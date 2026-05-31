@@ -1,108 +1,135 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 
-class SignInScreen extends StatefulWidget {
+// Importa tus dependencias (ajusta las rutas según la estructura de tu proyecto)
+import 'package:passenger_app/core/routing/app_routes.dart';
+import 'package:passenger_app/core/service_locator/main_service_locator.dart';
+import 'package:passenger_app/features/auth/presentation/bloc/auth_bloc.dart';
+// import 'package:passenger_app/core/di/injection.dart'; // Si usas get_it
+
+// =====================================================================
+// 1. WIDGET PROVEEDOR (Inyecta el BLoC al árbol de widgets)
+// =====================================================================
+class SignInScreen extends StatelessWidget {
   const SignInScreen({super.key});
 
   @override
-  State<SignInScreen> createState() => _SignInScreenState();
+  Widget build(BuildContext context) {
+    return BlocProvider(
+      // Si tienes get_it configurado, usa: create: (_) => getIt<AuthBloc>()
+      // De lo contrario, instáncialo aquí: create: (_) => AuthBloc(authRepository: ...)
+      create: (_) => mainServiceLocator<AuthBloc>(),
+      child: const SignInView(),
+    );
+  }
 }
 
-class _SignInScreenState extends State<SignInScreen> {
-  bool _isLoading = false;
-
-  void _handleGoogleSignIn() async {
-    setState(() {
-      _isLoading = true;
-    });
-
-    // Simulamos la petición de autenticación por 2 segundos
-    await Future.delayed(const Duration(seconds: 2));
-
-    if (mounted) {
-      setState(() {
-        _isLoading = false;
-      });
-
-
-    }
-  }
+// =====================================================================
+// 2. WIDGET DE LA VISTA (Consume el BLoC y dibuja la UI)
+// =====================================================================
+class SignInView extends StatelessWidget {
+  const SignInView({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 30.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Logo o Icono de la App
-              const Icon(
-                Icons.local_taxi_rounded,
-                size: 80,
-                color: Colors.black87,
-              ),
-              const SizedBox(height: 20),
-
-              // Título de bienvenida
-              const Text(
-                'Bienvenido Pasajero',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87,
+        // BlocConsumer escucha los estados para ejecutar acciones (listener)
+        // y también reconstruye la UI (builder)
+        child: BlocConsumer<AuthBloc, AuthState>(
+          listener: (context, state) {
+            if (state is AuthError) {
+              // Si el BLoC emite un error, mostramos el SnackBar
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(state.message),
+                  backgroundColor: Colors.redAccent,
+                  behavior: SnackBarBehavior.floating,
                 ),
-              ),
-              const SizedBox(height: 10),
-              const Text(
-                'Viaja de forma segura y rápida con nosotros.',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.grey,
-                ),
-              ),
-              const SizedBox(height: 60),
+              );
+            } else if (state is AuthAuthenticated) {
+              // Si el login es exitoso, navegamos a la pantalla de sesión
+              context.goNamed(sessionRoute.name);
+            }
+          },
+          builder: (context, state) {
+            // Evaluamos si el estado actual es Loading para bloquear el botón
+            final isLoading = state is AuthLoading;
 
-              // Botón de Google Sign-In Estilizado
-              _isLoading
-                  ? const Center(child: CircularProgressIndicator())
-                  : OutlinedButton(
-                onPressed: _handleGoogleSignIn,
-                style: OutlinedButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  foregroundColor: Colors.black87,
-                  side: const BorderSide(color: Colors.grey, width: 1),
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+            return Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 30.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const Icon(
+                    Icons.local_taxi_rounded,
+                    size: 80,
+                    color: Colors.black87,
                   ),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    // Icono de Google temporal usando Icons (o puedes usar un SVG de Google a futuro)
-                    const Icon(
-                      Icons.g_mobiledata_rounded,
-                      size: 32,
-                      color: Colors.redAccent, // Color temporal para que destaque
+                  const SizedBox(height: 20),
+                  const Text(
+                    'Bienvenido Pasajero',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
                     ),
-                    const SizedBox(width: 8),
-                    const Text(
-                      'Continuar con Google',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
+                  ),
+                  const SizedBox(height: 10),
+                  const Text(
+                    'Viaja de forma segura y rápida con nosotros.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.grey,
+                    ),
+                  ),
+                  const SizedBox(height: 60),
+
+                  // Lógica del botón: Cargando o Listo para presionar
+                  isLoading
+                      ? const Center(child: CircularProgressIndicator())
+                      : OutlinedButton(
+                    onPressed: () {
+                      // Enviamos el evento al BLoC al hacer clic
+                      context.read<AuthBloc>().add(AuthSignInWithGoogle());
+                    },
+                    style: OutlinedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      foregroundColor: Colors.black87,
+                      side: const BorderSide(color: Colors.grey, width: 1),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                  ],
-                ),
+                    child: const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.g_mobiledata_rounded,
+                          size: 32,
+                          color: Colors.redAccent,
+                        ),
+                        SizedBox(width: 8),
+                        Text(
+                          'Continuar con Google',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
+            );
+          },
         ),
       ),
     );

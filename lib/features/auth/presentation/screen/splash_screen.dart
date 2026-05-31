@@ -22,14 +22,14 @@ class _SplashScreenState extends State<SplashScreen> {
   void _startCountdown() async {
     await Future.delayed(Duration(seconds: secondsRemaining));
     if (mounted) {
-      context.goNamed(sessionRoute.name);
+      context.goNamed(signInRoute.name);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.pink, // Fondo rosa solicitado
+      backgroundColor: Colors.pink,
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
