@@ -3,6 +3,6 @@ part of 'auth_bloc.dart';
 @immutable
 sealed class AuthEvent {}
 
-class AuthSignInWithGoogle extends AuthEvent{
+class AuthSignInWithGoogle extends AuthEvent {}
 
-}
+class AuthCheckRequested extends AuthEvent {}

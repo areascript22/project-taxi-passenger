@@ -22,7 +22,7 @@ class _SplashScreenState extends State<SplashScreen> {
   void _startCountdown() async {
     await Future.delayed(Duration(seconds: secondsRemaining));
     if (mounted) {
-      context.goNamed(signInRoute.name);
+      context.goNamed(sessionRoute.name);
     }
   }
 

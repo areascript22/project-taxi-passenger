@@ -17,3 +17,9 @@ const sessionRoute = NavigationEntity(
   name: 'session',
   route: '/session',
 );
+
+const homeRoute = NavigationEntity(
+  key: 'home_route_key',
+  name: 'home',
+  route: '/home',
+);
