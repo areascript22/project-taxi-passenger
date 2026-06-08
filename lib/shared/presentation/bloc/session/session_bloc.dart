@@ -30,10 +30,12 @@ class SessionBloc extends Bloc<SessionEvent, SessionState> {
     emit(SessionAuthenticated(user: event.user));
   }
 
-  Future<void> _onLogoutRequested(
-    SessionLogoutRequested event,
-    Emitter<SessionState> emit,
-  ) async {
-    emit(SessionUnauthenticated());
+  Future<void> _onLogoutRequested(SessionLogoutRequested event,
+      Emitter<SessionState> emit,) async {
+    final response = await sessionRepository.signOut();
+    response.fold(
+            (failure) => emit(state),
+            (unit) =>
+        emit(SessionUnauthenticated()));
   }
 }

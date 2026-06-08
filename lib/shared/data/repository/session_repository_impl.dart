@@ -27,4 +27,15 @@ class SessionRepositoryImpl implements SessionRepository {
       return left(Failure(message: "Error interno al verificar la sesión: $e"));
     }
   }
+
+  @override
+  Future<Either<Failure, Unit>> signOut() async {
+    try {
+      final FirebaseAuth auth = FirebaseAuth.instance;
+      await auth.signOut();
+      return const Right(unit);
+    } catch (e) {
+      return left(Failure(message: "Error al cerrar sesión: $e"));
+    }
+  }
 }

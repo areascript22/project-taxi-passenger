@@ -34,10 +34,11 @@ class _SplashScreenState extends State<SplashScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(
-              Icons.local_taxi,
-              size: 100,
-              color: Colors.white,
+            Image.asset(
+              'assets/images/app_logo.png',
+              width: 260,
+              height: 260,
+              fit: BoxFit.contain,
             ),
             const SizedBox(height: 30),
           ],

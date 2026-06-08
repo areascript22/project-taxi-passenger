@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:passenger_app/features/profile/presentation/component/confirmation_popup.dart';
 import 'package:passenger_app/shared/presentation/bloc/session/session_bloc.dart';
 import '../../../../shared/domain/entity/user_entity.dart';
-import '../../../auth/presentation/bloc/auth_bloc.dart';
+import '../../../../shared/presentation/component/custom_button.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -20,15 +21,10 @@ class ProfileView extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
-      // Soft gray background for contrast
       body: BlocBuilder<SessionBloc, SessionState>(
         builder: (context, state) {
-          if (state is AuthLoading) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
           if (state is SessionAuthenticated) {
-            return _buildProfileContent(state.user);
+            return _buildProfileContent(context, state.user);
           }
 
           return const Center(
@@ -39,7 +35,7 @@ class ProfileView extends StatelessWidget {
     );
   }
 
-  Widget _buildProfileContent(UserEntity user) {
+  Widget _buildProfileContent(BuildContext context, UserEntity user) {
     return SafeArea(
       child: SingleChildScrollView(
         child: Column(
@@ -83,7 +79,7 @@ class ProfileView extends StatelessWidget {
               style: const TextStyle(
                 fontSize: 26,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF1E293B), // Dark slate
+                color: Color(0xFF1E293B),
                 letterSpacing: -0.5,
               ),
             ),
@@ -95,7 +91,7 @@ class ProfileView extends StatelessWidget {
               user.email ?? 'Sin correo electrónico',
               style: const TextStyle(
                 fontSize: 16,
-                color: Color(0xFF64748B), // Medium slate
+                color: Color(0xFF64748B),
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -139,6 +135,18 @@ class ProfileView extends StatelessWidget {
                 ),
               ),
             ),
+
+            const SizedBox(height: 32),
+
+            // Sign Out Button
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24.0),
+              child: CustomButton(textButton: "Cerrar sesión", onTap: () {
+                ConfirmationPopup.show(context: context);
+              }),
+            ),
+
+            const SizedBox(height: 40),
           ],
         ),
       ),
@@ -159,14 +167,10 @@ class ProfileView extends StatelessWidget {
         leading: Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: const Color(0xFFEFF6FF), // Light blue tint
+            color: const Color(0xFFEFF6FF),
             borderRadius: BorderRadius.circular(12),
           ),
-          child: Icon(
-            icon,
-            color: const Color(0xFF3B82F6),
-            size: 24,
-          ), // Blue icon
+          child: Icon(icon, color: const Color(0xFF3B82F6), size: 24),
         ),
         title: Text(
           title,
