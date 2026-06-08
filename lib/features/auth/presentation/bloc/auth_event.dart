@@ -5,4 +5,3 @@ sealed class AuthEvent {}
 
 class AuthSignInWithGoogle extends AuthEvent {}
 
-class AuthCheckRequested extends AuthEvent {}

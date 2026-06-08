@@ -2,8 +2,11 @@ import 'package:go_router/go_router.dart';
 import 'package:passenger_app/core/routing/app_routes.dart';
 import 'package:passenger_app/features/auth/presentation/screen/session_screen.dart';
 import 'package:passenger_app/features/auth/presentation/screen/sign_in_screen.dart';
-import 'package:passenger_app/features/home/presentation/screen/home_screen.dart';
-
+import 'package:passenger_app/features/booking/presentation/screen/booking_sccreen.dart';
+import 'package:passenger_app/features/booking/presentation/screen/booking_sccreen_2.dart';
+import 'package:passenger_app/features/profile/presentation/screen/profile_screen.dart';
+import 'package:passenger_app/features/profile/presentation/screen/profile_screen_2.dart';
+import 'package:passenger_app/shared/presentation/component/scaffold_nav_bar.dart';
 import '../../features/auth/presentation/screen/splash_screen.dart';
 
 class AppRouter {
@@ -25,10 +28,57 @@ class AppRouter {
         name: sessionRoute.name,
         builder: (context, state) => const SessionScreen(),
       ),
-      GoRoute(
-        path: homeRoute.route,
-        name: homeRoute.name,
-        builder: (context, state) => const HomeScreen(),
+
+      // The StatefulShellRoute acts as your authenticated "Home"
+      StatefulShellRoute.indexedStack(
+        builder: (context, state, navigationShell) {
+          return ScaffoldWithNavBar(navigationShell: navigationShell);
+        },
+        branches: [
+          // ---------------------------
+          // BRANCH 1: Booking Flow
+          // ---------------------------
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/booking',
+                name: 'booking',
+                builder: (context, state) => const BookingScreen(),
+                routes: [
+                  // CHILD ROUTE: Notice there is no leading '/' in the path
+                  // Navigate here using: context.pushNamed('booking2')
+                  GoRoute(
+                    path: 'booking2',
+                    name: 'booking2',
+                    builder: (context, state) => const BookingScreen2(),
+                  ),
+                ],
+              ),
+            ],
+          ),
+
+          // ---------------------------
+          // BRANCH 2: Profile Flow
+          // ---------------------------
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/profile',
+                name: 'profile',
+                builder: (context, state) => const ProfileScreen(),
+                routes: [
+                  // CHILD ROUTE: Notice there is no leading '/'
+                  // Navigate here using: context.pushNamed('profile2')
+                  GoRoute(
+                    path: '2',
+                    name: 'profile2',
+                    builder: (context, state) => const ProfileScreen2(),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ],
       ),
     ],
   );

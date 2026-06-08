@@ -1,4 +1,6 @@
-import '../../shared/entities/navigation_entity.dart';
+
+
+import '../../shared/domain/entity/navigation_entity.dart';
 
 const splashRoute = NavigationEntity(
   key: 'splash_route_key',

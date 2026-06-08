@@ -3,65 +3,44 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:passenger_app/core/error/errors.dart';
 import 'package:passenger_app/features/auth/domain/repository/auth_repository.dart';
+import '../../../../shared/domain/entity/user_entity.dart';
 
 class AuthRepositoryImpl implements AuthRepository {
   @override
-  Future<Either<Failure, Unit>> signInWithGoogle() async {
+  Future<Either<Failure, UserEntity>> signInWithGoogle() async {
     try {
       final FirebaseAuth auth = FirebaseAuth.instance;
-
-      // 1. CORRECCIÓN: Se utiliza el Singleton en lugar del constructor
       final GoogleSignIn googleSignIn = GoogleSignIn.instance;
 
-      // OBLIGATORIO EN v7+: Debes inicializar el SDK antes de cualquier acción
       await googleSignIn.initialize();
+      final GoogleSignInAccount googleUser = await googleSignIn.authenticate();
 
-      // 2. CORRECCIÓN: Se utiliza authenticate() en lugar de signIn()
-      final GoogleSignInAccount? googleUser = await googleSignIn.authenticate();
-
-      if (googleUser == null) {
-        // 3. CORRECCIÓN: Se retorna el Either (left) en vez de un 'null' plano
-        return left(
-          Failure(
-            message: "El usuario canceló el flujo de selección de cuenta",
-          ),
-        );
-      }
-
-      // Obtener los detalles de autenticación de la cuenta seleccionada
-      final GoogleSignInAuthentication googleAuth =
-          await googleUser.authentication;
-
-      // 4. CORRECCIÓN: Firebase funciona perfectamente solo con el idToken.
-      // Se elimina el accessToken que ya no existe en este paso en la v7+.
+      final GoogleSignInAuthentication googleAuth = googleUser.authentication;
       final AuthCredential credential = GoogleAuthProvider.credential(
         idToken: googleAuth.idToken,
       );
 
-      // Iniciar sesión en Firebase con la credencial generada
-      await auth.signInWithCredential(credential);
+      final userCredentials = await auth.signInWithCredential(credential);
+      final user = userCredentials.user;
 
-      // 5. CORRECCIÓN: Se pasa la constante 'unit' para cumplir con la firma del método
-      return right(unit);
+      if (user != null) {
+        return right(
+          UserEntity(
+            id: user.uid,
+            email: user.email,
+            displayName: user.displayName,
+            photoUrl: user.photoURL,
+          ),
+        );
+      } else {
+        return left(
+          Failure(
+            message: "Error al obtener los datos del usuario de Firebase",
+          ),
+        );
+      }
     } catch (e) {
-      print("Error en Google Sign-In: $e");
       return left(Failure(message: "Error interno en Google Sign-In: $e"));
-    }
-  }
-
-  @override
-  Future<Either<Failure, bool>> isUserAuthenticated() async {
-    try {
-      final FirebaseAuth auth = FirebaseAuth.instance;
-
-      // Obtenemos el usuario actual de la caché local de Firebase
-      final User? currentUser = auth.currentUser;
-
-      // Retornamos true si el usuario no es nulo, de lo contrario false
-      return right(currentUser != null);
-    } catch (e) {
-      print("Error verificando el estado de autenticación: $e");
-      return left(Failure(message: "Error interno al verificar la sesión: $e"));
     }
   }
 }

@@ -34,7 +34,6 @@ class _SplashScreenState extends State<SplashScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Icono temporal de Taxi (puedes cambiarlo por el logo de tu app más adelante)
             const Icon(
               Icons.local_taxi,
               size: 100,
