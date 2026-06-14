@@ -1,4 +1,4 @@
-name: Deploy ReadMind Dev (Internal Test)
+name: Deploy ViaGo Dev (Internal Test)
 
 on:
   push:
