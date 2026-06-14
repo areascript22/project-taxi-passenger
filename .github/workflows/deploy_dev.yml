@@ -69,7 +69,7 @@ jobs:
         uses: r0adkll/upload-google-play@v1
         with:
           serviceAccountJson: /tmp/playstore_key.json
-          packageName: com.readmind.dev
+          packageName: com.areascript.passenger_app.dev
           releaseFiles: build/app/outputs/bundle/devRelease/app-dev-release.aab
           track: internal
           status: draft
