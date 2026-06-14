@@ -41,8 +41,8 @@ jobs:
       # 6️⃣ 🔥 Decodifica .env.dev ANTES del build
       - name: Decode .env.dev
         run: |
-          mkdir -p assets/env
           echo "${{ secrets.ENV_DEV_BASE64 }}" | base64 --decode > .env.dev
+          ls -la .env.dev
 
       # 🟢 6.1️⃣ Decodifica google-services.json (dev)
       - name: Decode google-services.json (dev)
