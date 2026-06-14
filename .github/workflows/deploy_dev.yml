@@ -21,16 +21,29 @@ jobs:
           flutter-version: '3.29.2'
           channel: 'stable'
 
-      # 3️⃣ Instala dependencias
+      # 3️⃣ 🔥 Decodifica .env.dev ANTES de flutter pub get
+      - name: Decode .env.dev
+        run: |
+          echo "${{ secrets.ENV_DEV_BASE64 }}" | base64 --decode > .env.dev
+          echo "✅ .env.dev created:"
+          ls -la .env.dev
+
+      # 4️⃣ Decodifica google-services.json (dev)
+      - name: Decode google-services.json (dev)
+        run: |
+          mkdir -p android/app/src/dev
+          echo "${{ secrets.GOOGLE_SERVICES_DEV_BASE64 }}" | base64 --decode > android/app/src/dev/google-services.json
+
+      # 5️⃣ Ahora sí, instala dependencias (con .env.dev ya presente)
       - name: Install dependencies
         run: flutter pub get
 
-      # 4️⃣ Decodifica Keystore
+      # 6️⃣ Decodifica Keystore
       - name: Decode Keystore
         run: |
           echo "${{ secrets.KEYSTORE_FILE_BASE64 }}" | base64 --decode > android/app/my-release-key.jks
 
-      # 5️⃣ Crea key.properties
+      # 7️⃣ Crea key.properties
       - name: Create key.properties
         run: |
           echo "storePassword=${{ secrets.KEYSTORE_PASSWORD }}" > android/key.properties
@@ -38,31 +51,19 @@ jobs:
           echo "keyAlias=${{ secrets.KEY_ALIAS }}" >> android/key.properties
           echo "storeFile=my-release-key.jks" >> android/key.properties
 
-      # 6️⃣ 🔥 Decodifica .env.dev ANTES del build
-      - name: Decode .env.dev
-        run: |
-          echo "${{ secrets.ENV_DEV_BASE64 }}" | base64 --decode > .env.dev
-          ls -la .env.dev
-
-      # 🟢 6.1️⃣ Decodifica google-services.json (dev)
-      - name: Decode google-services.json (dev)
-        run: |
-          mkdir -p android/app/src/dev
-          echo "${{ secrets.GOOGLE_SERVICES_DEV_BASE64 }}" | base64 --decode > android/app/src/dev/google-services.json
-
-      # 7️⃣ Compila el .aab del flavor dev
+      # 8️⃣ Compila el .aab del flavor dev
       - name: Build appbundle (dev)
         run: flutter build appbundle --flavor dev --release --dart-define=FLAVOR=dev
 
-      # 8️⃣ Lista archivos generados
+      # 9️⃣ Lista archivos generados
       - name: List built files
         run: ls -l build/app/outputs/bundle/devRelease/
 
-      # 9️⃣ Decodifica JSON de Play Store
+      # 🔟 Decodifica JSON de Play Store
       - name: Decode Play Store JSON key
         run: echo "${{ secrets.PLAY_STORE_SERVICE_ACCOUNT_JSON }}" | base64 --decode > /tmp/playstore_key.json
 
-      # 🔟 Sube a Google Play (Internal track)
+      # 1️⃣1️⃣ Sube a Google Play (Internal track)
       - name: Upload to Google Play (Internal)
         uses: r0adkll/upload-google-play@v1
         with:
@@ -72,4 +73,4 @@ jobs:
           track: internal
           status: draft
           inAppUpdatePriority: 0
-          changesNotSentForReview: true  # 👈 ESTA ES LA SOLUCIÓN
+          changesNotSentForReview: true
