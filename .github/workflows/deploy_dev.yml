@@ -24,9 +24,10 @@ jobs:
       # 3️⃣ 🔥 Decodifica .env_dev ANTES de flutter pub get
       - name: Decode .env_dev
         run: |
-          echo "${{ secrets.ENV_DEV_BASE64 }}" | base64 --decode > .env_dev
+          mkdir -p assets/env
+          echo "${{ secrets.ENV_DEV_BASE64 }}" | base64 --decode > assets/env/.env_dev
           echo "✅ .env_dev created:"
-          ls -la .env_dev
+          ls -la assets/env/.env_dev
 
       # 4️⃣ Decodifica google-services.json (dev)
       - name: Decode google-services.json (dev)
@@ -53,7 +54,7 @@ jobs:
 
       # 8️⃣ Compila el .aab del flavor dev
       - name: Build appbundle (dev)
-        run: flutter build appbundle --flavor dev --release --dart-define=FLAVOR=dev
+        run: flutter build appbundle --flavor dev --dart-define=ENV_FILE=assets/env/.env_dev --release --dart-define=FLAVOR=dev
 
       # 9️⃣ Lista archivos generados
       - name: List built files
