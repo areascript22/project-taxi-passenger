@@ -21,10 +21,10 @@ jobs:
           flutter-version: '3.29.2'
           channel: 'stable'
 
-      # 3️⃣ 🔥 Decodifica .env.dev ANTES de flutter pub get
-      - name: Decode .env.dev
+      # 3️⃣ 🔥 Decodifica .env_dev ANTES de flutter pub get
+      - name: Decode .env_dev
         run: |
-          echo "${{ secrets.ENV_DEV_BASE64 }}" | base64 --decode > .env.dev
+          echo "${{ secrets.ENV_DEV_BASE64 }}" | base64 --decode > .env_dev
           echo "✅ .env.dev created:"
           ls -la .env.dev
 
@@ -34,7 +34,7 @@ jobs:
           mkdir -p android/app/src/dev
           echo "${{ secrets.GOOGLE_SERVICES_DEV_BASE64 }}" | base64 --decode > android/app/src/dev/google-services.json
 
-      # 5️⃣ Ahora sí, instala dependencias (con .env.dev ya presente)
+      # 5️⃣ Ahora sí, instala dependencias (con .env_dev ya presente)
       - name: Install dependencies
         run: flutter pub get
 

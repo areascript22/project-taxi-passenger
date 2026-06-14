@@ -7,7 +7,7 @@ class DotEnvServiceImpl implements DotEnvService {
   Future<void> initialize() async {
     const String envFile = String.fromEnvironment(
       'ENV_FILE',
-      defaultValue: '.env.dev',
+      defaultValue: '.env_dev',
     );
 
     await dotenv.load(fileName: envFile);
