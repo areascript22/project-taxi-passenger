@@ -52,7 +52,7 @@ jobs:
           echo "keyAlias=${{ secrets.KEY_ALIAS }}" >> android/key.properties
           echo "storeFile=my-release-key.jks" >> android/key.properties
 
-      # 8️⃣ Compila el .aab del flavor dev
+      # 8️⃣ Compila el .aab del flavor     dev
       - name: Build appbundle (dev)
         run: flutter build appbundle --flavor dev --dart-define=ENV_FILE=assets/env/.env_dev --release --dart-define=FLAVOR=dev
 
