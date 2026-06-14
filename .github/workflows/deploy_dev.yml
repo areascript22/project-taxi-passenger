@@ -42,7 +42,7 @@ jobs:
       - name: Decode .env.dev
         run: |
           mkdir -p assets/env
-          echo "${{ secrets.ENV_DEV_BASE64 }}" | base64 --decode > assets/env/.env.dev
+          echo "${{ secrets.ENV_DEV_BASE64 }}" | base64 --decode > .env.dev
 
       # 🟢 6.1️⃣ Decodifica google-services.json (dev)
       - name: Decode google-services.json (dev)
