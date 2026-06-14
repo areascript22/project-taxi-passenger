@@ -48,7 +48,7 @@ android {
             dimension = "environment"
             applicationId = "com.areascript.passenger_app.dev"
             versionNameSuffix = "-dev"
-            resValue("string", "app_name", "Taxi Dev")
+            resValue("string", "app_name", "ViaGo Dev")
         }
         create("prod") {
             dimension = "environment"
