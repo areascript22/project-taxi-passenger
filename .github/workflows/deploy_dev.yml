@@ -71,7 +71,6 @@ jobs:
           serviceAccountJson: /tmp/playstore_key.json
           packageName: com.areascript.passenger_app.dev
           releaseFiles: build/app/outputs/bundle/devRelease/app-dev-release.aab
-          track: internal
+          tracks: internal
           status: draft
           inAppUpdatePriority: 0
-          changesNotSentForReview: true
