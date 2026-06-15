@@ -39,20 +39,20 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      # 6️⃣ Decodifica Keystore
+      # 6️⃣ Decodifica Keystore (Actualizado a la ruta correcta en android/)
       - name: Decode Keystore
         run: |
-          echo "${{ secrets.KEYSTORE_FILE_BASE64 }}" | base64 --decode > android/app/my-release-key.jks
+          echo "${{ secrets.KEYSTORE_FILE_BASE64 }}" | base64 --decode > android/prod-keystore.jks
 
-      # 7️⃣ Crea key.properties
-      - name: Create key.properties
+      # 7️⃣ Crea keystore.properties (Actualizado al nombre que espera Gradle)
+      - name: Create keystore.properties
         run: |
-          echo "storePassword=${{ secrets.KEYSTORE_PASSWORD }}" > android/key.properties
-          echo "keyPassword=${{ secrets.KEY_PASSWORD }}" >> android/key.properties
-          echo "keyAlias=${{ secrets.KEY_ALIAS }}" >> android/key.properties
-          echo "storeFile=my-release-key.jks" >> android/key.properties
+          echo "storePassword=${{ secrets.KEYSTORE_PASSWORD }}" > android/keystore.properties
+          echo "keyPassword=${{ secrets.KEY_PASSWORD }}" >> android/keystore.properties
+          echo "keyAlias=${{ secrets.KEY_ALIAS }}" >> android/keystore.properties
+          echo "storeFile=prod-keystore.jks" >> android/keystore.properties
 
-      # 8️⃣ Compila el .aab del flavor     dev
+      # 8️⃣ Compila el .aab del flavor dev
       - name: Build appbundle (dev)
         run: flutter build appbundle --flavor dev --dart-define=ENV_FILE=assets/env/.env_dev --release --dart-define=FLAVOR=dev
 

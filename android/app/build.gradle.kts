@@ -4,7 +4,6 @@ import java.io.FileInputStream
 plugins {
     id("com.android.application")
     id("kotlin-android")
-    // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
     id("com.google.gms.google-services")
 }
@@ -30,10 +29,10 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
+        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html). [cite: 3]
         applicationId = "com.areascript.passenger_app"
         // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
+        // For more information, see: https://flutter.dev/to/review-gradle-config. [cite: 4]
         minSdk = 23
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
@@ -59,11 +58,16 @@ android {
     }
 
     signingConfigs {
-        create("prod") {
+        // Cambié el nombre de "prod" a "release" para que sea más semántico,
+        // ya que ahora firmará ambos flavors.
+        create("release") {
             if (keystorePropertiesFile.exists()) {
                 keyAlias = keystoreProperties.getProperty("keyAlias")
                 keyPassword = keystoreProperties.getProperty("keyPassword")
-                storeFile = file(keystoreProperties.getProperty("storeFile"))
+
+                // 🔥 Modificado: Usamos rootProject.file para que busque en "android/"
+                storeFile = rootProject.file(keystoreProperties.getProperty("storeFile"))
+
                 storePassword = keystoreProperties.getProperty("storePassword")
             }
         }
@@ -71,9 +75,8 @@ android {
 
     buildTypes {
         release {
-            // Use prod signing config for release builds
-            signingConfig = if (getCurrentFlavor() == "prod" && keystorePropertiesFile.exists()) {
-                signingConfigs.getByName("prod")
+            signingConfig = if (keystorePropertiesFile.exists()) {
+                signingConfigs.getByName("release")
             } else {
                 signingConfigs.getByName("debug")
             }
@@ -81,12 +84,6 @@ android {
     }
 }
 
-fun getCurrentFlavor(): String {
-    return gradle.startParameter.taskNames
-        .firstOrNull { it.contains("prod") || it.contains("dev") }
-        ?.let { if (it.contains("prod")) "prod" else "dev" }
-        ?: "dev"
-}
 flutter {
     source = "../.."
 }
