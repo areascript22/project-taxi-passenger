@@ -12,8 +12,6 @@ val keystorePropertiesFile = rootProject.file("keystore.properties")
 val keystoreProperties = Properties()
 if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(FileInputStream(keystorePropertiesFile))
-} else {
-    println("⚠️ WARNING: keystore.properties not found")
 }
 
 android {
@@ -31,22 +29,14 @@ android {
     }
 
     defaultConfig {
+        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html). [cite: 3]
+        applicationId = "com.areascript.passenger_app"
+        // You can update the following values to match your application needs.
+        // For more information, see: https://flutter.dev/to/review-gradle-config. [cite: 4]
         minSdk = 23
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
-    }
-
-    // Configuración de firmas para RELEASE
-    signingConfigs {
-        create("release") {
-            if (keystorePropertiesFile.exists()) {
-                keyAlias = keystoreProperties.getProperty("keyAlias")
-                keyPassword = keystoreProperties.getProperty("keyPassword")
-                storeFile = file(keystoreProperties.getProperty("storeFile"))
-                storePassword = keystoreProperties.getProperty("storePassword")
-            }
-        }
     }
 
     // Flavor configuration
@@ -58,28 +48,38 @@ android {
             applicationId = "com.areascript.passenger_app.dev"
             versionNameSuffix = "-dev"
             resValue("string", "app_name", "ViaGo Dev")
-            // 🔥 IMPORTANTE: Asignar la firma de release
-            signingConfig = signingConfigs.getByName("release")
         }
         create("prod") {
             dimension = "environment"
             applicationId = "com.areascript.passenger_app"
             versionNameSuffix = ""
             resValue("string", "app_name", "Taxi")
-            signingConfig = signingConfigs.getByName("release")
+        }
+    }
+
+    signingConfigs {
+        // Cambié el nombre de "prod" a "release" para que sea más semántico,
+        // ya que ahora firmará ambos flavors.
+        create("release") {
+            if (keystorePropertiesFile.exists()) {
+                keyAlias = keystoreProperties.getProperty("keyAlias")
+                keyPassword = keystoreProperties.getProperty("keyPassword")
+
+                // 🔥 Modificado: Usamos rootProject.file para que busque en "android/"
+                storeFile = rootProject.file(keystoreProperties.getProperty("storeFile"))
+
+                storePassword = keystoreProperties.getProperty("storePassword")
+            }
         }
     }
 
     buildTypes {
         release {
-            // 🔥 Ya no es necesario asignar aquí porque cada flavor ya tiene su signingConfig
-            signingConfig = null  // Dejar que cada flavor maneje su firma
-            isMinifyEnabled = false
-            isShrinkResources = false
-        }
-        debug {
-            // Opcional: También firmar debug con release para pruebas
-            signingConfig = signingConfigs.getByName("release")
+            signingConfig = if (keystorePropertiesFile.exists()) {
+                signingConfigs.getByName("release")
+            } else {
+                signingConfigs.getByName("debug")
+            }
         }
     }
 }
