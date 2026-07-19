@@ -16,5 +16,14 @@ class UpdatePickUpAddress extends BookingEvent {
   UpdatePickUpAddress({required this.pickUpAddress});
 }
 
-// Future Event:
-// class RequestTaxi extends BookingEvent {}
+class RequestTaxi extends BookingEvent{
+  final RequestEntity request;
+
+  RequestTaxi({required this.request});
+}
+
+
+class CancelTaxiRequest extends BookingEvent{
+
+}
+

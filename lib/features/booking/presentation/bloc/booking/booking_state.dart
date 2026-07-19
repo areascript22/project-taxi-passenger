@@ -4,23 +4,20 @@ enum BookingStatus {
   initial,
   fetchingAddress,
   readyToBook,
-  requestingTaxi, // Placeholder for future use
-  searchingForDriver, // Placeholder for future use
+  requestingTaxi,
+  cancellingRequest,
+  requestInQueue,
+  searchingForDriver,
   error,
 }
 
 @immutable
 class BookingState {
   final BookingStatus status;
-
-  // Data we hold onto during the entire booking lifecycle
   final double? pickupLat;
   final double? pickupLng;
   final String? pickupAddress;
-
-  // Future fields we will need before requesting the taxi
   final String? destinationAddress;
-
   final String? errorMessage;
 
   const BookingState({
