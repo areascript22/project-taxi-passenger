@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:get_it/get_it.dart';
+import 'package:passenger_app/features/booking/domain/entity/request_entity.dart';
 import 'package:passenger_app/features/booking/presentation/bloc/booking/booking_bloc.dart';
 import 'package:passenger_app/features/booking/presentation/component/booking_header.dart';
 import 'package:passenger_app/features/booking/presentation/component/confirmation_dialog.dart';
@@ -20,7 +21,7 @@ class BookingScreen extends StatelessWidget {
       providers: [
         BlocProvider(create: (context) => GetIt.instance<LocationBloc>()),
         BlocProvider(create: (_) => GetIt.instance<LocationSearchBloc>()),
-        BlocProvider(create: (_) => GetIt.instance<BookingBloc>()),
+        BlocProvider.value(value: GetIt.instance<BookingBloc>()),
       ],
       child: const BookingView(),
     );
@@ -81,11 +82,25 @@ class _BookingViewState extends State<BookingView> {
                           onTap:
                               state.pickupAddress != null
                                   ? () {
+
                                     TaxiConfirmationDialog.show(
                                       context: context,
                                       address: state.pickupAddress!,
-                                      onConfirm: () {},
+                                      onConfirm: () {
+                                        final request = RequestEntity(
+                                          pickupLat: 1234,
+                                          pickupLng: 1234,
+                                          pickupAddress: "pickupAddress",
+                                          userId: "userId",
+                                          userName: "userName",
+                                          userProfileImage: "userProfileImage",
+                                        );
+                                        context.read<BookingBloc>().add(
+                                          RequestTaxi(request: request),
+                                        );
+                                      },
                                     );
+
                                   }
                                   : null,
                         );

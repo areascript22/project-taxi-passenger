@@ -1,5 +1,7 @@
 import 'package:bloc/bloc.dart';
 import 'package:meta/meta.dart';
+import 'package:passenger_app/features/booking/domain/entity/request_entity.dart';
+import 'package:passenger_app/features/booking/domain/repository/booking_repository.dart';
 import '../../../domain/repository/geocoding_repository.dart';
 
 part 'booking_event.dart';
@@ -8,11 +10,16 @@ part 'booking_state.dart';
 
 class BookingBloc extends Bloc<BookingEvent, BookingState> {
   final GeocodingRepository geocodingRepository;
+  final BookingRepository bookingRepository;
 
-  BookingBloc({required this.geocodingRepository})
-    : super(const BookingState()) {
+  BookingBloc({
+    required this.geocodingRepository,
+    required this.bookingRepository,
+  }) : super(const BookingState()) {
     on<FetchPickupAddress>(_onFetchPickupAddress);
     on<UpdatePickUpAddress>(_onUpdatePickupAddress);
+      on<RequestTaxi>(_onRequestTaxi);
+      on<CancelTaxiRequest>(_onCancelTaxiRequest);
   }
 
   Future<void> _onFetchPickupAddress(
@@ -62,5 +69,37 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
     Emitter<BookingState> emit,
   ) {
     emit(state.copyWith(pickupAddress: event.pickUpAddress));
+  }
+
+  void _onRequestTaxi(RequestTaxi event, Emitter<BookingState> emit) async {
+    emit(state.copyWith(status: BookingStatus.requestingTaxi));
+
+    await Future.delayed(const Duration(seconds: 2));
+
+    final response = await bookingRepository.requestTaxi(
+      request: event.request,
+    );
+
+    response.fold(
+      (l) => emit(
+        state.copyWith(status: BookingStatus.error, errorMessage: l.message),
+      ),
+      (r) => emit(state.copyWith(status: BookingStatus.requestInQueue)),
+    );
+  }
+
+  void _onCancelTaxiRequest(CancelTaxiRequest event, Emitter<BookingState> emit) async {
+    emit(state.copyWith(status: BookingStatus.cancellingRequest));
+
+    await Future.delayed(const Duration(seconds: 2));
+
+    final response = await bookingRepository.cancelTaxiRequest();
+
+    response.fold(
+      (l) => emit(
+        state.copyWith(status: BookingStatus.error, errorMessage: l.message),
+      ),
+      (r) => emit(state.copyWith(status: BookingStatus.initial)),
+    );
   }
 }
