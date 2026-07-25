@@ -1,5 +1,6 @@
 import 'package:bloc/bloc.dart';
 import 'package:meta/meta.dart';
+import 'package:passenger_app/features/booking/domain/entity/place_entity.dart';
 import 'package:passenger_app/features/booking/domain/entity/request_entity.dart';
 import 'package:passenger_app/features/booking/domain/repository/booking_repository.dart';
 import '../../../domain/repository/geocoding_repository.dart';
@@ -18,8 +19,8 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
   }) : super(const BookingState()) {
     on<FetchPickupAddress>(_onFetchPickupAddress);
     on<UpdatePickUpAddress>(_onUpdatePickupAddress);
-      on<RequestTaxi>(_onRequestTaxi);
-      on<CancelTaxiRequest>(_onCancelTaxiRequest);
+    on<RequestTaxi>(_onRequestTaxi);
+    on<CancelTaxiRequest>(_onCancelTaxiRequest);
   }
 
   Future<void> _onFetchPickupAddress(
@@ -68,7 +69,13 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
     UpdatePickUpAddress event,
     Emitter<BookingState> emit,
   ) {
-    emit(state.copyWith(pickupAddress: event.pickUpAddress));
+    emit(
+      state.copyWith(
+        pickupAddress: event.placeEntity.address,
+        pickupLat: event.placeEntity.latitude,
+        pickupLng: event.placeEntity.longitude,
+      ),
+    );
   }
 
   void _onRequestTaxi(RequestTaxi event, Emitter<BookingState> emit) async {
@@ -88,7 +95,10 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
     );
   }
 
-  void _onCancelTaxiRequest(CancelTaxiRequest event, Emitter<BookingState> emit) async {
+  void _onCancelTaxiRequest(
+    CancelTaxiRequest event,
+    Emitter<BookingState> emit,
+  ) async {
     emit(state.copyWith(status: BookingStatus.cancellingRequest));
 
     await Future.delayed(const Duration(seconds: 2));

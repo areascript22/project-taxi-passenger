@@ -23,6 +23,7 @@ class LocationSearchBloc
       emit(LocationSearchInitial());
     });
 
+    on<FetchCordsPlace>(_onFetchCordsPlace);
   }
 
   Future<void> _onSearchQueryChanged(
@@ -43,6 +44,39 @@ class LocationSearchBloc
     results.fold(
       (l) => emit(LocationSearchError(message: l.message)),
       (places) => emit(LocationSearchLoaded(places: places)),
+    );
+  }
+
+  void _onFetchCordsPlace(
+    FetchCordsPlace event,
+    Emitter<LocationSearchState> emit,
+  ) async {
+    if (state is! LocationSearchLoaded) {
+      return;
+    }
+
+    emit(
+      (state as LocationSearchLoaded).copyWith(
+        searchLoadedProcess: SearchLoadedProcess.gettingCords,
+      ),
+    );
+    final response = await locationSearchRepository.getPlaceDetails(
+      placeId: event.placeId,
+    );
+
+    response.fold(
+      (error) => emit(
+        (state as LocationSearchLoaded).copyWith(
+          searchLoadedProcess: SearchLoadedProcess.gettingCordsError,
+          cordsError: error.message,
+        ),
+      ),
+      (data) => emit(
+        (state as LocationSearchLoaded).copyWith(
+          searchLoadedProcess: SearchLoadedProcess.gettingCordsReady,
+          placeWithCords: data,
+        ),
+      ),
     );
   }
 }

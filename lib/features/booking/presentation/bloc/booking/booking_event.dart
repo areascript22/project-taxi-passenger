@@ -11,9 +11,9 @@ class FetchPickupAddress extends BookingEvent {
 }
 
 class UpdatePickUpAddress extends BookingEvent {
-  final String pickUpAddress;
+  final PlaceEntity placeEntity;
 
-  UpdatePickUpAddress({required this.pickUpAddress});
+  UpdatePickUpAddress({required this.placeEntity});
 }
 
 class RequestTaxi extends BookingEvent{

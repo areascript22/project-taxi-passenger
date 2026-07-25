@@ -21,7 +21,7 @@ class LocationBloc extends Bloc<LocationEvent, LocationState> {
     CheckAndRequestPermissionEvent event,
     Emitter<LocationState> emit,
   ) async {
-    emit(state.copyWith(isCheckingLocation: true));
+    emit(state.copyWith(locationProcess: LocationProcess.checkingPermissions));
 
     final result = await locationService.checkAndRequestPermission();
 
@@ -29,7 +29,7 @@ class LocationBloc extends Bloc<LocationEvent, LocationState> {
       (failure) {
         emit(
           state.copyWith(
-            isCheckingLocation: false,
+            locationProcess: LocationProcess.permissionsError,
             errorMessage: failure.message,
           ),
         );
@@ -37,7 +37,7 @@ class LocationBloc extends Bloc<LocationEvent, LocationState> {
       (locationPermission) {
         emit(
           state.copyWith(
-            isCheckingLocation: false,
+            locationProcess: LocationProcess.permissionsReady,
             permissionStatus: locationPermission,
             errorMessage: null,
           ),
@@ -50,16 +50,32 @@ class LocationBloc extends Bloc<LocationEvent, LocationState> {
     FetchCurrentLocationEvent event,
     Emitter<LocationState> emit,
   ) async {
+    emit(state.copyWith(locationProcess: LocationProcess.gettingCurrentCords));
     if (state.permissionStatus == LocationPermission.denied ||
-        state.permissionStatus == LocationPermission.deniedForever)
-      {
-        return;
-      }
+        state.permissionStatus == LocationPermission.deniedForever) {
+      emit(
+        state.copyWith(
+          locationProcess: LocationProcess.permissionsError,
+          errorMessage: "No tiene permisos de ubicación.",
+        ),
+      );
+      return;
+    }
 
     final result = await locationService.getCurrentPosition();
     result.fold(
-      (failure) => emit(state.copyWith(errorMessage: failure.message)),
-      (location) => emit(state.copyWith(lastKnownLocation: location)),
+      (failure) => emit(
+        state.copyWith(
+          locationProcess: LocationProcess.currentCordsError,
+          errorMessage: failure.message,
+        ),
+      ),
+      (location) => emit(
+        state.copyWith(
+          locationProcess: LocationProcess.currentCordsReady,
+          lastKnownLocation: location,
+        ),
+      ),
     );
   }
 

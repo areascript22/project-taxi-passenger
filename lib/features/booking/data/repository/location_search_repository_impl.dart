@@ -8,6 +8,8 @@ import '../../domain/repository/location_search_repository.dart';
 import '../../../../core/network/dio_client.dart';
 
 class LocationSearchRepositoryImpl implements LocationSearchRepository {
+  final String apiKey = dotenv.env['PLACES_API_KEY'] ?? '';
+
   @override
   Future<Either<Failure, List<PlaceEntity>>> getAutocompletePlaces({
     required String query,
@@ -16,15 +18,15 @@ class LocationSearchRepositoryImpl implements LocationSearchRepository {
       return right(<PlaceEntity>[]);
     }
 
-    final String apiKey = dotenv.env['PLACES_API_KEY'] ?? '';
-
     try {
       final response = await DioClient.instance.post(
         'https://places.googleapis.com/v1/places:autocomplete',
         options: Options(
           headers: {
             'X-Goog-Api-Key': apiKey,
-            'X-Goog-FieldMask': 'suggestions.placePrediction.text',
+            // Añadimos placeId al field mask
+            'X-Goog-FieldMask':
+                'suggestions.placePrediction.text,suggestions.placePrediction.placeId',
           },
         ),
         data: {
@@ -35,6 +37,8 @@ class LocationSearchRepositoryImpl implements LocationSearchRepository {
               "radius": 15000.0,
             },
           },
+          // Incluimos solo lugares que tengan coordenadas
+          "includePureServiceAreaBusinesses": false,
         },
       );
 
@@ -44,9 +48,7 @@ class LocationSearchRepositoryImpl implements LocationSearchRepository {
 
         final List<PlaceEntity> places =
             predictions.map((suggestion) {
-              final placePrediction = suggestion['placePrediction'];
-              final text = placePrediction['text']['text'];
-              return PlaceEntity(address: text);
+              return PlaceEntity.fromAutocomplete(suggestion);
             }).toList();
 
         return right(places);
@@ -60,6 +62,50 @@ class LocationSearchRepositoryImpl implements LocationSearchRepository {
       return left(Failure(message: "Failed to fetch place suggestions."));
     } catch (e) {
       debugPrint("Exception in getAutocompletePlaces: $e");
+      return left(Failure(message: "An unexpected error occurred."));
+    }
+  }
+
+  @override
+  Future<Either<Failure, PlaceEntity>> getPlaceDetails({
+    required String placeId,
+  }) async {
+    if (placeId.isEmpty) {
+      return left(Failure(message: "Place ID is required"));
+    }
+
+    try {
+      final response = await DioClient.instance.get(
+        'https://places.googleapis.com/v1/places/$placeId',
+        options: Options(
+          headers: {
+            'X-Goog-Api-Key': apiKey,
+            'X-Goog-FieldMask':
+                'id,formattedAddress,location,addressComponents',
+          },
+        ),
+      );
+
+      if (response.statusCode == 200) {
+        final data = response.data as Map<String, dynamic>;
+        final place = PlaceEntity.fromDetails(data);
+
+        // Verificamos que tenga coordenadas
+        if (place.latitude == null || place.longitude == null) {
+          return left(Failure(message: "Place has no coordinates available"));
+        }
+
+        return right(place);
+      } else {
+        return left(Failure(message: "Failed to fetch place details."));
+      }
+    } on DioException catch (e) {
+      debugPrint(
+        "Places API Details Dio Error: ${e.response?.statusCode} - ${e.response?.data}",
+      );
+      return left(Failure(message: "Failed to fetch place details."));
+    } catch (e) {
+      debugPrint("Exception in getPlaceDetails: $e");
       return left(Failure(message: "An unexpected error occurred."));
     }
   }
