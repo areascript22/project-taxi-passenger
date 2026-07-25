@@ -8,6 +8,7 @@ import 'package:passenger_app/features/booking/presentation/component/booking_he
 import 'package:passenger_app/features/booking/presentation/component/confirmation_dialog.dart';
 import 'package:passenger_app/features/booking/presentation/component/location_denied.dart';
 import 'package:passenger_app/shared/geolocator/location/location_bloc.dart';
+import 'package:passenger_app/shared/presentation/bloc/session/session_bloc.dart';
 import 'package:passenger_app/shared/presentation/component/custom_button.dart';
 import 'package:passenger_app/shared/presentation/component/custom_loader.dart';
 import '../bloc/location_search/location_search_bloc.dart';
@@ -82,25 +83,7 @@ class _BookingViewState extends State<BookingView> {
                           onTap:
                               state.pickupAddress != null
                                   ? () {
-
-                                    TaxiConfirmationDialog.show(
-                                      context: context,
-                                      address: state.pickupAddress!,
-                                      onConfirm: () {
-                                        final request = RequestEntity(
-                                          pickupLat: 1234,
-                                          pickupLng: 1234,
-                                          pickupAddress: "pickupAddress",
-                                          userId: "userId",
-                                          userName: "userName",
-                                          userProfileImage: "userProfileImage",
-                                        );
-                                        context.read<BookingBloc>().add(
-                                          RequestTaxi(request: request),
-                                        );
-                                      },
-                                    );
-
+                                    _onRequestTaxi(state);
                                   }
                                   : null,
                         );
@@ -116,13 +99,62 @@ class _BookingViewState extends State<BookingView> {
     );
   }
 
+  void _onRequestTaxi(BookingState state) {
+    TaxiConfirmationDialog.show(
+      context: context,
+      address: state.pickupAddress!,
+      onConfirm: () {
+        final isPickUpReady =
+            state.pickupLng != null ||
+            state.pickupLat != null ||
+            state.pickupAddress != null;
+        if (!isPickUpReady) {
+          return;
+        }
+
+        final currentSessionState = context.read<SessionBloc>().state;
+        if (currentSessionState is! SessionAuthenticated) {
+          return;
+        }
+
+        final user = currentSessionState.user;
+
+        final request = RequestEntity(
+          pickupLat: state.pickupLat!,
+          pickupLng: state.pickupLng!,
+          pickupAddress: state.pickupAddress!,
+          userId: user.id,
+          userName: user.displayName ?? "user",
+          userProfileImage: user.photoUrl ?? "n/a",
+        );
+        context.read<BookingBloc>().add(RequestTaxi(request: request));
+      },
+    );
+  }
+
   Widget _buildMainLocationSection() {
     return BlocConsumer<LocationBloc, LocationState>(
       listenWhen: (previous, current) {
-        return previous.lastKnownLocation != current.lastKnownLocation;
+        final shouldListen =
+            (previous.permissionStatus != current.permissionStatus) ||
+            (previous.locationProcess != current.locationProcess);
+        return shouldListen;
       },
       listener: (context, state) {
-        if (state.lastKnownLocation != null) {
+        final shouldFetchCords =
+            (state.permissionStatus == LocationPermission.always ||
+                state.permissionStatus == LocationPermission.whileInUse) &&
+            state.locationProcess == LocationProcess.permissionsReady;
+
+        if (shouldFetchCords) {
+          context.read<LocationBloc>().add(FetchCurrentLocationEvent());
+        }
+
+        final shouldFetchAddress =
+            state.locationProcess == LocationProcess.currentCordsReady &&
+            state.lastKnownLocation != null;
+
+        if (shouldFetchAddress) {
           context.read<BookingBloc>().add(
             FetchPickupAddress(
               latitude: state.lastKnownLocation!.latitude,
@@ -132,50 +164,18 @@ class _BookingViewState extends State<BookingView> {
         }
       },
       builder: (context, state) {
-        return BlocBuilder<BookingBloc, BookingState>(
-          builder: (context, state) {
-            if (state.status == BookingStatus.fetchingAddress) {
-              return Center(child: CustomLoader());
-            }
-
-            return Column(
-              children: [
-                _buildLocationCard(address: state.pickupAddress),
-
-                const SizedBox(height: 24),
-
-                _buildSearchBar(context),
-
-                _buildSearchResults(),
-              ],
-            );
-          },
-        );
-      },
-    );
-  }
-
-  Widget _buildLocationCard({String? address}) {
-    return BlocConsumer<LocationBloc, LocationState>(
-      listenWhen: (previous, current) {
-        return (previous.permissionStatus != current.permissionStatus);
-      },
-      listener: (context, state) {
-        final hasPermissions =
-            (state.permissionStatus == LocationPermission.always ||
-                state.permissionStatus == LocationPermission.whileInUse) &&
-            !state.isCheckingLocation;
-
-        if (hasPermissions) {
-          context.read<LocationBloc>().add(FetchCurrentLocationEvent());
-        }
-      },
-
-      builder: (context, state) {
-        if (state.isCheckingLocation) {
+        if (state.locationProcess == LocationProcess.checkingPermissions) {
           return const Center(
             child: Column(
               children: [CustomLoader(), Text('Comprobando permisos...')],
+            ),
+          );
+        }
+
+        if (state.locationProcess == LocationProcess.gettingCurrentCords) {
+          return const Center(
+            child: Column(
+              children: [CustomLoader(), Text('Ubteniendo tu ubicacion...')],
             ),
           );
         }
@@ -197,52 +197,87 @@ class _BookingViewState extends State<BookingView> {
           );
         }
 
-        return GestureDetector(
-          onTap: () {},
-          child: Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.05),
-                  blurRadius: 10,
-                  offset: const Offset(0, 2),
+        return BlocBuilder<BookingBloc, BookingState>(
+          builder: (context, state) {
+            if (state.status == BookingStatus.fetchingAddress) {
+              return const Center(
+                child: Column(
+                  children: [
+                    CustomLoader(),
+                    Text('Ubteniendo tu direccion...'),
+                  ],
                 ),
-              ],
-            ),
-            child: Row(
+              );
+            }
+
+            return Column(
               children: [
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.green.withValues(alpha: 0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(Icons.circle, color: Colors.green, size: 20),
+                _buildLocationCard(address: state.pickupAddress),
+
+                const SizedBox(height: 24),
+
+                _buildSearchBar(context),
+
+                _buildSearchResults(),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildLocationCard({String? address}) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+
+          BlocBuilder<LocationSearchBloc, LocationSearchState>(
+            builder: (context, state) {
+              if(state is LocationSearchLoaded && state.searchLoadedProcess == SearchLoadedProcess.gettingCords){
+                return CustomLoader();
+              }
+              return Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.green.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
                 ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        address ?? '',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey.shade600,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
+                child: Icon(Icons.circle, color: Colors.green, size: 20),
+              );
+            },
+          ),
+
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  address ?? '',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey.shade600,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
               ],
             ),
           ),
-        );
-      },
+        ],
+      ),
     );
   }
 
@@ -300,7 +335,24 @@ class _BookingViewState extends State<BookingView> {
   }
 
   Widget _buildSearchResults() {
-    return BlocBuilder<LocationSearchBloc, LocationSearchState>(
+    return BlocConsumer<LocationSearchBloc, LocationSearchState>(
+      listener: (context, state) {
+        if (state is LocationSearchLoaded) {
+          final cordsReady =
+              state.searchLoadedProcess ==
+                  SearchLoadedProcess.gettingCordsReady &&
+              state.placeWithCords != null;
+          if (cordsReady) {
+            context.read<BookingBloc>().add(
+              UpdatePickUpAddress(placeEntity: state.placeWithCords!),
+            );
+            context.read<LocationSearchBloc>().add(ClearSearchResults());
+
+            _searchController.clear();
+            FocusScope.of(context).unfocus();
+          }
+        }
+      },
       builder: (context, state) {
         if (state is LocationSearchInitial) {
           return const SizedBox.shrink();
@@ -365,15 +417,9 @@ class _BookingViewState extends State<BookingView> {
                     style: const TextStyle(fontSize: 14, color: Colors.black87),
                   ),
                   onTap: () {
-                    context.read<BookingBloc>().add(
-                      UpdatePickUpAddress(pickUpAddress: place.address),
-                    );
                     context.read<LocationSearchBloc>().add(
-                      ClearSearchResults(),
+                      FetchCordsPlace(placeId: place.placeId!),
                     );
-
-                    _searchController.clear();
-                    FocusScope.of(context).unfocus();
                   },
                 );
               },

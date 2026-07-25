@@ -1,30 +1,40 @@
 part of 'location_bloc.dart';
 
+enum LocationProcess {
+  initial,
+  checkingPermissions,
+  permissionsReady,
+  permissionsError,
+  gettingCurrentCords,
+  currentCordsReady,
+  currentCordsError,
+}
+
 @immutable
 class LocationState {
-  final bool isCheckingLocation;
   final LocationPermission? permissionStatus;
   final UserLocation? lastKnownLocation;
   final String? errorMessage;
+  final LocationProcess locationProcess;
 
   const LocationState({
-    this.isCheckingLocation = false,
     this.permissionStatus,
     this.lastKnownLocation,
     this.errorMessage,
+    this.locationProcess = LocationProcess.initial,
   });
 
   LocationState copyWith({
-    bool? isCheckingLocation,
     LocationPermission? permissionStatus,
     UserLocation? lastKnownLocation,
     String? errorMessage,
+    LocationProcess? locationProcess,
   }) {
     return LocationState(
-      isCheckingLocation: isCheckingLocation ?? this.isCheckingLocation,
       permissionStatus: permissionStatus ?? this.permissionStatus,
       lastKnownLocation: lastKnownLocation ?? this.lastKnownLocation,
       errorMessage: errorMessage ?? this.errorMessage,
+      locationProcess: locationProcess ?? this.locationProcess,
     );
   }
 }
