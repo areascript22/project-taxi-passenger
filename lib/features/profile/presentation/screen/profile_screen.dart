@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:passenger_app/features/profile/presentation/component/confirmation_popup.dart';
 import 'package:passenger_app/shared/presentation/bloc/session/session_bloc.dart';
+import 'package:passenger_app/shared/presentation/component/app_version.dart';
 import '../../../../shared/domain/entity/user_entity.dart';
 import '../../../../shared/presentation/component/custom_button.dart';
 
@@ -147,6 +148,7 @@ class ProfileView extends StatelessWidget {
             ),
 
             const SizedBox(height: 40),
+            AppVersionWidget(),
           ],
         ),
       ),

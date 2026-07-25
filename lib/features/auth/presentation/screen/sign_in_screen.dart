@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:passenger_app/core/service_locator/main_service_locator.dart';
 import 'package:passenger_app/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:passenger_app/shared/presentation/bloc/session/session_bloc.dart';
+import 'package:passenger_app/shared/presentation/component/app_version.dart';
 
 class SignInScreen extends StatelessWidget {
   const SignInScreen({super.key});
@@ -108,6 +109,8 @@ class SignInView extends StatelessWidget {
                           ],
                         ),
                       ),
+                  SizedBox(height: 100),
+                  Center(child: AppVersionWidget(),)
                 ],
               ),
             );
