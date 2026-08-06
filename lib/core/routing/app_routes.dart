@@ -1,5 +1,3 @@
-
-
 import '../../shared/domain/entity/navigation_entity.dart';
 
 const splashRoute = NavigationEntity(
@@ -24,4 +22,10 @@ const homeRoute = NavigationEntity(
   key: 'home_route_key',
   name: 'home',
   route: '/home',
+);
+
+const rideTrackingRoute = NavigationEntity(
+  key: 'ride_tracking_key',
+  name: 'ride_tracking',
+  route: '/ride_tracking',
 );

@@ -6,6 +6,7 @@ import 'package:passenger_app/features/booking/presentation/screen/booking_sccre
 import 'package:passenger_app/features/booking/presentation/screen/booking_sccreen_2.dart';
 import 'package:passenger_app/features/profile/presentation/screen/profile_screen.dart';
 import 'package:passenger_app/features/profile/presentation/screen/profile_screen_2.dart';
+import 'package:passenger_app/features/ride_tracking/presentation/screen/ride_tracking_screen.dart';
 import 'package:passenger_app/shared/presentation/component/scaffold_nav_bar.dart';
 import '../../features/auth/presentation/screen/splash_screen.dart';
 
@@ -44,15 +45,18 @@ class AppRouter {
                 path: '/booking',
                 name: 'booking',
                 builder: (context, state) => const BookingScreen(),
-                routes: [
-                  // CHILD ROUTE: Notice there is no leading '/' in the path
-                  // Navigate here using: context.pushNamed('booking2')
-                  GoRoute(
-                    path: 'booking2',
-                    name: 'booking2',
-                    builder: (context, state) => const BookingScreen2(),
-                  ),
-                ],
+
+              ),
+              GoRoute(
+                path: '/booking2',
+                name: 'booking2',
+                builder: (context, state) => const BookingScreen2(),
+              ),
+
+              GoRoute(
+                path: rideTrackingRoute.route,
+                name: rideTrackingRoute.name,
+                builder: (context, state) => const RideTrackingScreen(),
               ),
             ],
           ),

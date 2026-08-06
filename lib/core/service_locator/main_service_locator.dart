@@ -3,6 +3,7 @@ import 'package:passenger_app/features/auth/di/auth_service_locator.dart';
 import 'package:passenger_app/shared/geolocator/di/geolocator_service_locator.dart';
 import 'package:passenger_app/shared/services/dotenv/dotenv_service_locator.dart';
 import '../../features/booking/di/booking_locator.dart';
+import '../../features/ride_tracking/di/ride_tracking_service_locator.dart';
 import '../../shared/di/shared_service_locator.dart';
 
 final GetIt mainServiceLocator = GetIt.instance;
@@ -11,6 +12,7 @@ Future<void> initMainServiceLocator() async {
   initSharedDI(mainServiceLocator);
   initAuthDI(mainServiceLocator);
   initBooking(mainServiceLocator);
+  initRideTracking(mainServiceLocator);
   initDotEnvDI(mainServiceLocator);
   initGeolocator(mainServiceLocator);
 }

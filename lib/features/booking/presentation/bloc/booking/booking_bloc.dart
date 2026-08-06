@@ -81,8 +81,6 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
   void _onRequestTaxi(RequestTaxi event, Emitter<BookingState> emit) async {
     emit(state.copyWith(status: BookingStatus.requestingTaxi));
 
-    await Future.delayed(const Duration(seconds: 2));
-
     final response = await bookingRepository.requestTaxi(
       request: event.request,
     );
