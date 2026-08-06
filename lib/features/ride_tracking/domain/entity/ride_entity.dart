@@ -6,10 +6,12 @@ class DriverEntity {
 
   DriverEntity({required this.name, required this.photo});
 
-  factory DriverEntity.fromJson(Map<String, dynamic> json) {
+  factory DriverEntity.fromJson(Map<dynamic, dynamic>? json) {
+    if (json == null) return DriverEntity(name: '', photo: '');
+
     return DriverEntity(
-      name: json['name'] as String? ?? '',
-      photo: json['photo'] as String? ?? '',
+      name: json['displayName'] as String? ?? '',
+      photo: json['photoUrl'] as String? ?? '',
     );
   }
 }
@@ -24,8 +26,13 @@ class RideEntity {
   });
 
   factory RideEntity.fromJson(Map<String, dynamic> json) {
+    // El driver_app escribe la data del conductor anidada en driver.data
+    final driverNode = json['driver'];
+    final driverData =
+        driverNode is Map ? driverNode['data'] as Map<dynamic, dynamic>? : null;
+
     return RideEntity(
-      driver: DriverEntity.fromJson(json),
+      driver: DriverEntity.fromJson(driverData),
       rideStatus: _statusMapper(json['status'] as String?),
     );
   }

@@ -37,7 +37,7 @@ class RideTrackingBloc extends Bloc<RideTrackingEvent, RideTrackingState> {
   void _onRideUpdated(RideUpdated event, Emitter<RideTrackingState> emit) {
     final ride = event.ride;
     debugPrint("Ride update event called ; ${ride}");
-    emit(state.copyWith(status: ride.rideStatus));
+    emit(state.copyWith(status: ride.rideStatus, ride: ride));
   }
 
   Future<void> _onStop(StopRideTracking event, Emitter<RideTrackingState> emit,

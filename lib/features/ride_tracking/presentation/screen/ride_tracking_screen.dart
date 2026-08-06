@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:get_it/get_it.dart';
+import 'package:passenger_app/features/ride_tracking/domain/entity/ride_entity.dart';
+import 'package:passenger_app/features/ride_tracking/presentation/bloc/ride_tracking_bloc.dart';
 import 'package:passenger_app/features/ride_tracking/presentation/widget/driver_distance_indicator.dart';
 
 class RideTrackingScreen extends StatelessWidget {
@@ -6,35 +10,53 @@ class RideTrackingScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF7F7F7),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20.0),
-          child: Column(
-            children: [
-              _buildHeader(context),
+    return BlocProvider.value(
+      value: GetIt.instance<RideTrackingBloc>(),
+      child: const _RideTrackingView(),
+    );
+  }
+}
 
-              Expanded(
-                child: SingleChildScrollView(
-                  physics: const BouncingScrollPhysics(),
-                  child: Column(
-                    children: [
-                      DriverDistanceIndicator(progress: 0.50),
-                      const SizedBox(height: 20),
-                      _buildDriverCard(),
-                      const SizedBox(height: 20),
-                      _buildTripInfo(),
-                      const SizedBox(height: 50),
-                      _buildCancelButton(context),
-                    ],
+class _RideTrackingView extends StatelessWidget {
+  const _RideTrackingView();
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<RideTrackingBloc, RideTrackingState>(
+      builder: (context, state) {
+        final driver = state.ride?.driver;
+
+        return Scaffold(
+          backgroundColor: const Color(0xFFF7F7F7),
+          body: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20.0),
+              child: Column(
+                children: [
+                  _buildHeader(context),
+
+                  Expanded(
+                    child: SingleChildScrollView(
+                      physics: const BouncingScrollPhysics(),
+                      child: Column(
+                        children: [
+                          DriverDistanceIndicator(progress: 0.50),
+                          const SizedBox(height: 20),
+                          _buildDriverCard(driver),
+                          const SizedBox(height: 20),
+                          _buildTripInfo(),
+                          const SizedBox(height: 50),
+                          _buildCancelButton(context),
+                        ],
+                      ),
+                    ),
                   ),
-                ),
+                ],
               ),
-            ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
@@ -62,45 +84,25 @@ class RideTrackingScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildProgressCard() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(24),
-      decoration: _cardDecoration(),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Conductor en camino',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: Colors.black87,
-            ),
-          ),
-          const SizedBox(height: 32),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDriverCard() {
+  Widget _buildDriverCard(DriverEntity? driver) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: _cardDecoration(),
       child: Row(
         children: [
-          _buildDriverPhoto(),
+          _buildDriverPhoto(driver),
           const SizedBox(width: 16),
-          Expanded(child: _buildDriverInfo()),
+          Expanded(child: _buildDriverInfo(driver)),
           _buildCallButton(),
         ],
       ),
     );
   }
 
-  Widget _buildDriverPhoto() {
+  Widget _buildDriverPhoto(DriverEntity? driver) {
+    final hasPhoto = driver != null && driver.photo.isNotEmpty;
+
     return Container(
       width: 60,
       height: 60,
@@ -108,61 +110,46 @@ class RideTrackingScreen extends StatelessWidget {
         shape: BoxShape.circle,
         color: Colors.grey.shade300,
         border: Border.all(color: Colors.grey.shade400, width: 1.5),
+        image:
+            hasPhoto
+                ? DecorationImage(
+                  image: NetworkImage(driver.photo),
+                  fit: BoxFit.cover,
+                )
+                : null,
       ),
-      child: const Center(
-        child: Icon(Icons.person_rounded, color: Colors.black54, size: 34),
-      ),
+      child:
+          hasPhoto
+              ? null
+              : const Center(
+                child: Icon(Icons.person_rounded, color: Colors.black54, size: 34),
+              ),
     );
   }
 
-  Widget _buildDriverInfo() {
+  Widget _buildDriverInfo(DriverEntity? driver) {
+    final driverName =
+        (driver != null && driver.name.isNotEmpty)
+            ? driver.name
+            : 'Buscando datos del conductor...';
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Juan Pérez',
-          style: TextStyle(
+        Text(
+          driverName,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(
             fontSize: 17,
             fontWeight: FontWeight.w600,
             color: Colors.black87,
           ),
         ),
-        const SizedBox(height: 2),
-        Row(
-          children: [
-            const Icon(Icons.star_rounded, size: 16, color: Color(0xFFFFB800)),
-            const SizedBox(width: 4),
-            const Text(
-              '4.9',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-                color: Colors.black87,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Text(
-              'Toyota Corolla',
-              style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
-            ),
-            const SizedBox(width: 12),
-
-          ],
-        ),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-          decoration: BoxDecoration(
-            color: Colors.grey.shade200,
-            borderRadius: BorderRadius.circular(4),
-          ),
-          child: Text(
-            'ABC-1234',
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-              color: Colors.grey.shade700,
-            ),
-          ),
+        const SizedBox(height: 4),
+        Text(
+          'Tu conductor está en camino',
+          style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
         ),
       ],
     );
