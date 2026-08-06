@@ -29,3 +29,9 @@ const rideTrackingRoute = NavigationEntity(
   name: 'ride_tracking',
   route: '/ride_tracking',
 );
+
+const bookingRoute = NavigationEntity(
+  key: 'booking_route_key',
+  name: 'booking',
+  route: '/booking',
+);

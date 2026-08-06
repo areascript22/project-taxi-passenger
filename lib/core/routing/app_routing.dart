@@ -42,10 +42,9 @@ class AppRouter {
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: '/booking',
-                name: 'booking',
+                path: bookingRoute.route,
+                name: bookingRoute.name,
                 builder: (context, state) => const BookingScreen(),
-
               ),
               GoRoute(
                 path: '/booking2',

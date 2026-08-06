@@ -19,3 +19,9 @@ class RideUpdated extends RideTrackingEvent {
 
 
 class StopRideTracking extends RideTrackingEvent {}
+
+class CancelRideRequested extends RideTrackingEvent {
+  final String passengerId;
+
+  CancelRideRequested({required this.passengerId});
+}

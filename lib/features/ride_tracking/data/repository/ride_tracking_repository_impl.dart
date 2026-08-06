@@ -1,5 +1,7 @@
+import 'package:dartz/dartz.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
+import '../../../../core/error/errors.dart';
 import '../../domain/entity/ride_entity.dart';
 import '../../domain/repository/ride_tracking_repository.dart';
 
@@ -24,6 +26,22 @@ class RideTrackingRepositoryImpl implements RideTrackingRepository {
 
       return RideEntity.fromJson(map);
     });
+  }
+
+  @override
+  Future<Either<Failure, Unit>> cancelRide({required String passengerId}) async {
+    try {
+      await database.ref('taxi_requests/$passengerId').update({
+        'status': 'cancelled',
+        'cancelledBy': 'passenger',
+        'updatedAt': ServerValue.timestamp,
+      });
+      return const Right(unit);
+    } catch (e) {
+      return Left(
+        Failure(message: 'No se pudo cancelar el viaje. Intenta de nuevo.'),
+      );
+    }
   }
 
   @override

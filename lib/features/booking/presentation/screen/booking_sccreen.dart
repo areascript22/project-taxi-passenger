@@ -93,10 +93,6 @@ class _BookingViewState extends State<BookingView> {
                     ),
 
                     SizedBox(height: 20),
-                    CustomButton(textButton: "Go to Ride tracking Screen", onTap: (){
-
-                      context.goNamed(rideTrackingRoute.name);
-                    })
                   ],
                 ),
               ),

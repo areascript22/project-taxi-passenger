@@ -18,26 +18,28 @@ class RideTrackingState {
   final RideTrackingStatus status;
   final RideEntity? ride;
   final String? errorMessage;
+  final bool isCancelling;
 
   const RideTrackingState({
     this.status = RideTrackingStatus.initial,
     this.ride,
     this.errorMessage,
+    this.isCancelling = false,
   });
 
   RideTrackingState copyWith({
     RideTrackingStatus? status,
-
     RideEntity? ride,
-
     String? errorMessage,
+    bool? isCancelling,
   }) {
     return RideTrackingState(
       status: status ?? this.status,
-
       ride: ride ?? this.ride,
-
-      errorMessage: errorMessage ?? this.errorMessage,
+      // Siempre explícito: pasar null limpia el error anterior en vez de
+      // arrastrarlo indefinidamente.
+      errorMessage: errorMessage,
+      isCancelling: isCancelling ?? this.isCancelling,
     );
   }
 }

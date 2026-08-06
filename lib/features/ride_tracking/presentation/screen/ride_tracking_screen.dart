@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
+import 'package:go_router/go_router.dart';
 import 'package:passenger_app/features/ride_tracking/domain/entity/ride_entity.dart';
 import 'package:passenger_app/features/ride_tracking/presentation/bloc/ride_tracking_bloc.dart';
+import 'package:passenger_app/features/ride_tracking/presentation/screen/widgets/confirm_cancel_ride_dialog.dart';
+import 'package:passenger_app/features/ride_tracking/presentation/screen/widgets/driver_cancelled_dialog.dart';
 import 'package:passenger_app/features/ride_tracking/presentation/widget/driver_distance_indicator.dart';
+import 'package:passenger_app/shared/presentation/bloc/session/session_bloc.dart';
+import '../../../../core/routing/app_routes.dart';
 
 class RideTrackingScreen extends StatelessWidget {
   const RideTrackingScreen({super.key});
@@ -20,43 +25,62 @@ class RideTrackingScreen extends StatelessWidget {
 class _RideTrackingView extends StatelessWidget {
   const _RideTrackingView();
 
+  Future<void> _onRideCancelled(BuildContext context, RideEntity? ride) async {
+    // 'passenger' == fui yo quien canceló (ya vi mi propio diálogo de
+    // confirmación); 'driver' == el conductor canceló, así que aviso aquí.
+    if (ride?.cancelledBy == 'driver') {
+      await DriverCancelledDialog.show(context: context);
+    }
+
+    if (!context.mounted) return;
+    context.read<RideTrackingBloc>().add(StopRideTracking());
+    context.go(bookingRoute.route);
+  }
+
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<RideTrackingBloc, RideTrackingState>(
-      builder: (context, state) {
-        final driver = state.ride?.driver;
+    return BlocListener<RideTrackingBloc, RideTrackingState>(
+      listenWhen:
+          (previous, current) =>
+              previous.status != current.status &&
+              current.status == RideTrackingStatus.cancelled,
+      listener: (context, state) => _onRideCancelled(context, state.ride),
+      child: BlocBuilder<RideTrackingBloc, RideTrackingState>(
+        builder: (context, state) {
+          final driver = state.ride?.driver;
 
-        return Scaffold(
-          backgroundColor: const Color(0xFFF7F7F7),
-          body: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20.0),
-              child: Column(
-                children: [
-                  _buildHeader(context),
+          return Scaffold(
+            backgroundColor: const Color(0xFFF7F7F7),
+            body: SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                child: Column(
+                  children: [
+                    _buildHeader(context),
 
-                  Expanded(
-                    child: SingleChildScrollView(
-                      physics: const BouncingScrollPhysics(),
-                      child: Column(
-                        children: [
-                          DriverDistanceIndicator(progress: 0.50),
-                          const SizedBox(height: 20),
-                          _buildDriverCard(driver),
-                          const SizedBox(height: 20),
-                          _buildTripInfo(),
-                          const SizedBox(height: 50),
-                          _buildCancelButton(context),
-                        ],
+                    Expanded(
+                      child: SingleChildScrollView(
+                        physics: const BouncingScrollPhysics(),
+                        child: Column(
+                          children: [
+                            DriverDistanceIndicator(progress: 0.50),
+                            const SizedBox(height: 20),
+                            _buildDriverCard(driver),
+                            const SizedBox(height: 20),
+                            _buildTripInfo(),
+                            const SizedBox(height: 50),
+                            _buildCancelButton(context),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 
@@ -242,7 +266,15 @@ class _RideTrackingView extends StatelessWidget {
       width: double.infinity,
       height: 52,
       child: OutlinedButton(
-        onPressed: () {},
+        onPressed: () {
+          final sessionState = context.read<SessionBloc>().state;
+          if (sessionState is! SessionAuthenticated) return;
+
+          ConfirmCancelRideDialog.show(
+            context: context,
+            passengerId: sessionState.user.id,
+          );
+        },
         style: OutlinedButton.styleFrom(
           side: const BorderSide(color: Colors.red, width: 1.5),
           shape: RoundedRectangleBorder(

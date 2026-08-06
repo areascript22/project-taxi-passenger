@@ -19,10 +19,14 @@ class DriverEntity {
 class RideEntity {
   final DriverEntity driver;
   final RideTrackingStatus rideStatus;
+  // Quién canceló el viaje ('passenger' | 'driver'), solo relevante cuando
+  // rideStatus == cancelled.
+  final String? cancelledBy;
 
   RideEntity({
     required this.driver,
     this.rideStatus = RideTrackingStatus.initial,
+    this.cancelledBy,
   });
 
   factory RideEntity.fromJson(Map<String, dynamic> json) {
@@ -34,6 +38,7 @@ class RideEntity {
     return RideEntity(
       driver: DriverEntity.fromJson(driverData),
       rideStatus: _statusMapper(json['status'] as String?),
+      cancelledBy: json['cancelledBy'] as String?,
     );
   }
 
