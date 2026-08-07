@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:get_it/get_it.dart';
-import 'package:go_router/go_router.dart';
 import 'package:passenger_app/features/booking/domain/entity/request_entity.dart';
 import 'package:passenger_app/features/booking/presentation/bloc/booking/booking_bloc.dart';
 import 'package:passenger_app/features/booking/presentation/component/booking_header.dart';
@@ -12,7 +11,7 @@ import 'package:passenger_app/shared/geolocator/location/location_bloc.dart';
 import 'package:passenger_app/shared/presentation/bloc/session/session_bloc.dart';
 import 'package:passenger_app/shared/presentation/component/custom_button.dart';
 import 'package:passenger_app/shared/presentation/component/custom_loader.dart';
-import '../../../../core/routing/app_routes.dart';
+import '../../../../shared/feedback/feedback_service.dart';
 import '../bloc/location_search/location_search_bloc.dart';
 
 class BookingScreen extends StatelessWidget {
@@ -45,6 +44,7 @@ class _BookingViewState extends State<BookingView> {
   void initState() {
     super.initState();
     _checkLocationPermissions();
+    GetIt.instance<FeedbackService>().announce('Bienvenido a Via Go');
   }
 
   @override

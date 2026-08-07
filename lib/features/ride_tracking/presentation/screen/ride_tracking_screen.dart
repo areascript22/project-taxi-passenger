@@ -7,6 +7,7 @@ import 'package:passenger_app/features/ride_tracking/presentation/bloc/ride_trac
 import 'package:passenger_app/features/ride_tracking/presentation/screen/widgets/confirm_cancel_ride_dialog.dart';
 import 'package:passenger_app/features/ride_tracking/presentation/screen/widgets/driver_cancelled_dialog.dart';
 import 'package:passenger_app/features/ride_tracking/presentation/widget/driver_distance_indicator.dart';
+import 'package:passenger_app/shared/feedback/feedback_service.dart';
 import 'package:passenger_app/shared/presentation/bloc/session/session_bloc.dart';
 import '../../../../core/routing/app_routes.dart';
 
@@ -29,6 +30,10 @@ class _RideTrackingView extends StatelessWidget {
     // 'passenger' == fui yo quien canceló (ya vi mi propio diálogo de
     // confirmación); 'driver' == el conductor canceló, así que aviso aquí.
     if (ride?.cancelledBy == 'driver') {
+      GetIt.instance<FeedbackService>().announce(
+        'El conductor canceló el viaje',
+        withVibration: true,
+      );
       await DriverCancelledDialog.show(context: context);
     }
 

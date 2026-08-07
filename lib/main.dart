@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
 import 'package:passenger_app/core/routing/app_routing.dart';
 import 'package:passenger_app/core/service_locator/main_service_locator.dart';
+import 'package:passenger_app/shared/feedback/feedback_service.dart';
 import 'package:passenger_app/shared/presentation/bloc/session/session_bloc.dart';
 import 'package:passenger_app/shared/services/services_initializer.dart';
 
@@ -12,6 +13,8 @@ void main() async {
   await Firebase.initializeApp();
   initMainServiceLocator();
   await ServicesInitializer.initializeServices();
+  // No se espera (fire-and-forget): no debe bloquear el arranque de la app.
+
   runApp(const MyApp());
 }
 

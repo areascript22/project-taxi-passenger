@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:passenger_app/features/profile/presentation/component/confirmation_popup.dart';
 import 'package:passenger_app/shared/presentation/bloc/session/session_bloc.dart';
 import 'package:passenger_app/shared/presentation/component/app_version.dart';
+import '../../../../core/routing/app_routes.dart';
 import '../../../../shared/domain/entity/user_entity.dart';
 import '../../../../shared/presentation/component/custom_button.dart';
 
@@ -22,6 +24,17 @@ class ProfileView extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFFF5F7FA),
+        elevation: 0,
+        automaticallyImplyLeading: false,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.settings_outlined, color: Color(0xFF1E293B)),
+            onPressed: () => context.pushNamed(settingsRoute.name),
+          ),
+        ],
+      ),
       body: BlocBuilder<SessionBloc, SessionState>(
         builder: (context, state) {
           if (state is SessionAuthenticated) {

@@ -29,11 +29,18 @@ class ConfirmCancelRideDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<RideTrackingBloc, RideTrackingState>(
+      // Dos señales pueden indicar "ya terminó, cierra el diálogo": que el
+      // propio request de cancelación termine (isCancelling true->false) o
+      // que el stream de Firebase confirme el nuevo status primero -- no hay
+      // orden garantizado entre ambos, así que reaccionamos a la que llegue
+      // primero.
       listenWhen:
           (previous, current) =>
-              previous.isCancelling &&
-              !current.isCancelling &&
-              current.errorMessage == null,
+              (previous.isCancelling &&
+                  !current.isCancelling &&
+                  current.errorMessage == null) ||
+              (previous.status != RideTrackingStatus.cancelled &&
+                  current.status == RideTrackingStatus.cancelled),
       listener: (context, state) {
         // Cancelación exitosa: el listener de RideTrackingScreen puede haber
         // navegado ya (llega por el mismo stream) y desmontado este diálogo,

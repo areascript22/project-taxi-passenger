@@ -8,6 +8,7 @@ import 'package:passenger_app/features/profile/presentation/screen/profile_scree
 import 'package:passenger_app/features/profile/presentation/screen/profile_screen_2.dart';
 import 'package:passenger_app/features/ride_tracking/presentation/screen/ride_tracking_screen.dart';
 import 'package:passenger_app/shared/presentation/component/scaffold_nav_bar.dart';
+import 'package:passenger_app/shared/settings/presentation/screen/settings_screen.dart';
 import '../../features/auth/presentation/screen/splash_screen.dart';
 
 class AppRouter {
@@ -78,6 +79,11 @@ class AppRouter {
                     builder: (context, state) => const ProfileScreen2(),
                   ),
                 ],
+              ),
+              GoRoute(
+                path: settingsRoute.route,
+                name: settingsRoute.name,
+                builder: (context, state) => const SettingsScreen(),
               ),
             ],
           ),

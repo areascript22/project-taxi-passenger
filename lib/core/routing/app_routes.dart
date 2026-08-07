@@ -35,3 +35,9 @@ const bookingRoute = NavigationEntity(
   name: 'booking',
   route: '/booking',
 );
+
+const settingsRoute = NavigationEntity(
+  key: 'settings_route_key',
+  name: 'settings',
+  route: '/settings',
+);

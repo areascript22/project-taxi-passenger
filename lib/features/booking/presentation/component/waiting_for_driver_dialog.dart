@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:lottie/lottie.dart';
 import 'package:passenger_app/features/booking/presentation/bloc/booking/booking_bloc.dart';
 import 'package:passenger_app/features/ride_tracking/presentation/bloc/ride_tracking_bloc.dart';
+import 'package:passenger_app/shared/feedback/feedback_service.dart';
 
 import '../../../../core/routing/app_routes.dart';
 
@@ -99,8 +100,11 @@ class WaitingForDriverDialog extends StatelessWidget {
                   previous.status != current.status,
                   listener: (context, state) {
                     if (state.status == RideTrackingStatus.driverAssigned) {
+                      GetIt.instance<FeedbackService>().announce(
+                        'Carrera aceptada',
+                        withVibration: true,
+                      );
                       Navigator.pop(context);
-                      //TODO: Navigate to ride tricking screen
                       context.goNamed(rideTrackingRoute.name);
                     }
                   },
