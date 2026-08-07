@@ -2,11 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:get_it/get_it.dart';
+import 'package:go_router/go_router.dart';
+import 'package:passenger_app/core/routing/app_routes.dart';
 import 'package:passenger_app/features/booking/domain/entity/request_entity.dart';
 import 'package:passenger_app/features/booking/presentation/bloc/booking/booking_bloc.dart';
 import 'package:passenger_app/features/booking/presentation/component/booking_header.dart';
 import 'package:passenger_app/features/booking/presentation/component/confirmation_dialog.dart';
 import 'package:passenger_app/features/booking/presentation/component/location_denied.dart';
+import 'package:passenger_app/shared/domain/entity/place_entity.dart';
 import 'package:passenger_app/shared/geolocator/location/location_bloc.dart';
 import 'package:passenger_app/shared/presentation/bloc/session/session_bloc.dart';
 import 'package:passenger_app/shared/presentation/component/custom_button.dart';
@@ -333,8 +336,41 @@ class _BookingViewState extends State<BookingView> {
               ),
             ),
           ),
+          const SizedBox(width: 4),
+          IconButton(
+            icon: const Icon(Icons.map_outlined, color: Colors.pink, size: 24),
+            tooltip: 'Elegir en el mapa',
+            onPressed: () => _openMapPicker(context),
+          ),
         ],
       ),
+    );
+  }
+
+  Future<void> _openMapPicker(BuildContext context) async {
+    final bookingState = context.read<BookingBloc>().state;
+
+    final result = await context.push<PlaceEntity>(
+      mapPickerRoute.route,
+      extra: bookingState.pickupLat != null && bookingState.pickupLng != null
+          ? PlaceEntity(
+              address: bookingState.pickupAddress ?? '',
+              latitude: bookingState.pickupLat,
+              longitude: bookingState.pickupLng,
+            )
+          : null,
+    );
+
+    if (result == null || !mounted) return;
+
+    context.read<BookingBloc>().add(UpdatePickUpAddress(placeEntity: result));
+    _setSearchText(result.address);
+  }
+
+  void _setSearchText(String address) {
+    _searchController.text = address;
+    _searchController.selection = TextSelection.collapsed(
+      offset: _searchController.text.length,
     );
   }
 
@@ -352,7 +388,7 @@ class _BookingViewState extends State<BookingView> {
             );
             context.read<LocationSearchBloc>().add(ClearSearchResults());
 
-            _searchController.clear();
+            _setSearchText(state.placeWithCords!.address);
             FocusScope.of(context).unfocus();
           }
         }

@@ -14,6 +14,18 @@ if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(FileInputStream(keystorePropertiesFile))
 }
 
+fun loadEnvProperties(fileName: String): Properties {
+    val props = Properties()
+    val file = rootProject.file("../assets/env/$fileName")
+    if (file.exists()) {
+        FileInputStream(file).use { props.load(it) }
+    }
+    return props
+}
+
+val devEnvProperties = loadEnvProperties(".env_dev")
+val prodEnvProperties = loadEnvProperties(".env_prod")
+
 android {
     namespace = "com.areascript.passenger_app"
     compileSdk = 36
@@ -48,12 +60,14 @@ android {
             applicationId = "com.areascript.passenger_app.dev"
             versionNameSuffix = "-dev"
             resValue("string", "app_name", "ViaGo Dev")
+            manifestPlaceholders["mapsApiKey"] = devEnvProperties.getProperty("MAPS_API_KEY", "")
         }
         create("prod") {
             dimension = "environment"
             applicationId = "com.areascript.passenger_app"
             versionNameSuffix = ""
             resValue("string", "app_name", "Taxi")
+            manifestPlaceholders["mapsApiKey"] = prodEnvProperties.getProperty("MAPS_API_KEY", "")
         }
     }
 

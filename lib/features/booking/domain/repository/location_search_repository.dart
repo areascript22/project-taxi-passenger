@@ -1,5 +1,5 @@
 import 'package:dartz/dartz.dart';
-import 'package:passenger_app/features/booking/domain/entity/place_entity.dart';
+import 'package:passenger_app/shared/domain/entity/place_entity.dart';
 import '../../../../core/error/errors.dart';
 
 abstract class LocationSearchRepository {

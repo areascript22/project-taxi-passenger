@@ -4,11 +4,13 @@ import 'package:passenger_app/features/auth/presentation/screen/session_screen.d
 import 'package:passenger_app/features/auth/presentation/screen/sign_in_screen.dart';
 import 'package:passenger_app/features/booking/presentation/screen/booking_sccreen.dart';
 import 'package:passenger_app/features/booking/presentation/screen/booking_sccreen_2.dart';
+import 'package:passenger_app/features/map/presentation/screen/map_picker_screen.dart';
 import 'package:passenger_app/features/profile/presentation/screen/profile_screen.dart';
 import 'package:passenger_app/features/profile/presentation/screen/profile_screen_2.dart';
 import 'package:passenger_app/features/ride_tracking/presentation/screen/ride_tracking_screen.dart';
 import 'package:passenger_app/shared/presentation/component/scaffold_nav_bar.dart';
 import 'package:passenger_app/shared/settings/presentation/screen/settings_screen.dart';
+import 'package:passenger_app/shared/domain/entity/place_entity.dart';
 import '../../features/auth/presentation/screen/splash_screen.dart';
 
 class AppRouter {
@@ -57,6 +59,15 @@ class AppRouter {
                 path: rideTrackingRoute.route,
                 name: rideTrackingRoute.name,
                 builder: (context, state) => const RideTrackingScreen(),
+              ),
+
+              GoRoute(
+                path: mapPickerRoute.route,
+                name: mapPickerRoute.name,
+                builder: (context, state) {
+                  final initialPlace = state.extra as PlaceEntity?;
+                  return MapPickerScreen(initialPlace: initialPlace);
+                },
               ),
             ],
           ),

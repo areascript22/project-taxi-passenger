@@ -1,8 +1,8 @@
 import 'package:bloc/bloc.dart';
 import 'package:meta/meta.dart';
-import 'package:passenger_app/features/booking/domain/entity/place_entity.dart';
+import 'package:passenger_app/shared/domain/entity/place_entity.dart';
 import 'package:passenger_app/features/booking/domain/repository/location_search_repository.dart';
-import 'package:passenger_app/features/booking/presentation/utils/debouncer.dart';
+import 'package:passenger_app/shared/utils/debouncer.dart';
 
 part 'location_search_event.dart';
 
