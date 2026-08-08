@@ -25,8 +25,28 @@ class RideTrackingScreen extends StatelessWidget {
   }
 }
 
-class _RideTrackingView extends StatelessWidget {
+class _RideTrackingView extends StatefulWidget {
   const _RideTrackingView();
+
+  @override
+  State<_RideTrackingView> createState() => _RideTrackingViewState();
+}
+
+class _RideTrackingViewState extends State<_RideTrackingView> {
+  @override
+  void initState() {
+    super.initState();
+    // Por si se llegó acá directo al reabrir la app con un viaje ya en
+    // curso (ver SessionBloc/SessionScreen) -- en el flujo normal (booking
+    // -> confirmación) el tracking ya lo arrancó ConfirmationDialog, así que
+    // este segundo dispatch es idempotente (solo reinicia la subscripción).
+    final passengerId = _readPassengerId(context);
+    if (passengerId != null) {
+      context.read<RideTrackingBloc>().add(
+        StartRideTracking(passengerId: passengerId),
+      );
+    }
+  }
 
   Future<void> _onRideCancelled(BuildContext context, RideEntity? ride) async {
     // 'passenger' == fui yo quien canceló (ya vi mi propio diálogo de

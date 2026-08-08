@@ -21,6 +21,14 @@ abstract class RideTrackingRepository {
     required String passengerId,
   });
 
+  // Lectura puntual (no stream): ¿el pasajero tiene un viaje en curso
+  // (conductor asignado en adelante)? Null == no hay viaje activo. Se usa
+  // al iniciar la app para decidir si hay que resumir RideTrackingScreen en
+  // vez de ir a BookingScreen.
+  Future<Either<Failure, RideEntity?>> getActiveRide({
+    required String passengerId,
+  });
+
   Future<void> dispose();
 
 }

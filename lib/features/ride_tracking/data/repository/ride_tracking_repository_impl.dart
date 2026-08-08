@@ -4,6 +4,16 @@ import 'package:flutter/material.dart';
 import '../../../../core/error/errors.dart';
 import '../../domain/entity/ride_entity.dart';
 import '../../domain/repository/ride_tracking_repository.dart';
+import '../../presentation/bloc/ride_tracking_bloc.dart';
+
+// Statuses que cuentan como "viaje en curso" para getActiveRide -- 'pending'
+// no aplica (todavía no tiene conductor asignado, eso lo maneja
+// BookingRepository) y 'cancelled' / 'tripCompleted' ya terminaron.
+const _activeRideStatuses = {
+  RideTrackingStatus.driverAssigned,
+  RideTrackingStatus.driverArrived,
+  RideTrackingStatus.tripStarted,
+};
 
 class RideTrackingRepositoryImpl implements RideTrackingRepository {
   final FirebaseDatabase database;
@@ -57,6 +67,30 @@ class RideTrackingRepositoryImpl implements RideTrackingRepository {
     } catch (e) {
       return Left(
         Failure(message: 'No se pudo confirmar. Intenta de nuevo.'),
+      );
+    }
+  }
+
+  @override
+  Future<Either<Failure, RideEntity?>> getActiveRide({
+    required String passengerId,
+  }) async {
+    try {
+      final snapshot = await database.ref('taxi_requests/$passengerId').get();
+      final rawData = snapshot.value;
+      if (rawData == null) return const Right(null);
+
+      final ride = RideEntity.fromJson(
+        Map<String, dynamic>.from(rawData as Map),
+      );
+      if (!_activeRideStatuses.contains(ride.rideStatus)) {
+        return const Right(null);
+      }
+
+      return Right(ride);
+    } catch (e) {
+      return Left(
+        Failure(message: 'No se pudo verificar si tienes un viaje en curso.'),
       );
     }
   }
