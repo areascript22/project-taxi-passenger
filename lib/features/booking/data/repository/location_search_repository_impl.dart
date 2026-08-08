@@ -2,7 +2,7 @@ import 'package:dartz/dartz.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:passenger_app/features/booking/domain/entity/place_entity.dart';
+import 'package:passenger_app/shared/domain/entity/place_entity.dart';
 import '../../../../core/error/errors.dart';
 import '../../domain/repository/location_search_repository.dart';
 import '../../../../core/network/dio_client.dart';

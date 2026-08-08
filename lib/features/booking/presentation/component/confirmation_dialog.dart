@@ -3,6 +3,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
 import 'package:passenger_app/features/booking/presentation/bloc/booking/booking_bloc.dart';
 import 'package:passenger_app/features/booking/presentation/component/waiting_for_driver_dialog.dart';
+import 'package:passenger_app/features/ride_tracking/presentation/bloc/ride_tracking_bloc.dart';
+import 'package:passenger_app/shared/presentation/bloc/session/session_bloc.dart';
 import 'package:passenger_app/shared/presentation/component/custom_loader.dart';
 
 class TaxiConfirmationDialog extends StatelessWidget {
@@ -24,8 +26,11 @@ class TaxiConfirmationDialog extends StatelessWidget {
       context: context,
       barrierDismissible: true,
       builder:
-          (context) => BlocProvider.value(
-            value: GetIt.instance<BookingBloc>(),
+          (context) => MultiBlocProvider(
+            providers: [
+              BlocProvider.value(value: GetIt.instance<BookingBloc>()),
+              BlocProvider.value(value: GetIt.instance<RideTrackingBloc>()),
+            ],
             child: TaxiConfirmationDialog(
               address: address,
               onConfirm: onConfirm,
@@ -203,6 +208,18 @@ class TaxiConfirmationDialog extends StatelessWidget {
                             },
                           );
                         });
+
+                        final currentSessionState =
+                            context.read<SessionBloc>().state;
+                        if (currentSessionState is! SessionAuthenticated) {
+                          return;
+                        }
+
+                        context.read<RideTrackingBloc>().add(
+                          StartRideTracking(
+                            passengerId: currentSessionState.user.id,
+                          ),
+                        );
                       }
                     },
                     child: const SizedBox.shrink(),

@@ -41,7 +41,14 @@ class SessionView extends StatelessWidget {
           }
 
           if (state is SessionAuthenticated) {
-            context.goNamed('booking');
+            if (state.hasActiveRide) {
+              // Viaje en curso (con conductor asignado antes de un kill de
+              // la app) -- resume directo en RideTrackingScreen en vez de
+              // BookingScreen.
+              context.goNamed(rideTrackingRoute.name);
+            } else {
+              context.goNamed('booking');
+            }
           }
         },
         child: const Center(child: CircularProgressIndicator()),

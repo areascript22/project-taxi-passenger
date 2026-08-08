@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lottie/lottie.dart';
 import 'package:passenger_app/features/booking/presentation/bloc/booking/booking_bloc.dart';
+import 'package:passenger_app/features/ride_tracking/presentation/bloc/ride_tracking_bloc.dart';
+import 'package:passenger_app/shared/feedback/feedback_service.dart';
+
+import '../../../../core/routing/app_routes.dart';
 
 class WaitingForDriverDialog extends StatelessWidget {
   final VoidCallback onCancel;
@@ -17,10 +22,16 @@ class WaitingForDriverDialog extends StatelessWidget {
       context: context,
       barrierDismissible: false,
       builder:
-          (context) => BlocProvider.value(
-            value: GetIt.instance<BookingBloc>(),
-            child: WaitingForDriverDialog(onCancel: onCancel),
-          ),
+          (context) =>
+          MultiBlocProvider(providers: [
+            BlocProvider.value(
+              value: GetIt.instance<BookingBloc>(),
+            ),
+            BlocProvider.value(
+              value: GetIt.instance<RideTrackingBloc>(),
+            ),
+
+          ], child: WaitingForDriverDialog(onCancel: onCancel)),
     );
   }
 
@@ -83,6 +94,23 @@ class WaitingForDriverDialog extends StatelessWidget {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 28),
+
+              BlocListener<RideTrackingBloc, RideTrackingState>(
+                  listenWhen: (previous, current) =>
+                  previous.status != current.status,
+                  listener: (context, state) {
+                    if (state.status == RideTrackingStatus.driverAssigned) {
+                      GetIt.instance<FeedbackService>().announce(
+                        'Carrera aceptada',
+                        withVibration: true,
+                      );
+                      Navigator.pop(context);
+                      context.goNamed(rideTrackingRoute.name);
+                    }
+                  },
+                  child: SizedBox(),
+              ),
+
               SizedBox(
                 width: double.infinity,
                 child: BlocConsumer<BookingBloc, BookingState>(

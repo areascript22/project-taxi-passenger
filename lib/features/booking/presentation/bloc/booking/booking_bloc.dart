@@ -1,9 +1,9 @@
 import 'package:bloc/bloc.dart';
 import 'package:meta/meta.dart';
-import 'package:passenger_app/features/booking/domain/entity/place_entity.dart';
+import 'package:passenger_app/shared/domain/entity/place_entity.dart';
 import 'package:passenger_app/features/booking/domain/entity/request_entity.dart';
 import 'package:passenger_app/features/booking/domain/repository/booking_repository.dart';
-import '../../../domain/repository/geocoding_repository.dart';
+import 'package:passenger_app/shared/geocoding/domain/repository/geocoding_repository.dart';
 
 part 'booking_event.dart';
 
@@ -80,8 +80,6 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
 
   void _onRequestTaxi(RequestTaxi event, Emitter<BookingState> emit) async {
     emit(state.copyWith(status: BookingStatus.requestingTaxi));
-
-    await Future.delayed(const Duration(seconds: 2));
 
     final response = await bookingRepository.requestTaxi(
       request: event.request,

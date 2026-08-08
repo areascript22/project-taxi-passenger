@@ -14,9 +14,21 @@ if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(FileInputStream(keystorePropertiesFile))
 }
 
+fun loadEnvProperties(fileName: String): Properties {
+    val props = Properties()
+    val file = rootProject.file("../assets/env/$fileName")
+    if (file.exists()) {
+        FileInputStream(file).use { props.load(it) }
+    }
+    return props
+}
+
+val devEnvProperties = loadEnvProperties(".env_dev")
+val prodEnvProperties = loadEnvProperties(".env_prod")
+
 android {
     namespace = "com.areascript.passenger_app"
-    compileSdk = flutter.compileSdkVersion
+    compileSdk = 36
     ndkVersion = "27.0.12077973"
 
     compileOptions {
@@ -33,7 +45,7 @@ android {
         applicationId = "com.areascript.passenger_app"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config. [cite: 4]
-        minSdk = 23
+        minSdk = 24
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
@@ -48,12 +60,14 @@ android {
             applicationId = "com.areascript.passenger_app.dev"
             versionNameSuffix = "-dev"
             resValue("string", "app_name", "ViaGo Dev")
+            manifestPlaceholders["mapsApiKey"] = devEnvProperties.getProperty("MAPS_API_KEY", "")
         }
         create("prod") {
             dimension = "environment"
             applicationId = "com.areascript.passenger_app"
             versionNameSuffix = ""
             resValue("string", "app_name", "Taxi")
+            manifestPlaceholders["mapsApiKey"] = prodEnvProperties.getProperty("MAPS_API_KEY", "")
         }
     }
 

@@ -1,0 +1,84 @@
+import 'dart:async';
+import 'package:bloc/bloc.dart';
+import 'package:flutter/material.dart';
+import 'package:meta/meta.dart';
+import '../../domain/entity/ride_entity.dart';
+import '../../domain/repository/ride_tracking_repository.dart';
+
+part 'ride_tracking_event.dart';
+part 'ride_tracking_state.dart';
+
+class RideTrackingBloc extends Bloc<RideTrackingEvent, RideTrackingState> {
+  final RideTrackingRepository repository;
+  StreamSubscription<RideEntity>? _subscription;
+
+  RideTrackingBloc({required this.repository})
+    : super(const RideTrackingState()) {
+    on<StartRideTracking>(_onStart);
+    on<RideUpdated>(_onRideUpdated);
+    on<StopRideTracking>(_onStop);
+    on<CancelRideRequested>(_onCancelRequested);
+    on<ConfirmOnTheWayRequested>(_onConfirmOnTheWayRequested);
+  }
+
+  Future<void> _onStart(
+    StartRideTracking event,
+    Emitter<RideTrackingState> emit,
+  ) async {
+    emit(state.copyWith(status: RideTrackingStatus.connecting));
+
+    await _subscription?.cancel();
+
+    _subscription = repository
+        .watchRideTrack(passengerId: event.passengerId)
+        .listen((ride) {
+          add(RideUpdated(ride));
+        });
+  }
+
+  void _onRideUpdated(RideUpdated event, Emitter<RideTrackingState> emit) {
+    final ride = event.ride;
+    debugPrint("Ride update event called ; ${ride}");
+    emit(state.copyWith(status: ride.rideStatus, ride: ride));
+  }
+
+  Future<void> _onStop(StopRideTracking event, Emitter<RideTrackingState> emit,
+  ) async {
+    await _subscription?.cancel();
+    _subscription = null;
+    emit(const RideTrackingState());
+  }
+
+  Future<void> _onCancelRequested(
+    CancelRideRequested event,
+    Emitter<RideTrackingState> emit,
+  ) async {
+    emit(state.copyWith(isCancelling: true));
+
+    final result = await repository.cancelRide(passengerId: event.passengerId);
+
+    result.fold(
+      (failure) => emit(
+        state.copyWith(isCancelling: false, errorMessage: failure.message),
+      ),
+      // El stream de watchRideTrack ya recibirá status == cancelled y
+      // actualizará el estado; aquí solo apagamos el loading.
+      (_) => emit(state.copyWith(isCancelling: false)),
+    );
+  }
+
+  Future<void> _onConfirmOnTheWayRequested(
+    ConfirmOnTheWayRequested event,
+    Emitter<RideTrackingState> emit,
+  ) async {
+    final result = await repository.confirmOnTheWay(
+      passengerId: event.passengerId,
+    );
+
+    result.fold(
+      (failure) => emit(state.copyWith(errorMessage: failure.message)),
+      // El stream de watchRideTrack ya recibirá status == tripStarted.
+      (_) {},
+    );
+  }
+}

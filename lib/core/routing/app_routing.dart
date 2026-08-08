@@ -4,9 +4,13 @@ import 'package:passenger_app/features/auth/presentation/screen/session_screen.d
 import 'package:passenger_app/features/auth/presentation/screen/sign_in_screen.dart';
 import 'package:passenger_app/features/booking/presentation/screen/booking_sccreen.dart';
 import 'package:passenger_app/features/booking/presentation/screen/booking_sccreen_2.dart';
+import 'package:passenger_app/features/map/presentation/screen/map_picker_screen.dart';
 import 'package:passenger_app/features/profile/presentation/screen/profile_screen.dart';
 import 'package:passenger_app/features/profile/presentation/screen/profile_screen_2.dart';
+import 'package:passenger_app/features/ride_tracking/presentation/screen/ride_tracking_screen.dart';
 import 'package:passenger_app/shared/presentation/component/scaffold_nav_bar.dart';
+import 'package:passenger_app/shared/settings/presentation/screen/settings_screen.dart';
+import 'package:passenger_app/shared/domain/entity/place_entity.dart';
 import '../../features/auth/presentation/screen/splash_screen.dart';
 
 class AppRouter {
@@ -41,18 +45,29 @@ class AppRouter {
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: '/booking',
-                name: 'booking',
+                path: bookingRoute.route,
+                name: bookingRoute.name,
                 builder: (context, state) => const BookingScreen(),
-                routes: [
-                  // CHILD ROUTE: Notice there is no leading '/' in the path
-                  // Navigate here using: context.pushNamed('booking2')
-                  GoRoute(
-                    path: 'booking2',
-                    name: 'booking2',
-                    builder: (context, state) => const BookingScreen2(),
-                  ),
-                ],
+              ),
+              GoRoute(
+                path: '/booking2',
+                name: 'booking2',
+                builder: (context, state) => const BookingScreen2(),
+              ),
+
+              GoRoute(
+                path: rideTrackingRoute.route,
+                name: rideTrackingRoute.name,
+                builder: (context, state) => const RideTrackingScreen(),
+              ),
+
+              GoRoute(
+                path: mapPickerRoute.route,
+                name: mapPickerRoute.name,
+                builder: (context, state) {
+                  final initialPlace = state.extra as PlaceEntity?;
+                  return MapPickerScreen(initialPlace: initialPlace);
+                },
               ),
             ],
           ),
@@ -75,6 +90,11 @@ class AppRouter {
                     builder: (context, state) => const ProfileScreen2(),
                   ),
                 ],
+              ),
+              GoRoute(
+                path: settingsRoute.route,
+                name: settingsRoute.name,
+                builder: (context, state) => const SettingsScreen(),
               ),
             ],
           ),
