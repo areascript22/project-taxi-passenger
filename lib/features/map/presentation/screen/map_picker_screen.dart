@@ -18,21 +18,34 @@ class MapPickerScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final initialLatitude = initialPlace?.latitude ?? _fallbackLatitude;
+    final initialLongitude = initialPlace?.longitude ?? _fallbackLongitude;
+
     return BlocProvider(
       create: (_) => GetIt.instance<MapPickerBloc>()
         ..add(
           MapCenterInitialized(
-            latitude: initialPlace?.latitude ?? _fallbackLatitude,
-            longitude: initialPlace?.longitude ?? _fallbackLongitude,
+            latitude: initialLatitude,
+            longitude: initialLongitude,
           ),
         ),
-      child: const MapPickerView(),
+      child: MapPickerView(
+        initialLatitude: initialLatitude,
+        initialLongitude: initialLongitude,
+      ),
     );
   }
 }
 
 class MapPickerView extends StatefulWidget {
-  const MapPickerView({super.key});
+  final double initialLatitude;
+  final double initialLongitude;
+
+  const MapPickerView({
+    super.key,
+    required this.initialLatitude,
+    required this.initialLongitude,
+  });
 
   @override
   State<MapPickerView> createState() => _MapPickerViewState();
@@ -46,9 +59,8 @@ class _MapPickerViewState extends State<MapPickerView> {
   @override
   void initState() {
     super.initState();
-    final initialState = context.read<MapPickerBloc>().state;
-    _pendingLatitude = initialState.latitude;
-    _pendingLongitude = initialState.longitude;
+    _pendingLatitude = widget.initialLatitude;
+    _pendingLongitude = widget.initialLongitude;
   }
 
   @override
@@ -76,8 +88,6 @@ class _MapPickerViewState extends State<MapPickerView> {
 
   @override
   Widget build(BuildContext context) {
-    final initialState = context.read<MapPickerBloc>().state;
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('Selecciona tu ubicación'),
@@ -90,7 +100,7 @@ class _MapPickerViewState extends State<MapPickerView> {
         children: [
           GoogleMap(
             initialCameraPosition: CameraPosition(
-              target: LatLng(initialState.latitude, initialState.longitude),
+              target: LatLng(widget.initialLatitude, widget.initialLongitude),
               zoom: 16,
             ),
             onMapCreated: (controller) => _mapController = controller,
