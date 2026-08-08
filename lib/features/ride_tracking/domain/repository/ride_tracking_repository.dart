@@ -15,6 +15,12 @@ abstract class RideTrackingRepository {
     required String passengerId,
   });
 
+  // El pasajero confirma que va camino al vehículo tras ver que el
+  // conductor llegó al punto de recogida.
+  Future<Either<Failure, Unit>> confirmOnTheWay({
+    required String passengerId,
+  });
+
   Future<void> dispose();
 
 }

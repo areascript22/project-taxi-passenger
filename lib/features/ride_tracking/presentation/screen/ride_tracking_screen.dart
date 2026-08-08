@@ -5,7 +5,9 @@ import 'package:go_router/go_router.dart';
 import 'package:passenger_app/features/ride_tracking/domain/entity/ride_entity.dart';
 import 'package:passenger_app/features/ride_tracking/presentation/bloc/ride_tracking_bloc.dart';
 import 'package:passenger_app/features/ride_tracking/presentation/screen/widgets/confirm_cancel_ride_dialog.dart';
+import 'package:passenger_app/features/ride_tracking/presentation/screen/widgets/driver_arrived_dialog.dart';
 import 'package:passenger_app/features/ride_tracking/presentation/screen/widgets/driver_cancelled_dialog.dart';
+import 'package:passenger_app/features/ride_tracking/presentation/screen/widgets/trip_completed_dialog.dart';
 import 'package:passenger_app/features/ride_tracking/presentation/widget/driver_distance_indicator.dart';
 import 'package:passenger_app/shared/feedback/feedback_service.dart';
 import 'package:passenger_app/shared/presentation/bloc/session/session_bloc.dart';
@@ -42,14 +44,55 @@ class _RideTrackingView extends StatelessWidget {
     context.go(bookingRoute.route);
   }
 
+  String? _readPassengerId(BuildContext context) {
+    final sessionState = context.read<SessionBloc>().state;
+    if (sessionState is! SessionAuthenticated) return null;
+    return sessionState.user.id;
+  }
+
+  Future<void> _onDriverArrived(BuildContext context) async {
+    final passengerId = _readPassengerId(context);
+    if (passengerId == null) return;
+
+    GetIt.instance<FeedbackService>().announce(
+      'El conductor ha llegado',
+      withVibration: true,
+    );
+    await DriverArrivedDialog.show(context: context, passengerId: passengerId);
+  }
+
+  Future<void> _onTripCompleted(BuildContext context) async {
+    await TripCompletedDialog.show(context: context);
+
+    if (!context.mounted) return;
+    context.read<RideTrackingBloc>().add(StopRideTracking());
+    context.go(bookingRoute.route);
+  }
+
+  Future<void> _onStatusChanged(
+    BuildContext context,
+    RideTrackingState state,
+  ) async {
+    switch (state.status) {
+      case RideTrackingStatus.driverArrived:
+        await _onDriverArrived(context);
+        break;
+      case RideTrackingStatus.tripCompleted:
+        await _onTripCompleted(context);
+        break;
+      case RideTrackingStatus.cancelled:
+        await _onRideCancelled(context, state.ride);
+        break;
+      default:
+        break;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocListener<RideTrackingBloc, RideTrackingState>(
-      listenWhen:
-          (previous, current) =>
-              previous.status != current.status &&
-              current.status == RideTrackingStatus.cancelled,
-      listener: (context, state) => _onRideCancelled(context, state.ride),
+      listenWhen: (previous, current) => previous.status != current.status,
+      listener: _onStatusChanged,
       child: BlocBuilder<RideTrackingBloc, RideTrackingState>(
         builder: (context, state) {
           final driver = state.ride?.driver;

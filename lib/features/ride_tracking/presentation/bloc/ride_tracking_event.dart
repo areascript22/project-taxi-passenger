@@ -25,3 +25,9 @@ class CancelRideRequested extends RideTrackingEvent {
 
   CancelRideRequested({required this.passengerId});
 }
+
+class ConfirmOnTheWayRequested extends RideTrackingEvent {
+  final String passengerId;
+
+  ConfirmOnTheWayRequested({required this.passengerId});
+}

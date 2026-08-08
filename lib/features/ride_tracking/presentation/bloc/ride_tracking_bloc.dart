@@ -18,6 +18,7 @@ class RideTrackingBloc extends Bloc<RideTrackingEvent, RideTrackingState> {
     on<RideUpdated>(_onRideUpdated);
     on<StopRideTracking>(_onStop);
     on<CancelRideRequested>(_onCancelRequested);
+    on<ConfirmOnTheWayRequested>(_onConfirmOnTheWayRequested);
   }
 
   Future<void> _onStart(
@@ -63,6 +64,21 @@ class RideTrackingBloc extends Bloc<RideTrackingEvent, RideTrackingState> {
       // El stream de watchRideTrack ya recibirá status == cancelled y
       // actualizará el estado; aquí solo apagamos el loading.
       (_) => emit(state.copyWith(isCancelling: false)),
+    );
+  }
+
+  Future<void> _onConfirmOnTheWayRequested(
+    ConfirmOnTheWayRequested event,
+    Emitter<RideTrackingState> emit,
+  ) async {
+    final result = await repository.confirmOnTheWay(
+      passengerId: event.passengerId,
+    );
+
+    result.fold(
+      (failure) => emit(state.copyWith(errorMessage: failure.message)),
+      // El stream de watchRideTrack ya recibirá status == tripStarted.
+      (_) {},
     );
   }
 }

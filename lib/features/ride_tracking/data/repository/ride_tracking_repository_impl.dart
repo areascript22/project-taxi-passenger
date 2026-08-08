@@ -45,5 +45,22 @@ class RideTrackingRepositoryImpl implements RideTrackingRepository {
   }
 
   @override
+  Future<Either<Failure, Unit>> confirmOnTheWay({
+    required String passengerId,
+  }) async {
+    try {
+      await database.ref('taxi_requests/$passengerId').update({
+        'status': 'tripStarted',
+        'updatedAt': ServerValue.timestamp,
+      });
+      return const Right(unit);
+    } catch (e) {
+      return Left(
+        Failure(message: 'No se pudo confirmar. Intenta de nuevo.'),
+      );
+    }
+  }
+
+  @override
   Future<void> dispose() async {}
 }
