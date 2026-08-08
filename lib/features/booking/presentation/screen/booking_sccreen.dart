@@ -9,6 +9,8 @@ import 'package:passenger_app/features/booking/presentation/bloc/booking/booking
 import 'package:passenger_app/features/booking/presentation/component/booking_header.dart';
 import 'package:passenger_app/features/booking/presentation/component/confirmation_dialog.dart';
 import 'package:passenger_app/features/booking/presentation/component/location_denied.dart';
+import 'package:passenger_app/features/ride_tracking/domain/repository/ride_tracking_repository.dart';
+import 'package:passenger_app/features/ride_tracking/presentation/bloc/ride_tracking_bloc.dart';
 import 'package:passenger_app/shared/domain/entity/place_entity.dart';
 import 'package:passenger_app/shared/geolocator/location/location_bloc.dart';
 import 'package:passenger_app/shared/presentation/bloc/session/session_bloc.dart';
@@ -43,10 +45,41 @@ class BookingView extends StatefulWidget {
 class _BookingViewState extends State<BookingView> {
   final TextEditingController _searchController = TextEditingController();
 
+  // static (no de instancia): sigue viva mientras el proceso de la app siga
+  // vivo, sin importar cuántas veces se entre/salga de esta pantalla por
+  // navegación interna (context.go). Se reinicia solo con un kill real de
+  // la app -- que es justo cuando SÍ queremos poder volver a evaluar si
+  // corresponde saludar de nuevo.
+  static bool _hasCheckedWelcomeThisSession = false;
+
   @override
   void initState() {
     super.initState();
     _checkLocationPermissions();
+    _maybePlayWelcome();
+  }
+
+  Future<void> _maybePlayWelcome() async {
+    if (_hasCheckedWelcomeThisSession) return;
+    _hasCheckedWelcomeThisSession = true;
+
+    final sessionState = context.read<SessionBloc>().state;
+    if (sessionState is SessionAuthenticated) {
+      // Si ya hay un viaje en curso (conductor asignado en adelante), esto
+      // es continuación de una sesión anterior (ej. la app se cerró y se
+      // volvió a abrir con un viaje activo) -- no repetir el saludo.
+      const activeStatuses = {
+        RideTrackingStatus.driverAssigned,
+        RideTrackingStatus.driverArrived,
+        RideTrackingStatus.tripStarted,
+      };
+      final ride =
+          await GetIt.instance<RideTrackingRepository>()
+              .watchRideTrack(passengerId: sessionState.user.id)
+              .first;
+      if (activeStatuses.contains(ride.rideStatus)) return;
+    }
+
     GetIt.instance<FeedbackService>().announce('Bienvenido a Via Go');
   }
 
