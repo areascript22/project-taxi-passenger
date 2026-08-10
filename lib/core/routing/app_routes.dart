@@ -42,6 +42,12 @@ const bookingRoute = NavigationEntity(
   route: '/booking',
 );
 
+const editProfileRoute = NavigationEntity(
+  key: 'edit_profile_route_key',
+  name: 'edit_profile',
+  route: '/edit-profile',
+);
+
 const mapPickerRoute = NavigationEntity(
   key: 'map_picker_route_key',
   name: 'map_picker',

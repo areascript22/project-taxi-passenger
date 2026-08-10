@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-class OnboardingTextField extends StatelessWidget {
+class AppTextField extends StatelessWidget {
   final String label;
   final TextEditingController controller;
   final String? hintText;
@@ -13,7 +13,7 @@ class OnboardingTextField extends StatelessWidget {
   final TextCapitalization textCapitalization;
   final Widget? prefix;
 
-  const OnboardingTextField({
+  const AppTextField({
     super.key,
     required this.label,
     required this.controller,

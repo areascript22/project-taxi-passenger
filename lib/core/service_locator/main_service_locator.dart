@@ -1,6 +1,7 @@
 import 'package:get_it/get_it.dart';
 import 'package:passenger_app/features/auth/di/auth_service_locator.dart';
 import 'package:passenger_app/features/passenger_profile/di/passenger_profile_service_locator.dart';
+import 'package:passenger_app/features/profile/di/profile_service_locator.dart';
 import 'package:passenger_app/shared/feedback/di/feedback_service_locator.dart';
 import 'package:passenger_app/shared/geocoding/di/geocoding_service_locator.dart';
 import 'package:passenger_app/shared/geolocator/di/geolocator_service_locator.dart';
@@ -19,6 +20,7 @@ final GetIt mainServiceLocator = GetIt.instance;
 Future<void> initMainServiceLocator() async {
   initImagePickerDI(mainServiceLocator);
   initPassengerProfileDI(mainServiceLocator);
+  initProfileDI(mainServiceLocator);
   initSharedDI(mainServiceLocator);
   initAuthDI(mainServiceLocator);
   initGeocodingDI(mainServiceLocator);

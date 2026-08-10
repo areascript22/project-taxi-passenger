@@ -80,4 +80,44 @@ class PassengerProfileRepositoryImpl implements PassengerProfileRepository {
       );
     }
   }
+
+  @override
+  Future<Either<Failure, PassengerEntity>> updatePassenger({
+    required PassengerEntity passenger,
+    File? profileImage,
+  }) async {
+    try {
+      String? photoUrl = passenger.photoUrl;
+
+      if (profileImage != null) {
+        final storageRef = _storage.ref(
+          'passenger_profile_photos/${passenger.id}.jpg',
+        );
+        await storageRef.putFile(profileImage);
+        photoUrl = await storageRef.getDownloadURL();
+      }
+
+      final passengerToSave = passenger.copyWith(photoUrl: photoUrl);
+
+      final passengerRef = _firestore
+          .collection(_passengersCollection)
+          .doc(passenger.id);
+
+      await passengerRef.update({
+        'firstName': passengerToSave.firstName,
+        'lastName': passengerToSave.lastName,
+        'photoUrl': passengerToSave.photoUrl,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+
+      return Right(passengerToSave);
+    } catch (e) {
+      debugPrint('PassengerProfileDebug | Error en updatePassenger: $e');
+      return Left(
+        Failure(
+          message: 'No se pudo actualizar tu información. Intenta nuevamente.',
+        ),
+      );
+    }
+  }
 }

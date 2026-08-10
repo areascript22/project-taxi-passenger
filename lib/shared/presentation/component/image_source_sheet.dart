@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../../shared/image_picker/service/profile_image_picker_service.dart';
+import '../../image_picker/service/profile_image_picker_service.dart';
 
 class ImageSourceSheet extends StatelessWidget {
   const ImageSourceSheet({super.key});

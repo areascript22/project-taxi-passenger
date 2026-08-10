@@ -6,11 +6,11 @@ import '../../../../core/service_locator/main_service_locator.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../shared/domain/entity/user_entity.dart';
 import '../../../../shared/presentation/bloc/session/session_bloc.dart';
+import '../../../../shared/presentation/component/app_text_field.dart';
 import '../../../../shared/presentation/component/custom_button.dart';
+import '../../../../shared/presentation/component/image_source_sheet.dart';
+import '../../../../shared/presentation/component/profile_avatar_picker.dart';
 import '../bloc/passenger_onboarding_bloc.dart';
-import '../component/image_source_sheet.dart';
-import '../component/onboarding_text_field.dart';
-import '../component/profile_avatar_picker.dart';
 
 class PassengerOnboardingScreen extends StatelessWidget {
   final UserEntity user;
@@ -152,7 +152,7 @@ class _PassengerOnboardingViewState extends State<PassengerOnboardingView> {
                                 ),
                               ),
                               const SizedBox(height: 32),
-                              OnboardingTextField(
+                              AppTextField(
                                 label: 'Nombres',
                                 controller: _firstNameController,
                                 textCapitalization: TextCapitalization.words,
@@ -164,7 +164,7 @@ class _PassengerOnboardingViewState extends State<PassengerOnboardingView> {
                                 },
                               ),
                               const SizedBox(height: 16),
-                              OnboardingTextField(
+                              AppTextField(
                                 label: 'Apellidos',
                                 controller: _lastNameController,
                                 textCapitalization: TextCapitalization.words,
@@ -176,7 +176,7 @@ class _PassengerOnboardingViewState extends State<PassengerOnboardingView> {
                                 },
                               ),
                               const SizedBox(height: 16),
-                              OnboardingTextField(
+                              AppTextField(
                                 label: 'Correo electrónico',
                                 controller: _emailController,
                                 enabled: false,

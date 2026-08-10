@@ -6,10 +6,13 @@ import 'package:passenger_app/features/booking/presentation/screen/booking_sccre
 import 'package:passenger_app/features/booking/presentation/screen/booking_sccreen_2.dart';
 import 'package:passenger_app/features/map/presentation/screen/map_picker_screen.dart';
 import 'package:passenger_app/features/passenger_profile/presentation/screen/passenger_onboarding_screen.dart';
+import 'package:passenger_app/features/profile/presentation/bloc/profile_bloc.dart';
+import 'package:passenger_app/features/profile/presentation/screen/edit_profile_screen.dart';
 import 'package:passenger_app/features/profile/presentation/screen/profile_screen.dart';
 import 'package:passenger_app/features/profile/presentation/screen/profile_screen_2.dart';
 import 'package:passenger_app/features/ride_tracking/presentation/screen/ride_tracking_screen.dart';
 import 'package:passenger_app/shared/domain/entity/user_entity.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:passenger_app/shared/presentation/component/scaffold_nav_bar.dart';
 import 'package:passenger_app/shared/settings/presentation/screen/settings_screen.dart';
 import 'package:passenger_app/shared/domain/entity/place_entity.dart';
@@ -104,6 +107,15 @@ class AppRouter {
                 path: settingsRoute.route,
                 name: settingsRoute.name,
                 builder: (context, state) => const SettingsScreen(),
+              ),
+              GoRoute(
+                path: editProfileRoute.route,
+                name: editProfileRoute.name,
+                builder:
+                    (context, state) => BlocProvider.value(
+                      value: state.extra as ProfileBloc,
+                      child: const EditProfileScreen(),
+                    ),
               ),
             ],
           ),

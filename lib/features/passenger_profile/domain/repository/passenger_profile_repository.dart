@@ -17,4 +17,13 @@ abstract class PassengerProfileRepository {
     required PassengerEntity passenger,
     File? profileImage,
   });
+
+  // Actualiza nombres/apellidos y (si corresponde) la foto de perfil de un
+  // pasajero ya registrado. No toca email/fcmToken/status/createdAt. Devuelve
+  // la entidad actualizada (con la photoUrl final) para refrescar la UI sin
+  // tener que volver a leer el documento.
+  Future<Either<Failure, PassengerEntity>> updatePassenger({
+    required PassengerEntity passenger,
+    File? profileImage,
+  });
 }
