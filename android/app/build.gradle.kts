@@ -59,14 +59,14 @@ android {
             dimension = "environment"
             applicationId = "com.areascript.passenger_app.dev"
             versionNameSuffix = "-dev"
-            resValue("string", "app_name", "ViaGo Dev")
+            resValue("string", "app_name", "TaxiGo Dev")
             manifestPlaceholders["mapsApiKey"] = devEnvProperties.getProperty("MAPS_API_KEY", "")
         }
         create("prod") {
             dimension = "environment"
             applicationId = "com.areascript.passenger_app"
             versionNameSuffix = ""
-            resValue("string", "app_name", "Taxi")
+            resValue("string", "app_name", "TaxiGo")
             manifestPlaceholders["mapsApiKey"] = prodEnvProperties.getProperty("MAPS_API_KEY", "")
         }
     }

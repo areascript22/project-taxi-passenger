@@ -66,7 +66,7 @@ class _BookingViewState extends State<BookingView> {
     // ya nos habría mandado directo a RideTrackingScreen en vez de acá (ver
     // shared/presentation/bloc/session/session_bloc.dart) -- si llegamos a
     // montar esta pantalla, es porque no hay ninguno.
-    GetIt.instance<FeedbackService>().announce('Bienvenido a Via Go');
+    GetIt.instance<FeedbackService>().announce('Bienvenido a TaxiGo');
   }
 
   @override
