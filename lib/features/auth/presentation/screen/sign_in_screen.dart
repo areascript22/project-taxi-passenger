@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:passenger_app/core/routing/app_routes.dart';
 import 'package:passenger_app/core/service_locator/main_service_locator.dart';
 import 'package:passenger_app/features/auth/presentation/bloc/auth_bloc.dart';
-import 'package:passenger_app/shared/presentation/bloc/session/session_bloc.dart';
 import 'package:passenger_app/shared/presentation/component/app_version.dart';
 
 class SignInScreen extends StatelessWidget {
@@ -37,8 +37,7 @@ class SignInView extends StatelessWidget {
             }
 
             if (state is AuthAuthenticated) {
-              context.read<SessionBloc>().add(SessionUserUpdated(state.user));
-              context.goNamed("booking");
+              context.goNamed(sessionRoute.name);
             }
           },
           builder: (context, state) {
