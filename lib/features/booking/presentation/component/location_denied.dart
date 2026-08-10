@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:passenger_app/core/theme/app_colors.dart';
 
 class LocationDenied extends StatelessWidget {
   final bool isPermanentlyDenied;
@@ -12,12 +13,15 @@ class LocationDenied extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final onSurface = Theme.of(context).colorScheme.onSurface;
+    final warning = context.appColors.warning;
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.orange.shade50,
+        color: warning.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.orange.shade200),
+        border: Border.all(color: warning.withValues(alpha: 0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -25,19 +29,15 @@ class LocationDenied extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(
-                Icons.location_off_rounded,
-                color: Colors.orange.shade700,
-                size: 24,
-              ),
+              Icon(Icons.location_off_rounded, color: warning, size: 24),
               const SizedBox(width: 12),
-              const Expanded(
+              Expanded(
                 child: Text(
                   "¿Dónde te encuentras?",
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
-                    color: Colors.black87,
+                    color: onSurface,
                   ),
                 ),
               ),
@@ -50,7 +50,7 @@ class LocationDenied extends StatelessWidget {
                 : "Ingresa tu punto de partida manualmente, o activa el GPS para ubicarte al instante.",
             style: TextStyle(
               fontSize: 14,
-              color: Colors.grey.shade700,
+              color: onSurface.withValues(alpha: 0.7),
               height: 1.4,
             ),
           ),
@@ -61,7 +61,7 @@ class LocationDenied extends StatelessWidget {
             child: TextButton(
               onPressed: onEnablePermissionsTapped,
               style: TextButton.styleFrom(
-                foregroundColor: Colors.orange.shade700,
+                foregroundColor: warning,
                 padding: const EdgeInsets.symmetric(vertical: 14),
               ),
               child: Text(

@@ -28,6 +28,8 @@ class ConfirmationPopup extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return BlocListener<SessionBloc, SessionState>(
       listener: (context, state) {
         if (state is SessionUnauthenticated) {
@@ -36,13 +38,20 @@ class ConfirmationPopup extends StatelessWidget {
       },
       child: AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text(
+        title: Text(
           "Cerrar Sesión",
-          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: colorScheme.onSurface,
+          ),
         ),
-        content: const Text(
+        content: Text(
           "¿Estás seguro de que deseas cerrar sesión?",
-          style: TextStyle(fontSize: 16, color: Colors.black87),
+          style: TextStyle(
+            fontSize: 16,
+            color: colorScheme.onSurface.withValues(alpha: 0.7),
+          ),
         ),
         actions: [
           TextButton(
@@ -50,12 +59,12 @@ class ConfirmationPopup extends StatelessWidget {
               // Just close the dialog
               Navigator.of(context).pop();
             },
-            child: const Text(
+            child: Text(
               "Cancelar",
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: Colors.grey,
+                color: colorScheme.onSurface.withValues(alpha: 0.5),
               ),
             ),
           ),
@@ -69,7 +78,7 @@ class ConfirmationPopup extends StatelessWidget {
                   // Dispatch logout event
                   context.read<SessionBloc>().add(SessionLogoutRequested());
                 },
-                backgroundColor: Colors.red,
+                backgroundColor: colorScheme.error,
                 fontSize: 14,
                 verticalPadding: 12,
                 borderRadius: 12,

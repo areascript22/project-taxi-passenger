@@ -27,13 +27,15 @@ class CustomButton extends StatefulWidget {
 class _CustomButtonState extends State<CustomButton> {
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton(
         onPressed: widget.onTap,
         style: ElevatedButton.styleFrom(
-          backgroundColor: widget.backgroundColor ?? Colors.pink,
-          foregroundColor: widget.foregroundColor ?? Colors.white,
+          backgroundColor: widget.backgroundColor ?? colorScheme.primary,
+          foregroundColor: widget.foregroundColor ?? colorScheme.onPrimary,
           padding: EdgeInsets.symmetric(vertical: widget.verticalPadding ?? 16),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(widget.borderRadius ?? 16),

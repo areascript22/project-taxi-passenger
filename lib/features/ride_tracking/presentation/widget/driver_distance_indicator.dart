@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:passenger_app/core/theme/app_colors.dart';
 
 class DriverDistanceIndicator extends StatelessWidget {
   const DriverDistanceIndicator({
@@ -12,38 +13,34 @@ class DriverDistanceIndicator extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final onSurface = colorScheme.onSurface;
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(22),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(.08),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        border: Border.all(color: onSurface.withValues(alpha: 0.08)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             "La conductora está en camino",
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
+              color: onSurface,
             ),
           ),
 
           const SizedBox(height: 6),
 
-          const Text(
+          Text(
             "Su conductor se dirige al lugar de recogida.",
-            style: TextStyle(
-              color: Colors.grey,
-            ),
+            style: TextStyle(color: onSurface.withValues(alpha: 0.6)),
           ),
 
           const SizedBox(height: 10),
@@ -67,20 +64,22 @@ class DriverDistanceIndicator extends StatelessWidget {
                       child: Container(
                         height: 6,
                         decoration: BoxDecoration(
-                          color: Colors.grey.shade300,
+                          color: onSurface.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(20),
                         ),
                       ),
                     ),
 
-                    const Positioned(
+                    Positioned(
                       left: 0,
                       child: CircleAvatar(
                         radius: 22,
-                        backgroundColor: Color(0xffE3F2FD),
+                        backgroundColor: colorScheme.primary.withValues(
+                          alpha: 0.15,
+                        ),
                         child: Icon(
                           Icons.location_pin,
-                          color: Colors.blue,
+                          color: colorScheme.primary,
                         ),
                       ),
                     ),
@@ -89,36 +88,36 @@ class DriverDistanceIndicator extends StatelessWidget {
                       duration: const Duration(milliseconds: 500),
                       curve: Curves.easeInOut,
                       left: driverX,
-                      child: const CircleAvatar(
+                      child: CircleAvatar(
                         radius: 22,
-                        backgroundColor: Colors.green,
+                        backgroundColor: context.appColors.success,
                         child: Icon(
                           Icons.local_taxi,
-                          color: Colors.white,
+                          color: colorScheme.onPrimary,
                         ),
                       ),
                     ),
 
-                    const Positioned(
+                    Positioned(
                       bottom: 0,
                       left: 0,
                       child: Text(
                         "Tu ubicación",
                         style: TextStyle(
                           fontSize: 12,
-                          color: Colors.grey,
+                          color: onSurface.withValues(alpha: 0.5),
                         ),
                       ),
                     ),
 
-                    const Positioned(
+                    Positioned(
                       bottom: 0,
                       right: 0,
                       child: Text(
                         "Conductor",
                         style: TextStyle(
                           fontSize: 12,
-                          color: Colors.grey,
+                          color: onSurface.withValues(alpha: 0.5),
                         ),
                       ),
                     ),
@@ -168,22 +167,21 @@ class _InfoTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final onSurface = Theme.of(context).colorScheme.onSurface;
+
     return Container(
       padding: const EdgeInsets.symmetric(
         horizontal: 14,
         vertical: 14,
       ),
       decoration: BoxDecoration(
-        color: Colors.grey.shade100,
+        color: onSurface.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(
-            icon,
-            color: Colors.black87,
-          ),
+          Icon(icon, color: onSurface),
           const SizedBox(width: 10),
           Expanded(
             child: Column(
@@ -193,8 +191,8 @@ class _InfoTile extends StatelessWidget {
                   title,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Colors.grey,
+                  style: TextStyle(
+                    color: onSurface.withValues(alpha: 0.5),
                     fontSize: 12,
                   ),
                 ),
@@ -203,9 +201,10 @@ class _InfoTile extends StatelessWidget {
                   value,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
+                    color: onSurface,
                   ),
                 ),
               ],

@@ -39,7 +39,14 @@ class AppVersionWidget extends StatelessWidget {
 
         return Text(
           displayText,
-          style: style ?? TextStyle(color: Colors.grey.shade600, fontSize: 12),
+          style:
+              style ??
+              TextStyle(
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurface.withValues(alpha: 0.5),
+                fontSize: 12,
+              ),
         );
       },
     );

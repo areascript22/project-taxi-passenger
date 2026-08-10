@@ -50,6 +50,7 @@ class ConfirmCancelRideDialog extends StatelessWidget {
       },
       builder: (context, state) {
         final isCancelling = state.isCancelling;
+        final colorScheme = Theme.of(context).colorScheme;
 
         return PopScope(
           canPop: !isCancelling,
@@ -62,15 +63,11 @@ class ConfirmCancelRideDialog extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: colorScheme.surface,
                 borderRadius: BorderRadius.circular(24),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.1),
-                    blurRadius: 20,
-                    offset: const Offset(0, 10),
-                  ),
-                ],
+                border: Border.all(
+                  color: colorScheme.onSurface.withValues(alpha: 0.08),
+                ),
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -78,22 +75,22 @@ class ConfirmCancelRideDialog extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.red.shade50,
+                      color: colorScheme.error.withValues(alpha: 0.15),
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
                       Icons.warning_rounded,
-                      color: Colors.red.shade600,
+                      color: colorScheme.error,
                       size: 32,
                     ),
                   ),
                   const SizedBox(height: 20),
-                  const Text(
+                  Text(
                     "¿Cancelar viaje?",
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
-                      color: Colors.black87,
+                      color: colorScheme.onSurface,
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -102,7 +99,7 @@ class ConfirmCancelRideDialog extends StatelessWidget {
                     "Tu conductor ya está en camino. Si cancelas ahora, es posible que se te aplique un cargo por cancelación.",
                     style: TextStyle(
                       fontSize: 14,
-                      color: Colors.grey.shade600,
+                      color: colorScheme.onSurface.withValues(alpha: 0.6),
                       height: 1.4,
                     ),
                     textAlign: TextAlign.center,
@@ -111,7 +108,7 @@ class ConfirmCancelRideDialog extends StatelessWidget {
                     const SizedBox(height: 12),
                     Text(
                       state.errorMessage!,
-                      style: TextStyle(fontSize: 13, color: Colors.red.shade600),
+                      style: TextStyle(fontSize: 13, color: colorScheme.error),
                       textAlign: TextAlign.center,
                     ),
                   ],
@@ -126,7 +123,9 @@ class ConfirmCancelRideDialog extends StatelessWidget {
                                   : () => Navigator.of(context).pop(),
                           style: TextButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 14),
-                            foregroundColor: Colors.grey.shade600,
+                            foregroundColor: colorScheme.onSurface.withValues(
+                              alpha: 0.6,
+                            ),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
@@ -154,8 +153,8 @@ class ConfirmCancelRideDialog extends StatelessWidget {
                                   }
                                   : null,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.red.shade600,
-                            foregroundColor: Colors.white,
+                            backgroundColor: colorScheme.error,
+                            foregroundColor: colorScheme.onError,
                             padding: EdgeInsets.symmetric(
                               vertical: isCancelling ? 0.0 : 14,
                             ),

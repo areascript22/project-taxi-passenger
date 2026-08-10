@@ -5,6 +5,7 @@ import 'package:passenger_app/features/profile/presentation/component/confirmati
 import 'package:passenger_app/shared/presentation/bloc/session/session_bloc.dart';
 import 'package:passenger_app/shared/presentation/component/app_version.dart';
 import '../../../../core/routing/app_routes.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../shared/domain/entity/user_entity.dart';
 import '../../../../shared/presentation/component/custom_button.dart';
 
@@ -22,34 +23,49 @@ class ProfileView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
       appBar: AppBar(
-        backgroundColor: const Color(0xFFF5F7FA),
-        elevation: 0,
         automaticallyImplyLeading: false,
         actions: [
           IconButton(
-            icon: const Icon(Icons.settings_outlined, color: Color(0xFF1E293B)),
+            icon: const Icon(Icons.settings_outlined),
             onPressed: () => context.pushNamed(settingsRoute.name),
           ),
         ],
       ),
-      body: BlocBuilder<SessionBloc, SessionState>(
-        builder: (context, state) {
-          if (state is SessionAuthenticated) {
-            return _buildProfileContent(context, state.user);
-          }
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: context.appColors.backgroundGradient,
+          ),
+        ),
+        child: BlocBuilder<SessionBloc, SessionState>(
+          builder: (context, state) {
+            if (state is SessionAuthenticated) {
+              return _buildProfileContent(context, state.user);
+            }
 
-          return const Center(
-            child: Text("No se encontró información del usuario"),
-          );
-        },
+            return Center(
+              child: Text(
+                "No se encontró información del usuario",
+                style: TextStyle(
+                  color: colorScheme.onSurface.withValues(alpha: 0.7),
+                ),
+              ),
+            );
+          },
+        ),
       ),
     );
   }
 
   Widget _buildProfileContent(BuildContext context, UserEntity user) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return SafeArea(
       child: SingleChildScrollView(
         child: Column(
@@ -60,26 +76,22 @@ class ProfileView extends StatelessWidget {
             Container(
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                border: Border.all(color: Colors.white, width: 4),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.1),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
+                border: Border.all(
+                  color: colorScheme.onSurface.withValues(alpha: 0.2),
+                  width: 4,
+                ),
               ),
               child: CircleAvatar(
                 radius: 60,
-                backgroundColor: const Color(0xFFE2E8F0),
+                backgroundColor: colorScheme.onSurface.withValues(alpha: 0.08),
                 backgroundImage:
                     user.photoUrl != null ? NetworkImage(user.photoUrl!) : null,
                 child:
                     user.photoUrl == null
-                        ? const Icon(
+                        ? Icon(
                           Icons.person,
                           size: 60,
-                          color: Color(0xFF94A3B8),
+                          color: colorScheme.onSurface.withValues(alpha: 0.4),
                         )
                         : null,
               ),
@@ -90,10 +102,10 @@ class ProfileView extends StatelessWidget {
             // Display Name
             Text(
               user.displayName ?? 'Usuario Sin Nombre',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 26,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF1E293B),
+                color: colorScheme.onSurface,
                 letterSpacing: -0.5,
               ),
             ),
@@ -103,9 +115,9 @@ class ProfileView extends StatelessWidget {
             // Email (Primary Subtitle)
             Text(
               user.email ?? 'Sin correo electrónico',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 16,
-                color: Color(0xFF64748B),
+                color: colorScheme.onSurface.withValues(alpha: 0.6),
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -117,30 +129,28 @@ class ProfileView extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 24.0),
               child: Container(
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: colorScheme.onSurface.withValues(alpha: 0.05),
                   borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.04),
-                      blurRadius: 20,
-                      offset: const Offset(0, 10),
-                    ),
-                  ],
+                  border: Border.all(
+                    color: colorScheme.onSurface.withValues(alpha: 0.08),
+                  ),
                 ),
                 child: Column(
                   children: [
                     _buildInfoTile(
+                      context,
                       icon: Icons.fingerprint,
                       title: 'ID de Usuario',
                       value: user.id,
                       isFirst: true,
                     ),
-                    const Divider(
+                    Divider(
                       height: 1,
                       indent: 60,
-                      color: Color(0xFFF1F5F9),
+                      color: colorScheme.onSurface.withValues(alpha: 0.06),
                     ),
                     _buildInfoTile(
+                      context,
                       icon: Icons.email_outlined,
                       title: 'Correo',
                       value: user.email ?? 'No disponible',
@@ -155,13 +165,17 @@ class ProfileView extends StatelessWidget {
             // Sign Out Button
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24.0),
-              child: CustomButton(textButton: "Cerrar sesión", onTap: () {
-                ConfirmationPopup.show(context: context);
-              }),
+              child: CustomButton(
+                textButton: "Cerrar sesión",
+                onTap: () {
+                  ConfirmationPopup.show(context: context);
+                },
+              ),
             ),
 
             const SizedBox(height: 40),
             AppVersionWidget(),
+            const SizedBox(height: 24),
           ],
         ),
       ),
@@ -169,12 +183,15 @@ class ProfileView extends StatelessWidget {
   }
 
   // Reusable widget for profile rows
-  Widget _buildInfoTile({
+  Widget _buildInfoTile(
+    BuildContext context, {
     required IconData icon,
     required String title,
     required String value,
     bool isFirst = false,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Padding(
       padding: EdgeInsets.only(top: isFirst ? 8.0 : 4.0, bottom: 4.0),
       child: ListTile(
@@ -182,17 +199,17 @@ class ProfileView extends StatelessWidget {
         leading: Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: const Color(0xFFEFF6FF),
+            color: colorScheme.primary.withValues(alpha: 0.15),
             borderRadius: BorderRadius.circular(12),
           ),
-          child: Icon(icon, color: const Color(0xFF3B82F6), size: 24),
+          child: Icon(icon, color: colorScheme.primary, size: 24),
         ),
         title: Text(
           title,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w600,
-            color: Color(0xFF94A3B8),
+            color: colorScheme.onSurface.withValues(alpha: 0.4),
             letterSpacing: 0.5,
           ),
         ),
@@ -200,10 +217,10 @@ class ProfileView extends StatelessWidget {
           padding: const EdgeInsets.only(top: 4.0),
           child: Text(
             value,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w600,
-              color: Color(0xFF334155),
+              color: colorScheme.onSurface,
             ),
           ),
         ),
