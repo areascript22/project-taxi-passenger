@@ -5,11 +5,19 @@ class DriverDistanceIndicator extends StatelessWidget {
   const DriverDistanceIndicator({
     super.key,
     required this.progress,
+    required this.distanceLabel,
+    required this.etaLabel,
   });
 
   /// 1 = driver is far away
   /// 0 = driver has arrived
   final double progress;
+
+  /// Ya formateado ("850 m" / "2.4 km" / "--" si todavía no se conoce).
+  final String distanceLabel;
+
+  /// Ya formateado ("6 min" / "Llegando" / "--" si todavía no se conoce).
+  final String etaLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -135,7 +143,7 @@ class DriverDistanceIndicator extends StatelessWidget {
                 child: _InfoTile(
                   icon: Icons.route,
                   title: "Distancia",
-                  value: "2.4 km",
+                  value: distanceLabel,
                 ),
               ),
               const SizedBox(width: 12),
@@ -143,7 +151,7 @@ class DriverDistanceIndicator extends StatelessWidget {
                 child: _InfoTile(
                   icon: Icons.access_time,
                   title: "Tiempo estimado",
-                  value: "6 min",
+                  value: etaLabel,
                 ),
               ),
             ],

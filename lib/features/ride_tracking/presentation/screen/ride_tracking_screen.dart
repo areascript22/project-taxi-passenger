@@ -130,11 +130,15 @@ class _RideTrackingViewState extends State<_RideTrackingView> {
                         physics: const BouncingScrollPhysics(),
                         child: Column(
                           children: [
-                            DriverDistanceIndicator(progress: 0.50),
+                            DriverDistanceIndicator(
+                              progress: state.progress ?? 1.0,
+                              distanceLabel: _formatDistance(state.distanceMeters),
+                              etaLabel: _formatEta(state.etaMinutes),
+                            ),
                             const SizedBox(height: 20),
                             _buildDriverCard(context, driver),
                             const SizedBox(height: 20),
-                            _buildTripInfo(context),
+                            _buildTripInfo(context, state.ride),
                             const SizedBox(height: 50),
                             _buildCancelButton(context),
                           ],
@@ -269,7 +273,9 @@ class _RideTrackingViewState extends State<_RideTrackingView> {
     );
   }
 
-  Widget _buildTripInfo(BuildContext context) {
+  Widget _buildTripInfo(BuildContext context, RideEntity? ride) {
+    final pickupAddress = ride?.pickupAddress;
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
@@ -280,7 +286,10 @@ class _RideTrackingViewState extends State<_RideTrackingView> {
             context,
             icon: Icons.location_on_rounded,
             label: 'Punto de recogida',
-            value: 'Av. Naciones Unidas y Shyris',
+            value:
+                (pickupAddress == null || pickupAddress.isEmpty)
+                    ? 'Ubicación no disponible'
+                    : pickupAddress,
           ),
         ],
       ),
@@ -386,4 +395,24 @@ class _RideTrackingViewState extends State<_RideTrackingView> {
       border: Border.all(color: colorScheme.onSurface.withValues(alpha: 0.08)),
     );
   }
+}
+
+// Redondeado al múltiplo de 10m más cercano para que no "tiemble" con cada
+// actualización de ubicación del conductor (~cada 5s).
+String _formatDistance(double? meters) {
+  if (meters == null) return '--';
+
+  if (meters < 1000) {
+    final rounded = (meters / 10).round() * 10;
+    return '$rounded m';
+  }
+
+  final km = meters / 1000;
+  return '${km.toStringAsFixed(1)} km';
+}
+
+String _formatEta(int? minutes) {
+  if (minutes == null) return '--';
+  if (minutes <= 0) return 'Llegando';
+  return '$minutes min';
 }
