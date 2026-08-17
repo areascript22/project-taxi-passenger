@@ -36,7 +36,7 @@ class DriverDistanceIndicator extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            "La conductora está en camino",
+            "El conductor está en camino",
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
@@ -61,7 +61,10 @@ class DriverDistanceIndicator extends StatelessWidget {
 
                 const iconSize = 44.0;
 
-                final driverX = (1 - progress) * (width - iconSize);
+                // progress=1 (recién asignado, lejos) -> extremo derecho.
+                // progress=0 (llegó) -> converge con el pin fijo de la
+                // izquierda ("Tu ubicación" / punto de recogida).
+                final driverX = progress * (width - iconSize);
 
                 return Stack(
                   alignment: Alignment.centerLeft,
