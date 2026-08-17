@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
+import 'package:passenger_app/core/theme/app_colors.dart';
 import 'package:passenger_app/features/booking/presentation/bloc/booking/booking_bloc.dart';
 import 'package:passenger_app/features/booking/presentation/component/waiting_for_driver_dialog.dart';
 import 'package:passenger_app/features/ride_tracking/presentation/bloc/ride_tracking_bloc.dart';
@@ -44,6 +45,9 @@ class TaxiConfirmationDialog extends StatelessWidget {
     return BlocBuilder<BookingBloc, BookingState>(
       builder: (context, state) {
         final isRequesting = state.status == BookingStatus.requestingTaxi;
+        final colorScheme = Theme.of(context).colorScheme;
+        final onSurface = colorScheme.onSurface;
+        final warning = context.appColors.warning;
 
         return PopScope(
           canPop: !isRequesting,
@@ -56,15 +60,9 @@ class TaxiConfirmationDialog extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: colorScheme.surface,
                 borderRadius: BorderRadius.circular(24),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.1),
-                    blurRadius: 20,
-                    offset: const Offset(0, 10),
-                  ),
-                ],
+                border: Border.all(color: onSurface.withValues(alpha: 0.08)),
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -72,22 +70,22 @@ class TaxiConfirmationDialog extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.amber.shade50,
+                      color: warning.withValues(alpha: 0.15),
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
                       Icons.local_taxi_rounded,
-                      color: Colors.amber.shade600,
+                      color: warning,
                       size: 32,
                     ),
                   ),
                   const SizedBox(height: 20),
-                  const Text(
+                  Text(
                     "¿Confirmar viaje?",
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
-                      color: Colors.black87,
+                      color: onSurface,
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -96,7 +94,7 @@ class TaxiConfirmationDialog extends StatelessWidget {
                     "Un conductor será enviado a la siguiente ubicación:",
                     style: TextStyle(
                       fontSize: 14,
-                      color: Colors.grey.shade600,
+                      color: onSurface.withValues(alpha: 0.6),
                       height: 1.4,
                     ),
                     textAlign: TextAlign.center,
@@ -108,25 +106,27 @@ class TaxiConfirmationDialog extends StatelessWidget {
                       vertical: 12,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.grey.shade50,
+                      color: onSurface.withValues(alpha: 0.05),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.grey.shade200),
+                      border: Border.all(
+                        color: onSurface.withValues(alpha: 0.08),
+                      ),
                     ),
                     child: Row(
                       children: [
                         Icon(
                           Icons.location_on,
-                          color: Colors.grey.shade400,
+                          color: onSurface.withValues(alpha: 0.5),
                           size: 20,
                         ),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
                             address,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w600,
-                              color: Colors.black87,
+                              color: onSurface,
                             ),
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
@@ -146,7 +146,7 @@ class TaxiConfirmationDialog extends StatelessWidget {
                                   : () => Navigator.of(context).pop(),
                           style: TextButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 14),
-                            foregroundColor: Colors.grey.shade600,
+                            foregroundColor: onSurface.withValues(alpha: 0.6),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
@@ -170,8 +170,8 @@ class TaxiConfirmationDialog extends StatelessWidget {
                                   }
                                   : null,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.black,
-                            foregroundColor: Colors.white,
+                            backgroundColor: colorScheme.primary,
+                            foregroundColor: colorScheme.onPrimary,
                             padding: EdgeInsets.symmetric(
                               vertical: isRequesting ? 0.0 : 14,
                             ),

@@ -1,5 +1,5 @@
 import 'package:bloc/bloc.dart';
-import 'package:meta/meta.dart';
+import 'package:flutter/material.dart';
 import '../../domain/repository/settings_repository.dart';
 
 part 'settings_event.dart';
@@ -12,6 +12,7 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
     on<LoadSettings>(_onLoad);
     on<ToggleVoice>(_onToggleVoice);
     on<ToggleVibration>(_onToggleVibration);
+    on<ChangeThemeMode>(_onChangeThemeMode);
   }
 
   Future<void> _onLoad(LoadSettings event, Emitter<SettingsState> emit) async {
@@ -19,6 +20,7 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
 
     final voiceResult = await repository.isVoiceEnabled();
     final vibrationResult = await repository.isVibrationEnabled();
+    final themeModeResult = await repository.getThemeMode();
 
     emit(
       state.copyWith(
@@ -28,8 +30,20 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
           (_) => true,
           (enabled) => enabled,
         ),
+        themeMode: themeModeResult.fold(
+          (_) => ThemeMode.system,
+          (mode) => mode,
+        ),
       ),
     );
+  }
+
+  Future<void> _onChangeThemeMode(
+    ChangeThemeMode event,
+    Emitter<SettingsState> emit,
+  ) async {
+    emit(state.copyWith(themeMode: event.themeMode));
+    await repository.setThemeMode(event.themeMode);
   }
 
   Future<void> _onToggleVoice(

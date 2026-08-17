@@ -8,3 +8,9 @@ class LoadSettings extends SettingsEvent {}
 class ToggleVoice extends SettingsEvent {}
 
 class ToggleVibration extends SettingsEvent {}
+
+class ChangeThemeMode extends SettingsEvent {
+  final ThemeMode themeMode;
+
+  ChangeThemeMode(this.themeMode);
+}

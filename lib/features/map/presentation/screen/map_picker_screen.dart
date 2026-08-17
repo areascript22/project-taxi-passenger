@@ -88,12 +88,14 @@ class _MapPickerViewState extends State<MapPickerView> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Selecciona tu ubicación'),
-        backgroundColor: Colors.white,
+        backgroundColor: colorScheme.surface,
         elevation: 0,
-        foregroundColor: Colors.black87,
+        foregroundColor: colorScheme.onSurface,
       ),
       body: Stack(
         alignment: Alignment.center,
@@ -115,10 +117,10 @@ class _MapPickerViewState extends State<MapPickerView> {
           IgnorePointer(
             child: Transform.translate(
               offset: const Offset(0, -20),
-              child: const Icon(
+              child: Icon(
                 Icons.location_pin,
                 size: 48,
-                color: Colors.pink,
+                color: colorScheme.primary,
               ),
             ),
           ),
@@ -161,41 +163,45 @@ class _AddressBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return BlocBuilder<MapPickerBloc, MapPickerState>(
       builder: (context, state) {
         return Container(
           width: double.infinity,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: colorScheme.surface,
             borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.1),
-                blurRadius: 10,
-                offset: const Offset(0, 2),
-              ),
-            ],
+            border: Border.all(
+              color: colorScheme.onSurface.withValues(alpha: 0.08),
+            ),
           ),
-          child: _buildContent(state),
+          child: _buildContent(context, state),
         );
       },
     );
   }
 
-  Widget _buildContent(MapPickerState state) {
+  Widget _buildContent(BuildContext context, MapPickerState state) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final onSurface = colorScheme.onSurface;
+
     if (state.status == MapPickerStatus.loadingAddress) {
-      return const Row(
+      return Row(
         children: [
           SizedBox(
             width: 16,
             height: 16,
-            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.pink),
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              color: colorScheme.primary,
+            ),
           ),
-          SizedBox(width: 12),
+          const SizedBox(width: 12),
           Text(
             'Buscando dirección...',
-            style: TextStyle(fontSize: 14, color: Colors.grey),
+            style: TextStyle(fontSize: 14, color: onSurface.withValues(alpha: 0.5)),
           ),
         ],
       );
@@ -204,21 +210,21 @@ class _AddressBubble extends StatelessWidget {
     if (state.status == MapPickerStatus.error) {
       return Text(
         state.errorMessage ?? 'No se pudo obtener la dirección.',
-        style: const TextStyle(fontSize: 14, color: Colors.red),
+        style: TextStyle(fontSize: 14, color: colorScheme.error),
       );
     }
 
     if (state.status == MapPickerStatus.addressReady) {
       return Row(
         children: [
-          const Icon(Icons.location_on, color: Colors.pink, size: 20),
+          Icon(Icons.location_on, color: colorScheme.primary, size: 20),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
               state.address ?? '',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
-                color: Colors.black87,
+                color: onSurface,
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -227,9 +233,9 @@ class _AddressBubble extends StatelessWidget {
       );
     }
 
-    return const Text(
+    return Text(
       'Mueve el mapa para elegir tu ubicación',
-      style: TextStyle(fontSize: 14, color: Colors.grey),
+      style: TextStyle(fontSize: 14, color: onSurface.withValues(alpha: 0.5)),
     );
   }
 }

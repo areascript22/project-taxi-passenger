@@ -1,49 +1,54 @@
 import 'package:flutter/material.dart';
+import 'package:passenger_app/core/theme/app_colors.dart';
 
 class DriverDistanceIndicator extends StatelessWidget {
   const DriverDistanceIndicator({
     super.key,
     required this.progress,
+    required this.distanceLabel,
+    required this.etaLabel,
   });
 
   /// 1 = driver is far away
   /// 0 = driver has arrived
   final double progress;
 
+  /// Ya formateado ("850 m" / "2.4 km" / "--" si todavía no se conoce).
+  final String distanceLabel;
+
+  /// Ya formateado ("6 min" / "Llegando" / "--" si todavía no se conoce).
+  final String etaLabel;
+
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final onSurface = colorScheme.onSurface;
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(22),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(.08),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        border: Border.all(color: onSurface.withValues(alpha: 0.08)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            "La conductora está en camino",
+          Text(
+            "El conductor está en camino",
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
+              color: onSurface,
             ),
           ),
 
           const SizedBox(height: 6),
 
-          const Text(
+          Text(
             "Su conductor se dirige al lugar de recogida.",
-            style: TextStyle(
-              color: Colors.grey,
-            ),
+            style: TextStyle(color: onSurface.withValues(alpha: 0.6)),
           ),
 
           const SizedBox(height: 10),
@@ -56,7 +61,10 @@ class DriverDistanceIndicator extends StatelessWidget {
 
                 const iconSize = 44.0;
 
-                final driverX = (1 - progress) * (width - iconSize);
+                // progress=1 (recién asignado, lejos) -> extremo derecho.
+                // progress=0 (llegó) -> converge con el pin fijo de la
+                // izquierda ("Tu ubicación" / punto de recogida).
+                final driverX = progress * (width - iconSize);
 
                 return Stack(
                   alignment: Alignment.centerLeft,
@@ -67,20 +75,22 @@ class DriverDistanceIndicator extends StatelessWidget {
                       child: Container(
                         height: 6,
                         decoration: BoxDecoration(
-                          color: Colors.grey.shade300,
+                          color: onSurface.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(20),
                         ),
                       ),
                     ),
 
-                    const Positioned(
+                    Positioned(
                       left: 0,
                       child: CircleAvatar(
                         radius: 22,
-                        backgroundColor: Color(0xffE3F2FD),
+                        backgroundColor: colorScheme.primary.withValues(
+                          alpha: 0.15,
+                        ),
                         child: Icon(
                           Icons.location_pin,
-                          color: Colors.blue,
+                          color: colorScheme.primary,
                         ),
                       ),
                     ),
@@ -89,36 +99,36 @@ class DriverDistanceIndicator extends StatelessWidget {
                       duration: const Duration(milliseconds: 500),
                       curve: Curves.easeInOut,
                       left: driverX,
-                      child: const CircleAvatar(
+                      child: CircleAvatar(
                         radius: 22,
-                        backgroundColor: Colors.green,
+                        backgroundColor: context.appColors.success,
                         child: Icon(
                           Icons.local_taxi,
-                          color: Colors.white,
+                          color: colorScheme.onPrimary,
                         ),
                       ),
                     ),
 
-                    const Positioned(
+                    Positioned(
                       bottom: 0,
                       left: 0,
                       child: Text(
                         "Tu ubicación",
                         style: TextStyle(
                           fontSize: 12,
-                          color: Colors.grey,
+                          color: onSurface.withValues(alpha: 0.5),
                         ),
                       ),
                     ),
 
-                    const Positioned(
+                    Positioned(
                       bottom: 0,
                       right: 0,
                       child: Text(
                         "Conductor",
                         style: TextStyle(
                           fontSize: 12,
-                          color: Colors.grey,
+                          color: onSurface.withValues(alpha: 0.5),
                         ),
                       ),
                     ),
@@ -136,7 +146,7 @@ class DriverDistanceIndicator extends StatelessWidget {
                 child: _InfoTile(
                   icon: Icons.route,
                   title: "Distancia",
-                  value: "2.4 km",
+                  value: distanceLabel,
                 ),
               ),
               const SizedBox(width: 12),
@@ -144,7 +154,7 @@ class DriverDistanceIndicator extends StatelessWidget {
                 child: _InfoTile(
                   icon: Icons.access_time,
                   title: "Tiempo estimado",
-                  value: "6 min",
+                  value: etaLabel,
                 ),
               ),
             ],
@@ -168,22 +178,21 @@ class _InfoTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final onSurface = Theme.of(context).colorScheme.onSurface;
+
     return Container(
       padding: const EdgeInsets.symmetric(
         horizontal: 14,
         vertical: 14,
       ),
       decoration: BoxDecoration(
-        color: Colors.grey.shade100,
+        color: onSurface.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(
-            icon,
-            color: Colors.black87,
-          ),
+          Icon(icon, color: onSurface),
           const SizedBox(width: 10),
           Expanded(
             child: Column(
@@ -193,8 +202,8 @@ class _InfoTile extends StatelessWidget {
                   title,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Colors.grey,
+                  style: TextStyle(
+                    color: onSurface.withValues(alpha: 0.5),
                     fontSize: 12,
                   ),
                 ),
@@ -203,9 +212,10 @@ class _InfoTile extends StatelessWidget {
                   value,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
+                    color: onSurface,
                   ),
                 ),
               ],

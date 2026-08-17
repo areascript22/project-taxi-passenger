@@ -96,5 +96,34 @@ class RideTrackingRepositoryImpl implements RideTrackingRepository {
   }
 
   @override
+  Future<Either<Failure, Unit>> recordInitialDriverDistance({
+    required String passengerId,
+    required double distanceMeters,
+  }) async {
+    try {
+      final ref = database.ref('taxi_requests/$passengerId/driver');
+
+      await ref.runTransaction((mutableData) {
+        if (mutableData == null) return Transaction.abort();
+
+        final data = Map<dynamic, dynamic>.from(mutableData as Map);
+        // Ya se registró antes (ej. la app se reabrió a mitad del viaje) --
+        // no lo pisamos, es una referencia fija de todo el viaje.
+        if (data['initialDistance'] != null) return Transaction.abort();
+
+        data['initialDistance'] = distanceMeters;
+        return Transaction.success(data);
+      });
+
+      return const Right(unit);
+    } catch (e) {
+      debugPrint('RideTrackingDebug | Error en recordInitialDriverDistance: $e');
+      return Left(
+        Failure(message: 'No se pudo registrar la distancia inicial del conductor.'),
+      );
+    }
+  }
+
+  @override
   Future<void> dispose() async {}
 }

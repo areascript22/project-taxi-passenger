@@ -40,6 +40,10 @@ class SessionView extends StatelessWidget {
             context.goNamed(signInRoute.name);
           }
 
+          if (state is SessionOnboardingRequired) {
+            context.goNamed(passengerOnboardingRoute.name, extra: state.user);
+          }
+
           if (state is SessionAuthenticated) {
             if (state.hasActiveRide) {
               // Viaje en curso (con conductor asignado antes de un kill de

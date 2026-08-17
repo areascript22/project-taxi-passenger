@@ -10,6 +10,10 @@ class ScaffoldWithNavBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final selectedColor = colorScheme.primary;
+    final unselectedColor = colorScheme.onSurface.withValues(alpha: 0.35);
+
     return Scaffold(
       // The body is the shell itself, which renders the current branch's UI[cite: 7]
       body: navigationShell,
@@ -20,13 +24,10 @@ class ScaffoldWithNavBar extends StatelessWidget {
           top: Radius.circular(24.0), // Adjust the radius size to your liking
         ),
         child: BottomNavigationBar(
-          backgroundColor: Colors.grey,
-          // Set the gray background color
+          backgroundColor: colorScheme.surface,
           currentIndex: navigationShell.currentIndex,
-          //[cite: 7]
-          // Optional: update colors for selected and unselected items so they contrast well with gray
-          selectedItemColor: Colors.black,
-          unselectedItemColor: Colors.white70,
+          selectedItemColor: selectedColor,
+          unselectedItemColor: unselectedColor,
 
           items: [
             BottomNavigationBarItem(
@@ -35,19 +36,13 @@ class ScaffoldWithNavBar extends StatelessWidget {
                 width: 24,
                 height: 24,
                 // Color filtering allows the icon to respect selected/unselected state colors
-                colorFilter: const ColorFilter.mode(
-                  Colors.white70,
-                  BlendMode.srcIn,
-                ),
+                colorFilter: ColorFilter.mode(unselectedColor, BlendMode.srcIn),
               ),
               activeIcon: SvgPicture.asset(
                 'assets/icons/svg/location.svg',
                 width: 24,
                 height: 24,
-                colorFilter: const ColorFilter.mode(
-                  Colors.black,
-                  BlendMode.srcIn,
-                ),
+                colorFilter: ColorFilter.mode(selectedColor, BlendMode.srcIn),
               ),
               label: 'Pedir',
             ),
@@ -56,19 +51,13 @@ class ScaffoldWithNavBar extends StatelessWidget {
                 'assets/icons/svg/profile.svg',
                 width: 24,
                 height: 24,
-                colorFilter: const ColorFilter.mode(
-                  Colors.white70,
-                  BlendMode.srcIn,
-                ),
+                colorFilter: ColorFilter.mode(unselectedColor, BlendMode.srcIn),
               ),
               activeIcon: SvgPicture.asset(
                 'assets/icons/svg/profile.svg',
                 width: 24,
                 height: 24,
-                colorFilter: const ColorFilter.mode(
-                  Colors.black,
-                  BlendMode.srcIn,
-                ),
+                colorFilter: ColorFilter.mode(selectedColor, BlendMode.srcIn),
               ),
               label: 'Perfil',
             ),

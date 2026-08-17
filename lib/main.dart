@@ -4,9 +4,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
 import 'package:passenger_app/core/routing/app_routing.dart';
 import 'package:passenger_app/core/service_locator/main_service_locator.dart';
-import 'package:passenger_app/shared/feedback/feedback_service.dart';
+import 'package:passenger_app/core/theme/app_theme.dart';
 import 'package:passenger_app/shared/presentation/bloc/session/session_bloc.dart';
 import 'package:passenger_app/shared/services/services_initializer.dart';
+import 'package:passenger_app/shared/settings/presentation/bloc/settings_bloc.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -28,15 +29,22 @@ class MyApp extends StatelessWidget {
         BlocProvider<SessionBloc>(
           create: (context) => GetIt.instance<SessionBloc>(),
         ),
-      ],
-      child: MaterialApp.router(
-        title: 'Taxi project',
-        debugShowCheckedModeBanner: false,
-        theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-          useMaterial3: true,
+        BlocProvider<SettingsBloc>(
+          create:
+              (context) => GetIt.instance<SettingsBloc>()..add(LoadSettings()),
         ),
-        routerConfig: AppRouter.router,
+      ],
+      child: BlocBuilder<SettingsBloc, SettingsState>(
+        builder: (context, settingsState) {
+          return MaterialApp.router(
+            title: 'Taxi project',
+            debugShowCheckedModeBanner: false,
+            theme: AppTheme.light,
+            darkTheme: AppTheme.dark,
+            themeMode: settingsState.themeMode,
+            routerConfig: AppRouter.router,
+          );
+        },
       ),
     );
   }

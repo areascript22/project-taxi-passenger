@@ -16,3 +16,12 @@ final class SessionAuthenticated extends SessionState {
 }
 
 final class SessionUnauthenticated extends SessionState {}
+
+// El usuario ya se autenticó con Google pero todavía no tiene datos de
+// pasajero guardados en Firestore -- debe completar el registro (datos
+// personales + foto de perfil) antes de continuar.
+final class SessionOnboardingRequired extends SessionState {
+  final UserEntity user;
+
+  SessionOnboardingRequired({required this.user});
+}

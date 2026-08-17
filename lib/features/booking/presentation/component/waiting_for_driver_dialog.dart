@@ -37,6 +37,9 @@ class WaitingForDriverDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final onSurface = colorScheme.onSurface;
+
     return PopScope(
       canPop: false,
       child: Dialog(
@@ -46,15 +49,9 @@ class WaitingForDriverDialog extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: colorScheme.surface,
             borderRadius: BorderRadius.circular(24),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.1),
-                blurRadius: 20,
-                offset: const Offset(0, 10),
-              ),
-            ],
+            border: Border.all(color: onSurface.withValues(alpha: 0.08)),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -62,7 +59,7 @@ class WaitingForDriverDialog extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(30),
                 decoration: BoxDecoration(
-                  color: Colors.blue.shade50,
+                  color: colorScheme.primary.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: SizedBox(
@@ -78,19 +75,23 @@ class WaitingForDriverDialog extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 20),
-              const Text(
+              Text(
                 "Buscando conductor...",
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
-                  color: Colors.black87,
+                  color: onSurface,
                 ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 12),
-              const Text(
+              Text(
                 "Estamos buscando un taxi disponible para tu viaje. Por favor espera, un conductor aceptará tu solicitud en breve.",
-                style: TextStyle(fontSize: 14, color: Colors.grey, height: 1.4),
+                style: TextStyle(
+                  fontSize: 14,
+                  color: onSurface.withValues(alpha: 0.6),
+                  height: 1.4,
+                ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 28),
@@ -133,24 +134,28 @@ class WaitingForDriverDialog extends StatelessWidget {
                               }
                               : null,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red.shade50,
-                        foregroundColor: Colors.red.shade700,
+                        backgroundColor: colorScheme.error.withValues(
+                          alpha: 0.1,
+                        ),
+                        foregroundColor: colorScheme.error,
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         elevation: 0,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
-                          side: BorderSide(color: Colors.red.shade200),
+                          side: BorderSide(
+                            color: colorScheme.error.withValues(alpha: 0.3),
+                          ),
                         ),
                       ),
                       child:
                           isCancelling
-                              ? const SizedBox(
+                              ? SizedBox(
                                 width: 24,
                                 height: 24,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
                                   valueColor: AlwaysStoppedAnimation<Color>(
-                                    Colors.red,
+                                    colorScheme.error,
                                   ),
                                 ),
                               )

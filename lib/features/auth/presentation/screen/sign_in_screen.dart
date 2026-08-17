@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:passenger_app/core/routing/app_routes.dart';
 import 'package:passenger_app/core/service_locator/main_service_locator.dart';
 import 'package:passenger_app/features/auth/presentation/bloc/auth_bloc.dart';
-import 'package:passenger_app/shared/presentation/bloc/session/session_bloc.dart';
 import 'package:passenger_app/shared/presentation/component/app_version.dart';
 
 class SignInScreen extends StatelessWidget {
@@ -23,24 +23,21 @@ class SignInView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final onSurface = colorScheme.onSurface;
+
     return Scaffold(
-      backgroundColor: Colors.white,
       body: SafeArea(
         child: BlocConsumer<AuthBloc, AuthState>(
           listener: (context, state) {
             if (state is AuthError) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(state.message),
-                  backgroundColor: Colors.redAccent,
-                  behavior: SnackBarBehavior.floating,
-                ),
-              );
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(SnackBar(content: Text(state.message)));
             }
 
             if (state is AuthAuthenticated) {
-              context.read<SessionBloc>().add(SessionUserUpdated(state.user));
-              context.goNamed("booking");
+              context.goNamed(sessionRoute.name);
             }
           },
           builder: (context, state) {
@@ -52,54 +49,59 @@ class SignInView extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const Icon(
-                    Icons.local_taxi_rounded,
-                    size: 80,
-                    color: Colors.black87,
-                  ),
+                  Icon(Icons.local_taxi_rounded, size: 80, color: onSurface),
                   const SizedBox(height: 20),
-                  const Text(
+                  Text(
                     'Bienvenido Pasajero',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 28,
                       fontWeight: FontWeight.bold,
-                      color: Colors.black87,
+                      color: onSurface,
                     ),
                   ),
                   const SizedBox(height: 10),
-                  const Text(
+                  Text(
                     'Viaja de forma segura y rápida con nosotros.',
                     textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 16, color: Colors.grey),
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: onSurface.withValues(alpha: 0.6),
+                    ),
                   ),
                   const SizedBox(height: 60),
 
                   isLoading
-                      ? const Center(child: CircularProgressIndicator())
+                      ? Center(
+                        child: CircularProgressIndicator(
+                          color: colorScheme.primary,
+                        ),
+                      )
                       : OutlinedButton(
                         onPressed: () {
                           context.read<AuthBloc>().add(AuthSignInWithGoogle());
                         },
                         style: OutlinedButton.styleFrom(
-                          backgroundColor: Colors.white,
-                          foregroundColor: Colors.black87,
-                          side: const BorderSide(color: Colors.grey, width: 1),
+                          backgroundColor: colorScheme.surface,
+                          foregroundColor: onSurface,
+                          side: BorderSide(
+                            color: onSurface.withValues(alpha: 0.2),
+                          ),
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
                         ),
-                        child: const Row(
+                        child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Icon(
                               Icons.g_mobiledata_rounded,
                               size: 32,
-                              color: Colors.redAccent,
+                              color: colorScheme.primary,
                             ),
-                            SizedBox(width: 8),
-                            Text(
+                            const SizedBox(width: 8),
+                            const Text(
                               'Continuar con Google',
                               style: TextStyle(
                                 fontSize: 16,
@@ -109,8 +111,8 @@ class SignInView extends StatelessWidget {
                           ],
                         ),
                       ),
-                  SizedBox(height: 100),
-                  Center(child: AppVersionWidget(),)
+                  const SizedBox(height: 100),
+                  Center(child: AppVersionWidget()),
                 ],
               ),
             );

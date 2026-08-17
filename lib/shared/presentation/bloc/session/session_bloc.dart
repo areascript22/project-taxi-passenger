@@ -1,5 +1,6 @@
 import 'package:bloc/bloc.dart';
 import 'package:flutter/material.dart';
+import 'package:passenger_app/features/passenger_profile/domain/repository/passenger_profile_repository.dart';
 import 'package:passenger_app/features/ride_tracking/domain/repository/ride_tracking_repository.dart';
 import 'package:passenger_app/shared/domain/repository/session_repository.dart';
 import '../../../domain/entity/user_entity.dart';
@@ -10,13 +11,14 @@ part 'session_state.dart';
 class SessionBloc extends Bloc<SessionEvent, SessionState> {
   final SessionRepository sessionRepository;
   final RideTrackingRepository rideTrackingRepository;
+  final PassengerProfileRepository passengerProfileRepository;
 
   SessionBloc({
     required this.sessionRepository,
     required this.rideTrackingRepository,
+    required this.passengerProfileRepository,
   }) : super(SessionUnknown()) {
     on<SessionCheckRequested>(_onCheckRequested);
-    on<SessionUserUpdated>(_onUserUpdated);
     on<SessionLogoutRequested>(_onLogoutRequested);
   }
 
@@ -32,6 +34,15 @@ class SessionBloc extends Bloc<SessionEvent, SessionState> {
       return;
     }
 
+    final passengerResult = await passengerProfileRepository.getPassenger(
+      passengerId: user.id,
+    );
+    final passenger = passengerResult.fold((_) => null, (passenger) => passenger);
+    if (passenger == null) {
+      emit(SessionOnboardingRequired(user: user));
+      return;
+    }
+
     final activeRideResult = await rideTrackingRepository.getActiveRide(
       passengerId: user.id,
     );
@@ -41,10 +52,6 @@ class SessionBloc extends Bloc<SessionEvent, SessionState> {
     );
 
     emit(SessionAuthenticated(user: user, hasActiveRide: hasActiveRide));
-  }
-
-  void _onUserUpdated(SessionUserUpdated event, Emitter<SessionState> emit) {
-    emit(SessionAuthenticated(user: event.user));
   }
 
   Future<void> _onLogoutRequested(SessionLogoutRequested event,

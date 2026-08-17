@@ -118,7 +118,6 @@ class _RideTrackingViewState extends State<_RideTrackingView> {
           final driver = state.ride?.driver;
 
           return Scaffold(
-            backgroundColor: const Color(0xFFF7F7F7),
             body: SafeArea(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20.0),
@@ -131,11 +130,15 @@ class _RideTrackingViewState extends State<_RideTrackingView> {
                         physics: const BouncingScrollPhysics(),
                         child: Column(
                           children: [
-                            DriverDistanceIndicator(progress: 0.50),
+                            DriverDistanceIndicator(
+                              progress: state.progress ?? 1.0,
+                              distanceLabel: _formatDistance(state.distanceMeters),
+                              etaLabel: _formatEta(state.etaMinutes),
+                            ),
                             const SizedBox(height: 20),
-                            _buildDriverCard(driver),
+                            _buildDriverCard(context, driver),
                             const SizedBox(height: 20),
-                            _buildTripInfo(),
+                            _buildTripInfo(context, state.ride),
                             const SizedBox(height: 50),
                             _buildCancelButton(context),
                           ],
@@ -153,18 +156,20 @@ class _RideTrackingViewState extends State<_RideTrackingView> {
   }
 
   Widget _buildHeader(BuildContext context) {
+    final onSurface = Theme.of(context).colorScheme.onSurface;
+
     return Padding(
-      padding: EdgeInsets.symmetric(vertical: 20),
+      padding: const EdgeInsets.symmetric(vertical: 20),
       child: Row(
         children: [
-          const Expanded(
+          Expanded(
             child: Center(
               child: Text(
                 'Tu viaje',
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.w600,
-                  color: Colors.black87,
+                  color: onSurface,
                   letterSpacing: -0.3,
                 ),
               ),
@@ -176,32 +181,33 @@ class _RideTrackingViewState extends State<_RideTrackingView> {
     );
   }
 
-  Widget _buildDriverCard(DriverEntity? driver) {
+  Widget _buildDriverCard(BuildContext context, DriverEntity? driver) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
-      decoration: _cardDecoration(),
+      decoration: _cardDecoration(context),
       child: Row(
         children: [
-          _buildDriverPhoto(driver),
+          _buildDriverPhoto(context, driver),
           const SizedBox(width: 16),
-          Expanded(child: _buildDriverInfo(driver)),
-          _buildCallButton(),
+          Expanded(child: _buildDriverInfo(context, driver)),
+          _buildCallButton(context),
         ],
       ),
     );
   }
 
-  Widget _buildDriverPhoto(DriverEntity? driver) {
+  Widget _buildDriverPhoto(BuildContext context, DriverEntity? driver) {
     final hasPhoto = driver != null && driver.photo.isNotEmpty;
+    final onSurface = Theme.of(context).colorScheme.onSurface;
 
     return Container(
       width: 60,
       height: 60,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: Colors.grey.shade300,
-        border: Border.all(color: Colors.grey.shade400, width: 1.5),
+        color: onSurface.withValues(alpha: 0.1),
+        border: Border.all(color: onSurface.withValues(alpha: 0.15), width: 1.5),
         image:
             hasPhoto
                 ? DecorationImage(
@@ -213,13 +219,18 @@ class _RideTrackingViewState extends State<_RideTrackingView> {
       child:
           hasPhoto
               ? null
-              : const Center(
-                child: Icon(Icons.person_rounded, color: Colors.black54, size: 34),
+              : Center(
+                child: Icon(
+                  Icons.person_rounded,
+                  color: onSurface.withValues(alpha: 0.6),
+                  size: 34,
+                ),
               ),
     );
   }
 
-  Widget _buildDriverInfo(DriverEntity? driver) {
+  Widget _buildDriverInfo(BuildContext context, DriverEntity? driver) {
+    final onSurface = Theme.of(context).colorScheme.onSurface;
     final driverName =
         (driver != null && driver.name.isNotEmpty)
             ? driver.name
@@ -232,57 +243,70 @@ class _RideTrackingViewState extends State<_RideTrackingView> {
           driverName,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 17,
             fontWeight: FontWeight.w600,
-            color: Colors.black87,
+            color: onSurface,
           ),
         ),
         const SizedBox(height: 4),
         Text(
           'Tu conductor está en camino',
-          style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
+          style: TextStyle(fontSize: 14, color: onSurface.withValues(alpha: 0.6)),
         ),
       ],
     );
   }
 
-  Widget _buildCallButton() {
+  Widget _buildCallButton(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Container(
       width: 44,
       height: 44,
-      decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.black),
+      decoration: BoxDecoration(shape: BoxShape.circle, color: colorScheme.primary),
       child: IconButton(
         onPressed: () {},
-        icon: const Icon(Icons.phone_rounded, color: Colors.white, size: 22),
+        icon: Icon(Icons.phone_rounded, color: colorScheme.onPrimary, size: 22),
         padding: EdgeInsets.zero,
       ),
     );
   }
 
-  Widget _buildTripInfo() {
+  Widget _buildTripInfo(BuildContext context, RideEntity? ride) {
+    final pickupAddress = ride?.pickupAddress;
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
-      decoration: _cardDecoration(),
+      decoration: _cardDecoration(context),
       child: Column(
         children: [
           _buildInfoRow(
+            context,
             icon: Icons.location_on_rounded,
             label: 'Punto de recogida',
-            value: 'Av. Naciones Unidas y Shyris',
+            value:
+                (pickupAddress == null || pickupAddress.isEmpty)
+                    ? 'Ubicación no disponible'
+                    : pickupAddress,
           ),
         ],
       ),
     );
   }
 
-  Widget _buildInfoRow({
+  Widget _buildInfoRow(
+    BuildContext context, {
     required IconData icon,
     required String label,
     required String value,
     bool isDestination = false,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final onSurface = colorScheme.onSurface;
+    final accentColor = isDestination ? colorScheme.error : onSurface;
+
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -291,13 +315,9 @@ class _RideTrackingViewState extends State<_RideTrackingView> {
           height: 32,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: isDestination ? Colors.red.shade50 : Colors.grey.shade100,
+            color: accentColor.withValues(alpha: isDestination ? 0.1 : 0.08),
           ),
-          child: Icon(
-            icon,
-            size: 18,
-            color: isDestination ? Colors.red.shade400 : Colors.grey.shade600,
-          ),
+          child: Icon(icon, size: 18, color: accentColor.withValues(alpha: isDestination ? 1 : 0.6)),
         ),
         const SizedBox(width: 12),
         Expanded(
@@ -309,17 +329,17 @@ class _RideTrackingViewState extends State<_RideTrackingView> {
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w500,
-                  color: Colors.grey.shade600,
+                  color: onSurface.withValues(alpha: 0.6),
                   letterSpacing: 0.3,
                 ),
               ),
               const SizedBox(height: 2),
               Text(
                 value,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w500,
-                  color: Colors.black87,
+                  color: onSurface,
                 ),
               ),
             ],
@@ -330,6 +350,8 @@ class _RideTrackingViewState extends State<_RideTrackingView> {
   }
 
   Widget _buildCancelButton(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return SizedBox(
       width: double.infinity,
       height: 52,
@@ -344,19 +366,19 @@ class _RideTrackingViewState extends State<_RideTrackingView> {
           );
         },
         style: OutlinedButton.styleFrom(
-          side: const BorderSide(color: Colors.red, width: 1.5),
+          side: BorderSide(color: colorScheme.error, width: 1.5),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
           backgroundColor: Colors.transparent,
           padding: const EdgeInsets.symmetric(vertical: 12),
         ),
-        child: const Text(
+        child: Text(
           'Cancelar viaje',
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w600,
-            color: Colors.red,
+            color: colorScheme.error,
             letterSpacing: 0.2,
           ),
         ),
@@ -364,22 +386,33 @@ class _RideTrackingViewState extends State<_RideTrackingView> {
     );
   }
 
-  BoxDecoration _cardDecoration() {
+  BoxDecoration _cardDecoration(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return BoxDecoration(
-      color: Colors.white,
+      color: colorScheme.surface,
       borderRadius: BorderRadius.circular(20),
-      boxShadow: [
-        BoxShadow(
-          color: Colors.black.withOpacity(0.04),
-          blurRadius: 12,
-          offset: const Offset(0, 4),
-        ),
-        BoxShadow(
-          color: Colors.black.withOpacity(0.02),
-          blurRadius: 4,
-          offset: const Offset(0, 1),
-        ),
-      ],
+      border: Border.all(color: colorScheme.onSurface.withValues(alpha: 0.08)),
     );
   }
+}
+
+// Redondeado al múltiplo de 10m más cercano para que no "tiemble" con cada
+// actualización de ubicación del conductor (~cada 5s).
+String _formatDistance(double? meters) {
+  if (meters == null) return '--';
+
+  if (meters < 1000) {
+    final rounded = (meters / 10).round() * 10;
+    return '$rounded m';
+  }
+
+  final km = meters / 1000;
+  return '${km.toStringAsFixed(1)} km';
+}
+
+String _formatEta(int? minutes) {
+  if (minutes == null) return '--';
+  if (minutes <= 0) return 'Llegando';
+  return '$minutes min';
 }

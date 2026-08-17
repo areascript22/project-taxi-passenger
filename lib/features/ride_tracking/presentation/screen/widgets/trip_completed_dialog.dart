@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:passenger_app/core/theme/app_colors.dart';
 
 // Diálogo informativo mostrado al pasajero cuando el conductor finaliza el
 // viaje. Solo tiene un botón de confirmación; quien lo invoca decide qué
@@ -17,6 +18,9 @@ class TripCompletedDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final success = context.appColors.success;
+
     return PopScope(
       canPop: false,
       child: Dialog(
@@ -26,15 +30,11 @@ class TripCompletedDialog extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: colorScheme.surface,
             borderRadius: BorderRadius.circular(24),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.1),
-                blurRadius: 20,
-                offset: const Offset(0, 10),
-              ),
-            ],
+            border: Border.all(
+              color: colorScheme.onSurface.withValues(alpha: 0.08),
+            ),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -42,22 +42,22 @@ class TripCompletedDialog extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.green.shade50,
+                  color: success.withValues(alpha: 0.15),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
                   Icons.check_circle_rounded,
-                  color: Colors.green.shade600,
+                  color: success,
                   size: 32,
                 ),
               ),
               const SizedBox(height: 20),
-              const Text(
+              Text(
                 "Has llegado a tu destino",
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
-                  color: Colors.black87,
+                  color: colorScheme.onSurface,
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -66,7 +66,7 @@ class TripCompletedDialog extends StatelessWidget {
                 "Gracias por elegirnos. Esperamos verte pronto de nuevo.",
                 style: TextStyle(
                   fontSize: 14,
-                  color: Colors.grey.shade600,
+                  color: colorScheme.onSurface.withValues(alpha: 0.6),
                   height: 1.4,
                 ),
                 textAlign: TextAlign.center,
@@ -77,8 +77,8 @@ class TripCompletedDialog extends StatelessWidget {
                 child: ElevatedButton(
                   onPressed: () => Navigator.of(context).pop(),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.black,
-                    foregroundColor: Colors.white,
+                    backgroundColor: colorScheme.primary,
+                    foregroundColor: colorScheme.onPrimary,
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     elevation: 0,
                     shape: RoundedRectangleBorder(

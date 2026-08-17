@@ -12,6 +12,7 @@ import 'package:passenger_app/features/booking/presentation/component/location_d
 import 'package:passenger_app/shared/domain/entity/place_entity.dart';
 import 'package:passenger_app/shared/geolocator/location/location_bloc.dart';
 import 'package:passenger_app/shared/presentation/bloc/session/session_bloc.dart';
+import 'package:passenger_app/core/theme/app_colors.dart';
 import 'package:passenger_app/shared/presentation/component/custom_button.dart';
 import 'package:passenger_app/shared/presentation/component/custom_loader.dart';
 import '../../../../shared/feedback/feedback_service.dart';
@@ -65,7 +66,7 @@ class _BookingViewState extends State<BookingView> {
     // ya nos habría mandado directo a RideTrackingScreen en vez de acá (ver
     // shared/presentation/bloc/session/session_bloc.dart) -- si llegamos a
     // montar esta pantalla, es porque no hay ninguno.
-    GetIt.instance<FeedbackService>().announce('Bienvenido a Via Go');
+    GetIt.instance<FeedbackService>().announce('Bienvenido a TaxiGo');
   }
 
   @override
@@ -81,7 +82,6 @@ class _BookingViewState extends State<BookingView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
       body: SafeArea(
         child: Column(
           children: [
@@ -237,13 +237,13 @@ class _BookingViewState extends State<BookingView> {
 
             return Column(
               children: [
-                _buildLocationCard(address: state.pickupAddress),
+                _buildLocationCard(context, address: state.pickupAddress),
 
                 const SizedBox(height: 24),
 
                 _buildSearchBar(context),
 
-                _buildSearchResults(),
+                _buildSearchResults(context),
               ],
             );
           },
@@ -252,19 +252,17 @@ class _BookingViewState extends State<BookingView> {
     );
   }
 
-  Widget _buildLocationCard({String? address}) {
+  Widget _buildLocationCard(BuildContext context, {String? address}) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final onSurface = colorScheme.onSurface;
+    final success = context.appColors.success;
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        border: Border.all(color: onSurface.withValues(alpha: 0.08)),
       ),
       child: Row(
         children: [
@@ -277,10 +275,10 @@ class _BookingViewState extends State<BookingView> {
               return Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.green.withValues(alpha: 0.1),
+                  color: success.withValues(alpha: 0.15),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(Icons.circle, color: Colors.green, size: 20),
+                child: Icon(Icons.circle, color: success, size: 20),
               );
             },
           ),
@@ -294,7 +292,7 @@ class _BookingViewState extends State<BookingView> {
                   address ?? '',
                   style: TextStyle(
                     fontSize: 12,
-                    color: Colors.grey.shade600,
+                    color: onSurface.withValues(alpha: 0.6),
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -307,28 +305,25 @@ class _BookingViewState extends State<BookingView> {
   }
 
   Widget _buildSearchBar(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final onSurface = colorScheme.onSurface;
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade200),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        border: Border.all(color: onSurface.withValues(alpha: 0.1)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Icon(Icons.search, color: Colors.grey.shade500, size: 22),
+          Icon(Icons.search, color: onSurface.withValues(alpha: 0.5), size: 22),
           const SizedBox(width: 12),
           Expanded(
             child: TextField(
               controller: _searchController,
+              style: TextStyle(color: onSurface),
               onChanged: (value) {
                 context.read<LocationSearchBloc>().add(
                   SearchQueryChanged(query: value),
@@ -336,11 +331,18 @@ class _BookingViewState extends State<BookingView> {
               },
               decoration: InputDecoration(
                 hintText: "Buscar dirección o lugar...",
-                hintStyle: TextStyle(color: Colors.grey.shade500, fontSize: 15),
+                hintStyle: TextStyle(
+                  color: onSurface.withValues(alpha: 0.4),
+                  fontSize: 15,
+                ),
                 border: InputBorder.none,
                 // The close icon is added here as a suffixIcon
                 suffixIcon: IconButton(
-                  icon: const Icon(Icons.close, color: Colors.grey, size: 20),
+                  icon: Icon(
+                    Icons.close,
+                    color: onSurface.withValues(alpha: 0.5),
+                    size: 20,
+                  ),
                   onPressed: () {
                     _searchController.clear();
 
@@ -356,7 +358,7 @@ class _BookingViewState extends State<BookingView> {
           ),
           const SizedBox(width: 4),
           IconButton(
-            icon: const Icon(Icons.map_outlined, color: Colors.pink, size: 24),
+            icon: Icon(Icons.map_outlined, color: colorScheme.primary, size: 24),
             tooltip: 'Elegir en el mapa',
             onPressed: () => _openMapPicker(context),
           ),
@@ -392,7 +394,10 @@ class _BookingViewState extends State<BookingView> {
     );
   }
 
-  Widget _buildSearchResults() {
+  Widget _buildSearchResults(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final onSurface = colorScheme.onSurface;
+
     return BlocConsumer<LocationSearchBloc, LocationSearchState>(
       listener: (context, state) {
         if (state is LocationSearchLoaded) {
@@ -417,9 +422,11 @@ class _BookingViewState extends State<BookingView> {
         }
 
         if (state is LocationSearchLoading) {
-          return const Padding(
-            padding: EdgeInsets.only(top: 16.0),
-            child: Center(child: CircularProgressIndicator(color: Colors.pink)),
+          return Padding(
+            padding: const EdgeInsets.only(top: 16.0),
+            child: Center(
+              child: CircularProgressIndicator(color: colorScheme.primary),
+            ),
           );
         }
 
@@ -428,18 +435,18 @@ class _BookingViewState extends State<BookingView> {
             padding: const EdgeInsets.only(top: 16.0),
             child: Text(
               state.message,
-              style: const TextStyle(color: Colors.red, fontSize: 14),
+              style: TextStyle(color: colorScheme.error, fontSize: 14),
             ),
           );
         }
 
         if (state is LocationSearchLoaded) {
           if (state.places.isEmpty) {
-            return const Padding(
-              padding: EdgeInsets.only(top: 16.0),
+            return Padding(
+              padding: const EdgeInsets.only(top: 16.0),
               child: Text(
                 "No se encontraron resultados",
-                style: TextStyle(color: Colors.grey),
+                style: TextStyle(color: onSurface.withValues(alpha: 0.5)),
               ),
             );
           }
@@ -447,16 +454,9 @@ class _BookingViewState extends State<BookingView> {
           return Container(
             margin: const EdgeInsets.only(top: 8),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: colorScheme.surface,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.grey.shade200),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.05),
-                  blurRadius: 10,
-                  offset: const Offset(0, 2),
-                ),
-              ],
+              border: Border.all(color: onSurface.withValues(alpha: 0.08)),
             ),
 
             child: ListView.separated(
@@ -464,15 +464,20 @@ class _BookingViewState extends State<BookingView> {
               physics: const NeverScrollableScrollPhysics(),
               itemCount: state.places.length,
               separatorBuilder:
-                  (context, index) =>
-                      Divider(color: Colors.grey.shade100, height: 1),
+                  (context, index) => Divider(
+                    color: onSurface.withValues(alpha: 0.06),
+                    height: 1,
+                  ),
               itemBuilder: (context, index) {
                 final place = state.places[index];
                 return ListTile(
-                  leading: Icon(Icons.location_on, color: Colors.grey.shade400),
+                  leading: Icon(
+                    Icons.location_on,
+                    color: onSurface.withValues(alpha: 0.4),
+                  ),
                   title: Text(
                     place.address,
-                    style: const TextStyle(fontSize: 14, color: Colors.black87),
+                    style: TextStyle(fontSize: 14, color: onSurface),
                   ),
                   onTap: () {
                     context.read<LocationSearchBloc>().add(

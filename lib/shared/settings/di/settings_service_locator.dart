@@ -5,5 +5,8 @@ import '../presentation/bloc/settings_bloc.dart';
 
 void initSettingsDI(GetIt sl) {
   sl.registerLazySingleton<SettingsRepository>(() => SettingsRepositoryImpl());
-  sl.registerFactory(() => SettingsBloc(repository: sl<SettingsRepository>()));
+  // Singleton (no factory): MyApp lo provee una sola vez en la raíz para
+  // controlar el ThemeMode de MaterialApp.router, y SettingsScreen debe
+  // leer/mutar esa MISMA instancia.
+  sl.registerLazySingleton(() => SettingsBloc(repository: sl<SettingsRepository>()));
 }
