@@ -1,7 +1,9 @@
 import 'package:dartz/dartz.dart';
+import 'package:dio/dio.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import '../../../../core/error/errors.dart';
+import '../../../../core/network/dio_client.dart';
 import '../../domain/entity/ride_entity.dart';
 import '../../domain/repository/ride_tracking_repository.dart';
 import '../../presentation/bloc/ride_tracking_bloc.dart';
@@ -17,6 +19,7 @@ const _activeRideStatuses = {
 
 class RideTrackingRepositoryImpl implements RideTrackingRepository {
   final FirebaseDatabase database;
+  final Dio _dio = DioClient.instance;
 
   RideTrackingRepositoryImpl({required this.database});
 
@@ -38,16 +41,33 @@ class RideTrackingRepositoryImpl implements RideTrackingRepository {
     });
   }
 
+  // Ya no escribe directo a Realtime Database: pasa por el backend
+  // (RideService.cancelRide) para que verifique con el token de Firebase
+  // que quien cancela es realmente el pasajero dueño del viaje, y para que
+  // el servidor pueda avisarle al conductor por push (el cliente no tiene
+  // acceso al Admin SDK de FCM).
   @override
   Future<Either<Failure, Unit>> cancelRide({required String passengerId}) async {
     try {
-      await database.ref('taxi_requests/$passengerId').update({
-        'status': 'cancelled',
-        'cancelledBy': 'passenger',
-        'updatedAt': ServerValue.timestamp,
-      });
+      await _dio.post('/api/rides/$passengerId/cancel');
       return const Right(unit);
+    } on DioException catch (e) {
+      debugPrint('RideTrackingDebug | Error en cancelRide: $e');
+      if (e.response?.statusCode == 403) {
+        return Left(
+          Failure(message: 'No tienes permiso para cancelar este viaje.'),
+        );
+      }
+      if (e.response?.statusCode == 404 || e.response?.statusCode == 409) {
+        return Left(
+          Failure(message: 'El viaje ya no está disponible para cancelar.'),
+        );
+      }
+      return Left(
+        Failure(message: 'No se pudo cancelar el viaje. Intenta de nuevo.'),
+      );
     } catch (e) {
+      debugPrint('RideTrackingDebug | Error inesperado en cancelRide: $e');
       return Left(
         Failure(message: 'No se pudo cancelar el viaje. Intenta de nuevo.'),
       );

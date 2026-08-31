@@ -51,5 +51,11 @@
 	<string>TaxiGo necesita acceso a tu cámara para tomar tu foto de perfil.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>TaxiGo necesita acceso a tus fotos para elegir tu foto de perfil.</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>remote-notification</string>
+	</array>
+	<key>FirebaseAppDelegateProxyEnabled</key>
+	<true/>
 </dict>
 </plist>

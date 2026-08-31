@@ -6,6 +6,7 @@ import 'package:passenger_app/shared/feedback/di/feedback_service_locator.dart';
 import 'package:passenger_app/shared/geocoding/di/geocoding_service_locator.dart';
 import 'package:passenger_app/shared/geolocator/di/geolocator_service_locator.dart';
 import 'package:passenger_app/shared/image_picker/di/image_picker_service_locator.dart';
+import 'package:passenger_app/shared/notifications/di/push_notifications_service_locator.dart';
 import 'package:passenger_app/shared/services/dotenv/dotenv_service_locator.dart';
 import 'package:passenger_app/shared/settings/di/settings_service_locator.dart';
 import 'package:passenger_app/shared/vibration/di/vibration_service_locator.dart';
@@ -18,6 +19,7 @@ import '../../shared/di/shared_service_locator.dart';
 final GetIt mainServiceLocator = GetIt.instance;
 
 Future<void> initMainServiceLocator() async {
+  initPushNotificationsDI(mainServiceLocator);
   initImagePickerDI(mainServiceLocator);
   initPassengerProfileDI(mainServiceLocator);
   initProfileDI(mainServiceLocator);
