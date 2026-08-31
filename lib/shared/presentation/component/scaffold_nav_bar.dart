@@ -62,19 +62,19 @@ class ScaffoldWithNavBar extends StatelessWidget {
               label: 'Perfil',
             ),
           ],
-          onTap: (int index) => _onTap(context, index), //[cite: 7]
+          onTap: _onTap,
         ),
       ),
     );
   }
 
-  void _onTap(BuildContext context, int index) {
-    // goBranch switches the active navigation stack.[cite: 7]
-    navigationShell.goBranch(
-      index, //[cite: 7]
-      // Optional but recommended: If you tap the active tab again,[cite: 7]
-      // it pops the stack back to its root (e.g., PageY pops back to PageX).[cite: 7]
-      initialLocation: index == navigationShell.currentIndex, //[cite: 7]
-    );
+  void _onTap(int index) {
+    // El bottom bar solo navega ENTRE branches. Volver a tocar la pestaña ya
+    // activa no debe hacer nada -- en particular, no debe resetear el branch
+    // a su ruta inicial: si el pasajero está en RideTrackingScreen (dentro
+    // del branch "Pedir") y vuelve a tocar "Pedir", debe quedarse ahí, no
+    // volver a la pantalla de solicitar viaje.
+    if (index == navigationShell.currentIndex) return;
+    navigationShell.goBranch(index);
   }
 }
