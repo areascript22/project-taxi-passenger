@@ -120,4 +120,22 @@ class PassengerProfileRepositoryImpl implements PassengerProfileRepository {
       );
     }
   }
+
+  @override
+  Future<Either<Failure, Unit>> updateFcmToken({
+    required String passengerId,
+    required String token,
+  }) async {
+    try {
+      await _firestore.collection(_passengersCollection).doc(passengerId).update({
+        'fcmToken': token,
+      });
+      return const Right(unit);
+    } catch (e) {
+      debugPrint('PassengerProfileDebug | Error en updateFcmToken: $e');
+      return Left(
+        Failure(message: 'No se pudo registrar el token de notificaciones'),
+      );
+    }
+  }
 }

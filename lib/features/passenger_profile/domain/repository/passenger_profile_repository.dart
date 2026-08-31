@@ -26,4 +26,11 @@ abstract class PassengerProfileRepository {
     required PassengerEntity passenger,
     File? profileImage,
   });
+
+  // Guarda/actualiza el token FCM del pasajero en Firestore -- lo usa el
+  // backend para enviarle push notifications.
+  Future<Either<Failure, Unit>> updateFcmToken({
+    required String passengerId,
+    required String token,
+  });
 }
