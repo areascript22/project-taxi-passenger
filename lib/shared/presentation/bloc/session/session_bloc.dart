@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:bloc/bloc.dart';
 import 'package:flutter/material.dart';
+import 'package:passenger_app/features/passenger_profile/domain/entity/passenger_entity.dart';
 import 'package:passenger_app/features/passenger_profile/domain/repository/passenger_profile_repository.dart';
 import 'package:passenger_app/features/ride_tracking/domain/repository/ride_tracking_repository.dart';
 import 'package:passenger_app/shared/domain/repository/session_repository.dart';
@@ -44,15 +45,21 @@ class SessionBloc extends Bloc<SessionEvent, SessionState> {
     final passengerResult = await passengerProfileRepository.getPassenger(
       passengerId: user.id,
     );
-    final passenger = passengerResult.fold((_) => null, (passenger) => passenger);
+    if (passengerResult.isLeft()) {
+      emit(SessionCheckFailed(user: user));
+      return;
+    }
+
+    final PassengerEntity? passenger = passengerResult.fold(
+      (_) => null,
+      (value) => value,
+    );
     if (passenger == null) {
       emit(SessionOnboardingRequired(user: user));
       return;
     }
 
-    final activeRideResult = await rideTrackingRepository.getActiveRide(
-      passengerId: user.id,
-    );
+    final activeRideResult = await rideTrackingRepository.getActiveRide();
     final hasActiveRide = activeRideResult.fold(
       (_) => false,
       (ride) => ride != null,

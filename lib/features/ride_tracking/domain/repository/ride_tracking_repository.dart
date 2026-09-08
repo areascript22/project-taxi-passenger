@@ -30,13 +30,12 @@ abstract class RideTrackingRepository {
     required double distanceMeters,
   });
 
-  // Lectura puntual (no stream): ¿el pasajero tiene un viaje en curso
-  // (conductor asignado en adelante)? Null == no hay viaje activo. Se usa
-  // al iniciar la app para decidir si hay que resumir RideTrackingScreen en
-  // vez de ir a BookingScreen.
-  Future<Either<Failure, RideEntity?>> getActiveRide({
-    required String passengerId,
-  });
+  // Lectura puntual (no stream): ¿el pasajero autenticado tiene un viaje en
+  // curso (conductor asignado en adelante)? Null == no hay viaje activo. Se
+  // usa al iniciar la app para decidir si hay que resumir RideTrackingScreen
+  // en vez de ir a BookingScreen. El pasajero se identifica por el token de
+  // sesión (backend), no por un id que pase el cliente.
+  Future<Either<Failure, RideEntity?>> getActiveRide();
 
   Future<void> dispose();
 

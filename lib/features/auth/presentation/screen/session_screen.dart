@@ -34,7 +34,7 @@ class SessionView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: BlocListener<SessionBloc, SessionState>(
+      body: BlocConsumer<SessionBloc, SessionState>(
         listener: (context, state) {
           if (state is SessionUnauthenticated) {
             context.goNamed(signInRoute.name);
@@ -55,7 +55,34 @@ class SessionView extends StatelessWidget {
             }
           }
         },
-        child: const Center(child: CircularProgressIndicator()),
+        builder: (context, state) {
+          if (state is SessionCheckFailed) {
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text(
+                      'No se pudo verificar tu sesión. Revisa tu conexión e '
+                      'intenta de nuevo.',
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: () => context.read<SessionBloc>().add(
+                        SessionCheckRequested(),
+                      ),
+                      child: const Text('Reintentar'),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }
+
+          return const Center(child: CircularProgressIndicator());
+        },
       ),
     );
   }

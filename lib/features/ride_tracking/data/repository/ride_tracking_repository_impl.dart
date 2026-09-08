@@ -6,16 +6,6 @@ import '../../../../core/error/errors.dart';
 import '../../../../core/network/dio_client.dart';
 import '../../domain/entity/ride_entity.dart';
 import '../../domain/repository/ride_tracking_repository.dart';
-import '../../presentation/bloc/ride_tracking_bloc.dart';
-
-// Statuses que cuentan como "viaje en curso" para getActiveRide -- 'pending'
-// no aplica (todavía no tiene conductor asignado, eso lo maneja
-// BookingRepository) y 'cancelled' / 'tripCompleted' ya terminaron.
-const _activeRideStatuses = {
-  RideTrackingStatus.driverAssigned,
-  RideTrackingStatus.driverArrived,
-  RideTrackingStatus.tripStarted,
-};
 
 class RideTrackingRepositoryImpl implements RideTrackingRepository {
   final FirebaseDatabase database;
@@ -91,24 +81,31 @@ class RideTrackingRepositoryImpl implements RideTrackingRepository {
     }
   }
 
+  // Ya no lee directo taxi_requests/{passengerId}: pasa por el backend
+  // (RideService.findActiveRideForPassenger), que identifica al pasajero
+  // por el token verificado en vez de confiar en un id que el cliente
+  // podría pasar. El backend devuelve el mismo nodo crudo de Realtime
+  // Database, así que RideEntity.fromJson lo parsea igual que cuando venía
+  // del listener en vivo (watchRideTrack).
   @override
-  Future<Either<Failure, RideEntity?>> getActiveRide({
-    required String passengerId,
-  }) async {
+  Future<Either<Failure, RideEntity?>> getActiveRide() async {
     try {
-      final snapshot = await database.ref('taxi_requests/$passengerId').get();
-      final rawData = snapshot.value;
-      if (rawData == null) return const Right(null);
-
-      final ride = RideEntity.fromJson(
-        Map<String, dynamic>.from(rawData as Map),
-      );
-      if (!_activeRideStatuses.contains(ride.rideStatus)) {
+      final response = await _dio.get('/api/rides/passenger/active');
+      if (response.statusCode == 204 || response.data == null) {
         return const Right(null);
       }
 
+      final ride = RideEntity.fromJson(
+        Map<String, dynamic>.from(response.data as Map),
+      );
       return Right(ride);
+    } on DioException catch (e) {
+      debugPrint('RideTrackingDebug | Error en getActiveRide: $e');
+      return Left(
+        Failure(message: 'No se pudo verificar si tienes un viaje en curso.'),
+      );
     } catch (e) {
+      debugPrint('RideTrackingDebug | Error inesperado en getActiveRide: $e');
       return Left(
         Failure(message: 'No se pudo verificar si tienes un viaje en curso.'),
       );
