@@ -49,6 +49,12 @@ class _WaitingForDriverDialogState extends State<WaitingForDriverDialog> {
 
   Timer? _timeoutTimer;
 
+  // Marca que la próxima cancelación (éxito o falla) del BookingBloc fue
+  // disparada por el timeout automático, no por el botón. Así el listener de
+  // BookingBloc sabe qué mensaje mostrar sin necesitar un nuevo estado en el
+  // bloc.
+  bool _cancelledByTimeout = false;
+
   @override
   void initState() {
     super.initState();
@@ -71,20 +77,14 @@ class _WaitingForDriverDialogState extends State<WaitingForDriverDialog> {
     final rideStatus = context.read<RideTrackingBloc>().state.status;
     if (rideStatus == RideTrackingStatus.driverAssigned) return;
 
-    // Se captura el ScaffoldMessenger ANTES de cerrar el diálogo: una vez
-    // hecho el pop, este context ya no está en el árbol.
-    final messenger = ScaffoldMessenger.of(context);
-
+    // No cerramos el diálogo acá: el endpoint de cancelación puede fallar
+    // (conexión caída, la carrera ya fue aceptada en el instante exacto,
+    // etc.), y si cerráramos el popup igual perderíamos el BlocListener de
+    // RideTrackingBloc de más abajo -- el que nos avisa si un conductor
+    // terminó aceptando la carrera que creíamos cancelada. Solo cerramos
+    // cuando BookingBloc confirme éxito (ver el BlocConsumer más abajo).
+    _cancelledByTimeout = true;
     context.read<BookingBloc>().add(CancelTaxiRequest());
-    Navigator.of(context).pop();
-
-    messenger.showSnackBar(
-      const SnackBar(
-        content: Text(
-          'Ahora mismo no hay conductores disponibles. Intenta de nuevo en unos minutos.',
-        ),
-      ),
-    );
   }
 
   @override
@@ -169,7 +169,49 @@ class _WaitingForDriverDialogState extends State<WaitingForDriverDialog> {
                 child: BlocConsumer<BookingBloc, BookingState>(
                   listener: (context, state) {
                     if (state.status == BookingStatus.initial) {
+                      // Éxito confirmado por el backend (Right en el
+                      // repositorio): recién acá es seguro cerrar el popup.
+                      final wasTimeout = _cancelledByTimeout;
+                      final messenger = ScaffoldMessenger.of(context);
                       Navigator.of(context).pop();
+                      if (wasTimeout) {
+                        messenger.showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              'Ahora mismo no hay conductores disponibles. Intenta de nuevo en unos minutos.',
+                            ),
+                          ),
+                        );
+                      }
+                    } else if (state.status == BookingStatus.error &&
+                        _cancelledByTimeout) {
+                      // El repositorio devolvió Failure: la carrera puede
+                      // seguir viva en Firebase, así que el popup se queda
+                      // abierto (y con él, el listener de RideTrackingBloc
+                      // que reacciona si un conductor la acepta mientras
+                      // tanto). El botón "Cancelar solicitud" sigue
+                      // disponible para reintentar manualmente.
+                      _cancelledByTimeout = false;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            state.errorMessage ??
+                                'No se pudo cancelar automáticamente. Intenta cancelar de nuevo.',
+                          ),
+                        ),
+                      );
+                    } else if (state.status == BookingStatus.error) {
+                      // Falla al cancelar manualmente con el botón: el
+                      // diálogo se queda abierto (nunca cerramos en error),
+                      // solo avisamos para que el usuario reintente.
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            state.errorMessage ??
+                                'No se pudo cancelar la solicitud. Intenta de nuevo.',
+                          ),
+                        ),
+                      );
                     }
                   },
                   builder: (context, state) {
