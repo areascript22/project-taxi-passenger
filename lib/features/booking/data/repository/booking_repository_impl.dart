@@ -1,12 +1,16 @@
 import 'package:dartz/dartz.dart';
+import 'package:dio/dio.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
+import 'package:flutter/material.dart';
 import 'package:passenger_app/features/booking/domain/repository/booking_repository.dart';
 import '../../../../core/error/errors.dart';
+import '../../../../core/network/dio_client.dart';
 import '../../domain/entity/request_entity.dart';
 
 class BookingRepositoryImpl implements BookingRepository {
   final FirebaseDatabase database;
+  final Dio _dio = DioClient.instance;
 
   BookingRepositoryImpl({required this.database});
 
@@ -63,6 +67,11 @@ class BookingRepositoryImpl implements BookingRepository {
     }
   }
 
+  // Ya no borra directo el nodo de Realtime Database: pasa por el backend
+  // (RideService.cancelRide), la misma transacción que ya usa RideTracking
+  // para cancelar viajes en curso. Así, si el pasajero cancela justo cuando
+  // un conductor acepta, Firebase decide de forma atómica cuál de las dos
+  // operaciones gana -- nunca se pierde la solicitud a mitad de camino.
   @override
   Future<Either<Failure, Unit>> cancelTaxiRequest() async {
     try {
@@ -74,16 +83,20 @@ class BookingRepositoryImpl implements BookingRepository {
         );
       }
 
-      final String userId = currentUser.uid;
-
-      final DatabaseReference requestRef = database.ref()
-          .child('taxi_requests')
-          .child(userId);
-
-      await requestRef.remove();
-
-      return Right(unit);
+      await _dio.post('/api/rides/${currentUser.uid}/cancel');
+      return const Right(unit);
+    } on DioException catch (e) {
+      debugPrint('BookingDebug | Error en cancelTaxiRequest: $e');
+      if (e.response?.statusCode == 404 || e.response?.statusCode == 409) {
+        return Left(
+          Failure(message: 'La solicitud ya no está disponible para cancelar.'),
+        );
+      }
+      return Left(
+        Failure(message: 'No se pudo cancelar la solicitud. Intente de nuevo.'),
+      );
     } catch (e) {
+      debugPrint('BookingDebug | Error inesperado en cancelTaxiRequest: $e');
       return Left(
         Failure(message: 'No se pudo cancelar la solicitud. Intente de nuevo.'),
       );

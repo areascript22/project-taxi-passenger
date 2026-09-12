@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
@@ -9,7 +11,7 @@ import 'package:passenger_app/shared/feedback/feedback_service.dart';
 
 import '../../../../core/routing/app_routes.dart';
 
-class WaitingForDriverDialog extends StatelessWidget {
+class WaitingForDriverDialog extends StatefulWidget {
   final VoidCallback onCancel;
 
   const WaitingForDriverDialog({super.key, required this.onCancel});
@@ -32,6 +34,56 @@ class WaitingForDriverDialog extends StatelessWidget {
             ),
 
           ], child: WaitingForDriverDialog(onCancel: onCancel)),
+    );
+  }
+
+  @override
+  State<WaitingForDriverDialog> createState() =>
+      _WaitingForDriverDialogState();
+}
+
+class _WaitingForDriverDialogState extends State<WaitingForDriverDialog> {
+  // Tiempo máximo esperando a que un conductor acepte antes de cancelar la
+  // solicitud automáticamente. El cliente pidió "25 o 30 segundos".
+  static const _searchTimeout = Duration(seconds: 30);
+
+  Timer? _timeoutTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _timeoutTimer = Timer(_searchTimeout, _handleSearchTimeout);
+  }
+
+  @override
+  void dispose() {
+    _timeoutTimer?.cancel();
+    super.dispose();
+  }
+
+  void _handleSearchTimeout() {
+    if (!mounted) return;
+
+    // Guarda contra la carrera donde un conductor acepta justo en el
+    // instante en que expira el timer: si ya hay conductor asignado, dejamos
+    // que el otro listener (más abajo) cierre este diálogo y navegue --  no
+    // cancelamos una carrera que ya fue aceptada.
+    final rideStatus = context.read<RideTrackingBloc>().state.status;
+    if (rideStatus == RideTrackingStatus.driverAssigned) return;
+
+    // Se captura el ScaffoldMessenger ANTES de cerrar el diálogo: una vez
+    // hecho el pop, este context ya no está en el árbol.
+    final messenger = ScaffoldMessenger.of(context);
+
+    context.read<BookingBloc>().add(CancelTaxiRequest());
+    Navigator.of(context).pop();
+
+    messenger.showSnackBar(
+      const SnackBar(
+        content: Text(
+          'Ahora mismo no hay conductores disponibles. Intenta de nuevo en unos minutos.',
+        ),
+      ),
     );
   }
 
