@@ -68,6 +68,18 @@ class _WaitingForDriverDialogState extends State<WaitingForDriverDialog> {
   // bloc.
   bool _cancelledByTimeout = false;
 
+  // true mientras haya un intento de cancelación disparado por ESTE cliente
+  // (botón o timeout) en curso o ya confirmado. El backend también puede
+  // cancelar la solicitud por su cuenta (auto-expiry si nadie la acepta a
+  // tiempo, ver PENDING_REQUEST_EXPIRY_SECONDS server-side) sin que este
+  // cliente llegue a llamar a /cancel -- el listener de RideTrackingBloc de
+  // más abajo usa este flag para no duplicar el cierre del popup cuando la
+  // cancelación sí la iniciamos nosotros (en ese caso ya la maneja el
+  // BlocConsumer<BookingBloc>), y para poder reaccionar cuando NO la
+  // iniciamos nosotros. Se resetea a false si un intento local falla, para
+  // que el diálogo vuelva a poder reaccionar a una cancelación externa.
+  bool _localCancelRequested = false;
+
   @override
   void initState() {
     super.initState();
@@ -119,6 +131,7 @@ class _WaitingForDriverDialogState extends State<WaitingForDriverDialog> {
     // terminó aceptando la carrera que creíamos cancelada. Solo cerramos
     // cuando BookingBloc confirme éxito (ver el BlocConsumer más abajo).
     _cancelledByTimeout = true;
+    _localCancelRequested = true;
     context.read<BookingBloc>().add(CancelTaxiRequest());
   }
 
@@ -188,12 +201,33 @@ class _WaitingForDriverDialogState extends State<WaitingForDriverDialog> {
                   previous.status != current.status,
                   listener: (context, state) {
                     if (state.status == RideTrackingStatus.driverAssigned) {
+                      if (!context.mounted) return;
                       GetIt.instance<FeedbackService>().announce(
                         'Carrera aceptada',
                         withVibration: true,
                       );
                       Navigator.pop(context);
                       context.goNamed(rideTrackingRoute.name);
+                    } else if (state.status == RideTrackingStatus.cancelled) {
+                      // El backend puede auto-cancelar la solicitud por su
+                      // cuenta (ver PENDING_REQUEST_EXPIRY_SECONDS) sin que
+                      // este cliente llegue a llamar a /cancel -- este
+                      // listener reacciona directo al cambio real en
+                      // Firebase. Si la cancelación la iniciamos nosotros
+                      // (botón o timeout local), no hacemos nada acá: ya la
+                      // maneja el BlocConsumer<BookingBloc> de más abajo, con
+                      // su propia lógica de mensaje.
+                      if (_localCancelRequested) return;
+                      if (!context.mounted) return;
+                      final messenger = ScaffoldMessenger.of(context);
+                      Navigator.of(context).pop();
+                      messenger.showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            'Ahora mismo no hay conductores disponibles. Intenta de nuevo en unos minutos.',
+                          ),
+                        ),
+                      );
                     }
                   },
                   child: SizedBox(),
@@ -204,6 +238,7 @@ class _WaitingForDriverDialogState extends State<WaitingForDriverDialog> {
                 child: BlocConsumer<BookingBloc, BookingState>(
                   listener: (context, state) {
                     if (state.status == BookingStatus.initial) {
+                      if (!context.mounted) return;
                       // Éxito confirmado por el backend (Right en el
                       // repositorio): recién acá es seguro cerrar el popup.
                       final wasTimeout = _cancelledByTimeout;
@@ -225,8 +260,12 @@ class _WaitingForDriverDialogState extends State<WaitingForDriverDialog> {
                       // abierto (y con él, el listener de RideTrackingBloc
                       // que reacciona si un conductor la acepta mientras
                       // tanto). El botón "Cancelar solicitud" sigue
-                      // disponible para reintentar manualmente.
+                      // disponible para reintentar manualmente. Reseteamos
+                      // ambos flags para que el listener de RideTrackingBloc
+                      // vuelva a poder reaccionar por su cuenta (ej. si el
+                      // backend termina auto-cancelándola igual).
                       _cancelledByTimeout = false;
+                      _localCancelRequested = false;
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Text(
@@ -239,6 +278,7 @@ class _WaitingForDriverDialogState extends State<WaitingForDriverDialog> {
                       // Falla al cancelar manualmente con el botón: el
                       // diálogo se queda abierto (nunca cerramos en error),
                       // solo avisamos para que el usuario reintente.
+                      _localCancelRequested = false;
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Text(
@@ -257,6 +297,7 @@ class _WaitingForDriverDialogState extends State<WaitingForDriverDialog> {
                       onPressed:
                           !isCancelling
                               ? () {
+                                _localCancelRequested = true;
                                 context.read<BookingBloc>().add(
                                   CancelTaxiRequest(),
                                 );

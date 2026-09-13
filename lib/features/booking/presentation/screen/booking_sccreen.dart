@@ -178,20 +178,10 @@ class _BookingViewState extends State<BookingView> {
           return;
         }
 
-        final currentSessionState = context.read<SessionBloc>().state;
-        if (currentSessionState is! SessionAuthenticated) {
-          return;
-        }
-
-        final user = currentSessionState.user;
-
         final request = RequestEntity(
           pickupLat: state.pickupLat!,
           pickupLng: state.pickupLng!,
           pickupAddress: state.pickupAddress!,
-          userId: user.id,
-          userName: user.displayName ?? "user",
-          userProfileImage: user.photoUrl ?? "n/a",
         );
         context.read<BookingBloc>().add(RequestTaxi(request: request));
       },

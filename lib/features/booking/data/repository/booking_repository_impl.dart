@@ -1,7 +1,6 @@
 import 'package:dartz/dartz.dart';
 import 'package:dio/dio.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:passenger_app/features/booking/domain/repository/booking_repository.dart';
 import '../../../../core/error/errors.dart';
@@ -9,58 +8,34 @@ import '../../../../core/network/dio_client.dart';
 import '../../domain/entity/request_entity.dart';
 
 class BookingRepositoryImpl implements BookingRepository {
-  final FirebaseDatabase database;
   final Dio _dio = DioClient.instance;
 
-  BookingRepositoryImpl({required this.database});
-
+  // Ya no escribe directo a Realtime Database: pasa por el backend
+  // (RideService.requestRide), que agenda ahí mismo la auto-cancelación de
+  // la solicitud si nadie la acepta a tiempo (ver PENDING_REQUEST_EXPIRY_SECONDS
+  // server-side), y deriva nombre/foto del pasajero del token verificado en
+  // vez de confiar en lo que mande el cliente.
   @override
-  Future<Either<Failure, String>> requestTaxi({
+  Future<Either<Failure, Unit>> requestTaxi({
     required RequestEntity request,
   }) async {
     try {
-      final User? currentUser = FirebaseAuth.instance.currentUser;
-
-      if (currentUser == null) {
-        return Left(
-          Failure(message: 'Usuario no autenticado. Inicie sesión nuevamente.'),
-        );
-      }
-
-      final String userId = currentUser.uid;
-
-      // 1. Reference directly to /taxi_requests/{userId}
-      final DatabaseReference requestRef = database.ref()
-          .child('taxi_requests')
-          .child(userId); // 👈 This is the key: userId
-
-      // 2. Generate a unique rideId (for tracking purposes)
-      final String rideId = '${userId}_${DateTime.now().millisecondsSinceEpoch}';
-
-      // 3. Structure the data payload
-      final Map<String, dynamic> rideData = {
-        'rideId': rideId,
-        'userId': userId, // Keep this for queries
-        'passenger': {
-          'name': request.userName,
-          'profileImage': request.userProfileImage,
-        },
-        'pickupLocation': {
+      await _dio.post(
+        '/api/rides/request',
+        data: {
           'latitude': request.pickupLat,
           'longitude': request.pickupLng,
           'address': request.pickupAddress,
         },
-        'status': 'pending',
-        'createdAt': ServerValue.timestamp,
-        'updatedAt': ServerValue.timestamp, // For tracking updates
-      };
-
-      // 4. Write the data - this will CREATE or UPDATE
-      await requestRef.set(rideData); // 👈 No .push() here!
-
-      // 5. Return the rideId
-      return Right(rideId);
+      );
+      return const Right(unit);
+    } on DioException catch (e) {
+      debugPrint('BookingDebug | Error en requestTaxi: $e');
+      return Left(
+        Failure(message: 'No se pudo solicitar el taxi. Intente de nuevo.'),
+      );
     } catch (e) {
+      debugPrint('BookingDebug | Error inesperado en requestTaxi: $e');
       return Left(
         Failure(message: 'No se pudo solicitar el taxi. Intente de nuevo.'),
       );
