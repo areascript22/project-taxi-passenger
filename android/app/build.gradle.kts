@@ -49,7 +49,11 @@ android {
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config. [cite: 4]
         minSdk = 24
-        targetSdk = flutter.targetSdkVersion
+        // Fijo en vez de flutter.targetSdkVersion: el Flutter SDK instalado
+        // (3.29.2) todavía resuelve ese valor a 35, pero Google Play ya
+        // exige apuntar como mínimo a 36 para subidas nuevas. compileSdk ya
+        // estaba en 36, así que las herramientas de build ya lo soportan.
+        targetSdk = 36
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
