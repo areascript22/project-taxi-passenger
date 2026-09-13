@@ -58,7 +58,8 @@ class PushNotificationsServiceImpl implements PushNotificationsService {
       // reintenta después, porque go_router preserva el estado de la rama al
       // navegar ahí de nuevo). El flujo normal de sesión ya detecta el viaje
       // en curso (SessionAuthenticated.hasActiveRide) y navega al mismo
-      // lugar una vez la sesión está resuelta, con los datos completos.
+      // lugar una vez la sesión está resuelta, con los datos completos
+      // (SessionAuthenticated.activeRide).
 
       return const Right(unit);
     } catch (e) {

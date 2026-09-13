@@ -13,12 +13,22 @@ import '../../../../core/routing/app_routes.dart';
 
 class WaitingForDriverDialog extends StatefulWidget {
   final VoidCallback onCancel;
+  // Epoch millis de RideEntity.createdAtMillis, solo cuando este diálogo se
+  // muestra al reanudar una solicitud 'pending' que ya existía en Firebase
+  // (app cerrada y reabierta). Null en el flujo normal (solicitud recién
+  // creada): en ese caso el countdown arranca completo desde _searchTimeout.
+  final int? rideCreatedAtMillis;
 
-  const WaitingForDriverDialog({super.key, required this.onCancel});
+  const WaitingForDriverDialog({
+    super.key,
+    required this.onCancel,
+    this.rideCreatedAtMillis,
+  });
 
   static Future<void> show({
     required BuildContext context,
     required VoidCallback onCancel,
+    int? rideCreatedAtMillis,
   }) {
     return showDialog(
       context: context,
@@ -33,7 +43,10 @@ class WaitingForDriverDialog extends StatefulWidget {
               value: GetIt.instance<RideTrackingBloc>(),
             ),
 
-          ], child: WaitingForDriverDialog(onCancel: onCancel)),
+          ], child: WaitingForDriverDialog(
+            onCancel: onCancel,
+            rideCreatedAtMillis: rideCreatedAtMillis,
+          )),
     );
   }
 
@@ -58,7 +71,29 @@ class _WaitingForDriverDialogState extends State<WaitingForDriverDialog> {
   @override
   void initState() {
     super.initState();
-    _timeoutTimer = Timer(_searchTimeout, _handleSearchTimeout);
+    _timeoutTimer = Timer(_remainingSearchTime(), _handleSearchTimeout);
+  }
+
+  // Margen mínimo al resumir una solicitud cuyo timeout ya se cumplió con la
+  // app cerrada: le da tiempo al listener de Firebase (RideTrackingBloc) a
+  // reconectar y traer el status real antes de evaluar si corresponde
+  // auto-cancelar -- evita cancelar una carrera que en realidad ya fue
+  // aceptada segundos antes de reabrir la app.
+  static const _minResumeGrace = Duration(seconds: 3);
+
+  // Si rideCreatedAtMillis viene seteado (diálogo resumido tras reabrir la
+  // app con una solicitud 'pending' ya existente), el countdown se calcula
+  // contra ese momento real en vez de reiniciar los 30s completos --
+  // createdAt es un ServerValue.timestamp de Firebase, así que no depende
+  // del reloj local del dispositivo.
+  Duration _remainingSearchTime() {
+    final createdAtMillis = widget.rideCreatedAtMillis;
+    if (createdAtMillis == null) return _searchTimeout;
+
+    final createdAt = DateTime.fromMillisecondsSinceEpoch(createdAtMillis);
+    final elapsed = DateTime.now().difference(createdAt);
+    final remaining = _searchTimeout - elapsed;
+    return remaining < _minResumeGrace ? _minResumeGrace : remaining;
   }
 
   @override

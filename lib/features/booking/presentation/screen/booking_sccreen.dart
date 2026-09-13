@@ -9,6 +9,9 @@ import 'package:passenger_app/features/booking/presentation/bloc/booking/booking
 import 'package:passenger_app/features/booking/presentation/component/booking_header.dart';
 import 'package:passenger_app/features/booking/presentation/component/confirmation_dialog.dart';
 import 'package:passenger_app/features/booking/presentation/component/location_denied.dart';
+import 'package:passenger_app/features/booking/presentation/component/waiting_for_driver_dialog.dart';
+import 'package:passenger_app/features/ride_tracking/domain/entity/ride_entity.dart';
+import 'package:passenger_app/features/ride_tracking/presentation/bloc/ride_tracking_bloc.dart';
 import 'package:passenger_app/shared/domain/entity/place_entity.dart';
 import 'package:passenger_app/shared/geolocator/location/location_bloc.dart';
 import 'package:passenger_app/shared/presentation/bloc/session/session_bloc.dart';
@@ -19,7 +22,12 @@ import '../../../../shared/feedback/feedback_service.dart';
 import '../bloc/location_search/location_search_bloc.dart';
 
 class BookingScreen extends StatelessWidget {
-  const BookingScreen({super.key});
+  // Solicitud 'pending' recuperada al reabrir la app (ver SessionScreen):
+  // si viene seteado, hay que resumir el diálogo "Buscando conductor" en
+  // vez de mostrar la pantalla de booking normal.
+  final RideEntity? recoveredRide;
+
+  const BookingScreen({super.key, this.recoveredRide});
 
   @override
   Widget build(BuildContext context) {
@@ -29,13 +37,15 @@ class BookingScreen extends StatelessWidget {
         BlocProvider(create: (_) => GetIt.instance<LocationSearchBloc>()),
         BlocProvider.value(value: GetIt.instance<BookingBloc>()),
       ],
-      child: const BookingView(),
+      child: BookingView(recoveredRide: recoveredRide),
     );
   }
 }
 
 class BookingView extends StatefulWidget {
-  const BookingView({super.key});
+  final RideEntity? recoveredRide;
+
+  const BookingView({super.key, this.recoveredRide});
 
   @override
   State<BookingView> createState() => _BookingViewState();
@@ -56,17 +66,48 @@ class _BookingViewState extends State<BookingView> {
     super.initState();
     _checkLocationPermissions();
     _maybePlayWelcome();
+    _maybeResumeWaitingDialog();
   }
 
   void _maybePlayWelcome() {
     if (_hasCheckedWelcomeThisSession) return;
     _hasCheckedWelcomeThisSession = true;
 
-    // No hace falta chequear viaje en curso acá: si lo hubiera, SessionScreen
-    // ya nos habría mandado directo a RideTrackingScreen en vez de acá (ver
-    // shared/presentation/bloc/session/session_bloc.dart) -- si llegamos a
-    // montar esta pantalla, es porque no hay ninguno.
+    // Si SessionScreen nos mandó acá con una solicitud 'pending' recuperada
+    // (ver widget.recoveredRide), ya vamos a mostrar el diálogo "Buscando
+    // conductor" -- no tiene sentido saludar de bienvenida encima.
+    if (widget.recoveredRide != null) return;
+
     GetIt.instance<FeedbackService>().announce('Bienvenido a TaxiGo');
+  }
+
+  // Resume el diálogo "Buscando conductor" si SessionScreen detectó que el
+  // pasajero tiene una solicitud 'pending' en Firebase (la app se cerró
+  // antes de que un conductor aceptara). El countdown de
+  // WaitingForDriverDialog usa el createdAt real de la solicitud, así que no
+  // se reinicia desde cero.
+  void _maybeResumeWaitingDialog() {
+    final ride = widget.recoveredRide;
+    if (ride == null) return;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+
+      final sessionState = context.read<SessionBloc>().state;
+      if (sessionState is! SessionAuthenticated) return;
+
+      GetIt.instance<RideTrackingBloc>().add(
+        StartRideTracking(passengerId: sessionState.user.id),
+      );
+
+      WaitingForDriverDialog.show(
+        context: context,
+        onCancel: () {
+          context.read<BookingBloc>().add(CancelTaxiRequest());
+        },
+        rideCreatedAtMillis: ride.createdAtMillis,
+      );
+    });
   }
 
   @override

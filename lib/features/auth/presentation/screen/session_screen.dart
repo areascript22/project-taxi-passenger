@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:passenger_app/core/routing/app_routes.dart';
+import 'package:passenger_app/features/ride_tracking/presentation/bloc/ride_tracking_bloc.dart';
 import 'package:passenger_app/shared/presentation/bloc/session/session_bloc.dart';
 
 class SessionScreen extends StatefulWidget {
@@ -45,13 +46,18 @@ class SessionView extends StatelessWidget {
           }
 
           if (state is SessionAuthenticated) {
-            if (state.hasActiveRide) {
-              // Viaje en curso (con conductor asignado antes de un kill de
-              // la app) -- resume directo en RideTrackingScreen en vez de
-              // BookingScreen.
-              context.goNamed(rideTrackingRoute.name);
-            } else {
+            final ride = state.activeRide;
+            if (ride == null) {
               context.goNamed('booking');
+            } else if (ride.rideStatus == RideTrackingStatus.waitingDriver) {
+              // Solicitud pendiente (sin conductor asignado todavía) antes de
+              // un kill de la app -- resume BookingScreen con el diálogo
+              // "Buscando conductor" en vez de perderla silenciosamente.
+              context.goNamed('booking', extra: ride);
+            } else {
+              // Viaje en curso (con conductor asignado en adelante) -- resume
+              // directo en RideTrackingScreen.
+              context.goNamed(rideTrackingRoute.name);
             }
           }
         },

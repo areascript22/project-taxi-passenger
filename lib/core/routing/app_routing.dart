@@ -10,6 +10,7 @@ import 'package:passenger_app/features/profile/presentation/bloc/profile_bloc.da
 import 'package:passenger_app/features/profile/presentation/screen/edit_profile_screen.dart';
 import 'package:passenger_app/features/profile/presentation/screen/profile_screen.dart';
 import 'package:passenger_app/features/profile/presentation/screen/profile_screen_2.dart';
+import 'package:passenger_app/features/ride_tracking/domain/entity/ride_entity.dart';
 import 'package:passenger_app/features/ride_tracking/presentation/screen/ride_tracking_screen.dart';
 import 'package:passenger_app/shared/domain/entity/user_entity.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -59,7 +60,9 @@ class AppRouter {
               GoRoute(
                 path: bookingRoute.route,
                 name: bookingRoute.name,
-                builder: (context, state) => const BookingScreen(),
+                builder:
+                    (context, state) =>
+                        BookingScreen(recoveredRide: state.extra as RideEntity?),
               ),
               GoRoute(
                 path: '/booking2',
