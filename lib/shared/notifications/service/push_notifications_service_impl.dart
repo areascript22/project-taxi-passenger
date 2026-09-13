@@ -48,11 +48,18 @@ class PushNotificationsServiceImpl implements PushNotificationsService {
         (message) => _navigate(message.data['route'] as String?),
       );
 
-      final initialMessage = await _messaging.getInitialMessage();
-      if (initialMessage != null) {
-        final route = initialMessage.data['route'] as String?;
-        WidgetsBinding.instance.addPostFrameCallback((_) => _navigate(route));
-      }
+      // A propósito NO se navega acá con getInitialMessage() (app abierta
+      // tocando la notificación estando completamente cerrada, "cold
+      // start"): en ese momento SessionBloc todavía no corrió su chequeo de
+      // sesión (recién va a arrancar el flujo splash -> SessionScreen), así
+      // que empujar la ruta ahora monta esa pantalla sin sesión resuelta --
+      // RideTrackingScreen resuelve su propio passengerId desde SessionBloc,
+      // así que sin sesión no dispara el tracking y queda sin datos (y no se
+      // reintenta después, porque go_router preserva el estado de la rama al
+      // navegar ahí de nuevo). El flujo normal de sesión ya detecta el viaje
+      // en curso (SessionAuthenticated.hasActiveRide) y navega al mismo
+      // lugar una vez la sesión está resuelta, con los datos completos
+      // (SessionAuthenticated.activeRide).
 
       return const Right(unit);
     } catch (e) {

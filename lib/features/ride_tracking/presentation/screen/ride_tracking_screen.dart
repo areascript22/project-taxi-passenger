@@ -40,6 +40,17 @@ class _RideTrackingViewState extends State<_RideTrackingView> {
     // curso (ver SessionBloc/SessionScreen) -- en el flujo normal (booking
     // -> confirmación) el tracking ya lo arrancó ConfirmationDialog, así que
     // este segundo dispatch es idempotente (solo reinicia la subscripción).
+    _maybeStartTracking(context);
+  }
+
+  // Puede que esta screen se monte antes de que SessionBloc termine de
+  // resolver la sesión (ej. algún flujo de navegación futuro que llegue acá
+  // sin pasar por SessionScreen) -- en ese caso _readPassengerId no
+  // devuelve nada todavía y este primer intento no hace nada. El
+  // BlocListener<SessionBloc> en build() vuelve a llamar a este mismo
+  // método apenas SessionBloc emita SessionAuthenticated, así que el
+  // tracking igual arranca sin depender de en qué orden ocurran las cosas.
+  void _maybeStartTracking(BuildContext context) {
     final passengerId = _readPassengerId(context);
     if (passengerId != null) {
       context.read<RideTrackingBloc>().add(
@@ -82,6 +93,10 @@ class _RideTrackingViewState extends State<_RideTrackingView> {
   }
 
   Future<void> _onTripCompleted(BuildContext context) async {
+    GetIt.instance<FeedbackService>().announce(
+      'Taxi Go te agradece por elegir nuestros servicios.',
+      withVibration: true,
+    );
     await TripCompletedDialog.show(context: context);
 
     if (!context.mounted) return;
@@ -110,9 +125,17 @@ class _RideTrackingViewState extends State<_RideTrackingView> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocListener<RideTrackingBloc, RideTrackingState>(
-      listenWhen: (previous, current) => previous.status != current.status,
-      listener: _onStatusChanged,
+    return MultiBlocListener(
+      listeners: [
+        BlocListener<SessionBloc, SessionState>(
+          listenWhen: (previous, current) => current is SessionAuthenticated,
+          listener: (context, state) => _maybeStartTracking(context),
+        ),
+        BlocListener<RideTrackingBloc, RideTrackingState>(
+          listenWhen: (previous, current) => previous.status != current.status,
+          listener: _onStatusChanged,
+        ),
+      ],
       child: BlocBuilder<RideTrackingBloc, RideTrackingState>(
         builder: (context, state) {
           final driver = state.ride?.driver;

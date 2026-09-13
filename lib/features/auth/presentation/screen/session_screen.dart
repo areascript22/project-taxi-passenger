@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:passenger_app/core/routing/app_routes.dart';
+import 'package:passenger_app/features/ride_tracking/presentation/bloc/ride_tracking_bloc.dart';
 import 'package:passenger_app/shared/presentation/bloc/session/session_bloc.dart';
 
 class SessionScreen extends StatefulWidget {
@@ -34,7 +35,7 @@ class SessionView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: BlocListener<SessionBloc, SessionState>(
+      body: BlocConsumer<SessionBloc, SessionState>(
         listener: (context, state) {
           if (state is SessionUnauthenticated) {
             context.goNamed(signInRoute.name);
@@ -45,17 +46,49 @@ class SessionView extends StatelessWidget {
           }
 
           if (state is SessionAuthenticated) {
-            if (state.hasActiveRide) {
-              // Viaje en curso (con conductor asignado antes de un kill de
-              // la app) -- resume directo en RideTrackingScreen en vez de
-              // BookingScreen.
-              context.goNamed(rideTrackingRoute.name);
-            } else {
+            final ride = state.activeRide;
+            if (ride == null) {
               context.goNamed('booking');
+            } else if (ride.rideStatus == RideTrackingStatus.waitingDriver) {
+              // Solicitud pendiente (sin conductor asignado todavía) antes de
+              // un kill de la app -- resume BookingScreen con el diálogo
+              // "Buscando conductor" en vez de perderla silenciosamente.
+              context.goNamed('booking', extra: ride);
+            } else {
+              // Viaje en curso (con conductor asignado en adelante) -- resume
+              // directo en RideTrackingScreen.
+              context.goNamed(rideTrackingRoute.name);
             }
           }
         },
-        child: const Center(child: CircularProgressIndicator()),
+        builder: (context, state) {
+          if (state is SessionCheckFailed) {
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text(
+                      'No se pudo verificar tu sesión. Revisa tu conexión e '
+                      'intenta de nuevo.',
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: () => context.read<SessionBloc>().add(
+                        SessionCheckRequested(),
+                      ),
+                      child: const Text('Reintentar'),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }
+
+          return const Center(child: CircularProgressIndicator());
+        },
       ),
     );
   }

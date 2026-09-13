@@ -1,4 +1,3 @@
-import 'package:firebase_database/firebase_database.dart';
 import 'package:get_it/get_it.dart';
 import 'package:passenger_app/features/booking/data/repository/booking_repository_impl.dart';
 import 'package:passenger_app/features/booking/data/repository/location_search_repository_impl.dart';
@@ -13,7 +12,7 @@ void initBooking(GetIt sl) {
     () => LocationSearchRepositoryImpl(),
   );
   sl.registerFactory<BookingRepository>(
-    () => BookingRepositoryImpl(database: FirebaseDatabase.instance),
+    () => BookingRepositoryImpl(),
   );
 
   sl.registerFactory(

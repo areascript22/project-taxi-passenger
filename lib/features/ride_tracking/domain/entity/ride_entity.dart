@@ -44,6 +44,12 @@ class RideEntity {
   // normalizar DriverDistanceIndicator. Se escribe una sola vez desde
   // RideTrackingBloc (ver RideTrackingRepository.recordInitialDriverDistance).
   final double? driverInitialDistanceMeters;
+  // Epoch millis (ServerValue.timestamp, resuelto server-side por Firebase --
+  // no depende del reloj del cliente) de cuándo se creó la solicitud. Se usa
+  // para reanudar el countdown de WaitingForDriverDialog con el tiempo real
+  // transcurrido si el pasajero cierra y reabre la app mientras la carrera
+  // sigue 'pending'.
+  final int? createdAtMillis;
 
   RideEntity({
     required this.driver,
@@ -53,6 +59,7 @@ class RideEntity {
     this.pickupLongitude,
     this.pickupAddress,
     this.driverInitialDistanceMeters,
+    this.createdAtMillis,
   });
 
   factory RideEntity.fromJson(Map<String, dynamic> json) {
@@ -75,12 +82,20 @@ class RideEntity {
       pickupAddress: pickupMap?['address'] as String?,
       driverInitialDistanceMeters:
           (driverMap?['initialDistance'] as num?)?.toDouble(),
+      createdAtMillis: (json['createdAt'] as num?)?.toInt(),
     );
   }
 
   static RideTrackingStatus _statusMapper(String? statusString) {
     if (statusString == null) {
       return RideTrackingStatus.initial;
+    }
+
+    // 'pending' es el único status de Firebase sin un enum del mismo nombre
+    // -- todavía no hay conductor asignado, así que se mapea a waitingDriver
+    // en vez de caer al fallback 'initial'.
+    if (statusString.toLowerCase() == 'pending') {
+      return RideTrackingStatus.waitingDriver;
     }
 
     return RideTrackingStatus.values.firstWhere(
