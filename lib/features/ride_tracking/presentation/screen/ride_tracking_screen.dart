@@ -93,6 +93,10 @@ class _RideTrackingViewState extends State<_RideTrackingView> {
   }
 
   Future<void> _onTripCompleted(BuildContext context) async {
+    GetIt.instance<FeedbackService>().announce(
+      'Taxi Go te agradece por elegir nuestros servicios.',
+      withVibration: true,
+    );
     await TripCompletedDialog.show(context: context);
 
     if (!context.mounted) return;

@@ -62,6 +62,22 @@ class _WaitingForDriverDialogState extends State<WaitingForDriverDialog> {
 
   Timer? _timeoutTimer;
 
+  // Duración real que se le dio a _timeoutTimer al arrancar (30s en el flujo
+  // normal, o menos si el diálogo se resumió con parte del tiempo ya
+  // transcurrido -- ver _remainingSearchTime). Ancla del countdown visual:
+  // _displayRemaining se calcula a partir de esta y de cuándo se mostró el
+  // diálogo, nunca reaplicando _minResumeGrace en cada tick (ese piso solo
+  // aplica una vez, al decidir cuánto dura el timer real).
+  late final Duration _initialCountdown;
+  late final DateTime _countdownStartedAt;
+
+  // Valor mostrado en el anillo/chip de countdown, refrescado cada segundo
+  // por _displayTicker. Independiente de _timeoutTimer (que es el que de
+  // verdad dispara la cancelación) para no acoplar la UI a un Timer de
+  // disparo único.
+  Duration _displayRemaining = Duration.zero;
+  Timer? _displayTicker;
+
   // Marca que la próxima cancelación (éxito o falla) del BookingBloc fue
   // disparada por el timeout automático, no por el botón. Así el listener de
   // BookingBloc sabe qué mensaje mostrar sin necesitar un nuevo estado en el
@@ -83,7 +99,21 @@ class _WaitingForDriverDialogState extends State<WaitingForDriverDialog> {
   @override
   void initState() {
     super.initState();
-    _timeoutTimer = Timer(_remainingSearchTime(), _handleSearchTimeout);
+    _initialCountdown = _remainingSearchTime();
+    _countdownStartedAt = DateTime.now();
+    _displayRemaining = _initialCountdown;
+    _timeoutTimer = Timer(_initialCountdown, _handleSearchTimeout);
+    _displayTicker = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (!mounted) return;
+      final elapsed = DateTime.now().difference(_countdownStartedAt);
+      final remaining = _initialCountdown - elapsed;
+      setState(() {
+        _displayRemaining = remaining.isNegative ? Duration.zero : remaining;
+      });
+      if (_displayRemaining == Duration.zero) {
+        _displayTicker?.cancel();
+      }
+    });
   }
 
   // Margen mínimo al resumir una solicitud cuyo timeout ya se cumplió con la
@@ -111,7 +141,103 @@ class _WaitingForDriverDialogState extends State<WaitingForDriverDialog> {
   @override
   void dispose() {
     _timeoutTimer?.cancel();
+    _displayTicker?.cancel();
     super.dispose();
+  }
+
+  // Bajo este umbral, el countdown (anillo + chip) cambia a un tono de
+  // alerta -- mismo criterio visual que el contador de driver_app
+  // (IncomingRequestTile) para el lado del conductor.
+  static const _urgentThreshold = Duration(seconds: 10);
+
+  String _formatCountdown(Duration duration) {
+    final totalSeconds = duration.inSeconds.clamp(0, 3599);
+    final minutes = totalSeconds ~/ 60;
+    final seconds = totalSeconds % 60;
+    return '$minutes:${seconds.toString().padLeft(2, '0')}';
+  }
+
+  // Anillo de progreso alrededor del ícono del taxi: se vacía a medida que
+  // pasa el tiempo, dando una señal ambiental de "se está agotando el
+  // tiempo" sin necesidad de leer un número.
+  Widget _buildCountdownRing(ColorScheme colorScheme) {
+    final progress =
+        _initialCountdown.inMilliseconds == 0
+            ? 0.0
+            : (_displayRemaining.inMilliseconds /
+                    _initialCountdown.inMilliseconds)
+                .clamp(0.0, 1.0);
+    final isUrgent = _displayRemaining <= _urgentThreshold;
+    final ringColor = isUrgent ? colorScheme.error : colorScheme.primary;
+
+    return SizedBox(
+      width: 158,
+      height: 158,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          SizedBox(
+            width: 158,
+            height: 158,
+            child: CircularProgressIndicator(
+              value: progress,
+              strokeWidth: 5,
+              backgroundColor: ringColor.withValues(alpha: 0.15),
+              valueColor: AlwaysStoppedAnimation<Color>(ringColor),
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.all(30),
+            decoration: BoxDecoration(
+              color: colorScheme.primary.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
+            child: SizedBox(
+              width: 88,
+              height: 88,
+              child: Transform.scale(
+                scale: 3.2,
+                child: Lottie.asset(
+                  'assets/animations/taxi_animation.json',
+                  fit: BoxFit.fill,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Chip con el número exacto de segundos restantes -- complementa el
+  // anillo (ambiental) con el dato concreto, para que quede claro por qué
+  // el popup se va a cerrar solo si nadie acepta a tiempo.
+  Widget _buildCountdownChip(ColorScheme colorScheme) {
+    final isUrgent = _displayRemaining <= _urgentThreshold;
+    final chipColor = isUrgent ? colorScheme.error : colorScheme.primary;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: chipColor.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.timer_outlined, size: 14, color: chipColor),
+          const SizedBox(width: 6),
+          Text(
+            'Cancelaremos en ${_formatCountdown(_displayRemaining)}',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: chipColor,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   void _handleSearchTimeout() {
@@ -156,24 +282,7 @@ class _WaitingForDriverDialogState extends State<WaitingForDriverDialog> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Container(
-                padding: const EdgeInsets.all(30),
-                decoration: BoxDecoration(
-                  color: colorScheme.primary.withValues(alpha: 0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: SizedBox(
-                  width: 88,
-                  height: 88,
-                  child: Transform.scale(
-                    scale: 3.2,
-                    child: Lottie.asset(
-                      'assets/animations/taxi_animation.json',
-                      fit: BoxFit.fill,
-                    ),
-                  ),
-                ),
-              ),
+              _buildCountdownRing(colorScheme),
               const SizedBox(height: 20),
               Text(
                 "Buscando conductor...",
@@ -194,7 +303,9 @@ class _WaitingForDriverDialogState extends State<WaitingForDriverDialog> {
                 ),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 28),
+              const SizedBox(height: 16),
+              _buildCountdownChip(colorScheme),
+              const SizedBox(height: 24),
 
               BlocListener<RideTrackingBloc, RideTrackingState>(
                   listenWhen: (previous, current) =>
