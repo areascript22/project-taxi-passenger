@@ -36,6 +36,7 @@ class BookingState {
     String? pickupAddress,
     String? destinationAddress,
     String? errorMessage,
+    bool clearError = false,
   }) {
     return BookingState(
       status: status ?? this.status,
@@ -43,10 +44,7 @@ class BookingState {
       pickupLng: pickupLng ?? this.pickupLng,
       pickupAddress: pickupAddress ?? this.pickupAddress,
       destinationAddress: destinationAddress ?? this.destinationAddress,
-      // If we pass null to errorMessage, we want to clear it,
-      // so we handle it slightly differently if needed,
-      // or just trust the new state emission to override it.
-      errorMessage: errorMessage ?? this.errorMessage,
+      errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
     );
   }
 }

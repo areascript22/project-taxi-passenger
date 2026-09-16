@@ -83,9 +83,7 @@ void main() {
     );
 
     blocTest<LocationBloc, LocationState>(
-      'BUG conocido: pasar errorMessage: null en copyWith no limpia el '
-      'error previo (usa `??`), así que un error anterior persiste aunque '
-      'el nuevo chequeo de permisos haya sido exitoso',
+      'limpia un error previo cuando el nuevo chequeo de permisos es exitoso',
       build: () {
         when(() => locationService.checkAndRequestPermission()).thenAnswer(
           (_) async => const Right(LocationPermission.always),
@@ -102,11 +100,7 @@ void main() {
               'locationProcess',
               LocationProcess.permissionsReady,
             )
-            .having(
-              (s) => s.errorMessage,
-              'errorMessage',
-              'error anterior',
-            ),
+            .having((s) => s.errorMessage, 'errorMessage', isNull),
       ],
     );
   });

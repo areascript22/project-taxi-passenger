@@ -325,7 +325,7 @@ void main() {
     );
 
     blocTest<SessionBloc, SessionState>(
-      'no emite nada nuevo si el sign out falla (re-emite la misma instancia de estado, que Bloc deduplica)',
+      'no emite nada nuevo si el sign out falla (solo hace debugPrint del error)',
       build: () {
         when(
           () => sessionRepository.signOut(),
