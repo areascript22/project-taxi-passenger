@@ -11,6 +11,7 @@ import 'package:passenger_app/features/ride_tracking/presentation/screen/widgets
 import 'package:passenger_app/features/ride_tracking/presentation/screen/widgets/driver_cancelled_dialog.dart';
 import 'package:passenger_app/features/ride_tracking/presentation/screen/widgets/trip_completed_dialog.dart';
 import 'package:passenger_app/features/ride_tracking/presentation/widget/driver_distance_indicator.dart';
+import 'package:passenger_app/shared/chat_presence/service/pending_chat_navigation_tracker.dart';
 import 'package:passenger_app/shared/feedback/feedback_service.dart';
 import 'package:passenger_app/shared/presentation/bloc/session/session_bloc.dart';
 import '../../../../core/routing/app_routes.dart';
@@ -36,6 +37,8 @@ class _RideTrackingView extends StatefulWidget {
 
 class _RideTrackingViewState extends State<_RideTrackingView> {
   final ChatBloc _chatBloc = GetIt.instance<ChatBloc>();
+  final PendingChatNavigationTracker _pendingChat =
+      GetIt.instance<PendingChatNavigationTracker>();
   String? _watchedRideId;
 
   @override
@@ -46,12 +49,30 @@ class _RideTrackingViewState extends State<_RideTrackingView> {
     // -> confirmación) el tracking ya lo arrancó ConfirmationDialog, así que
     // este segundo dispatch es idempotente (solo reinicia la subscripción).
     _maybeStartTracking(context);
+
+    // Cubre los 3 casos de un push de chat tocado (ver
+    // PushNotificationsServiceImpl): si llega mientras esta pantalla sigue
+    // montada (foreground/background con la app viva), el listener
+    // reacciona al instante. El caso cold-start (rideId todavía no
+    // conocido acá) lo cubre _maybeWatchChat de abajo.
+    _pendingChat.pendingRideId.addListener(_onPendingChatChanged);
   }
 
   @override
   void dispose() {
+    _pendingChat.pendingRideId.removeListener(_onPendingChatChanged);
     _chatBloc.add(StopWatchingMessages());
     super.dispose();
+  }
+
+  void _onPendingChatChanged() {
+    final rideId = _watchedRideId;
+    if (rideId == null) return;
+    if (_pendingChat.consumeIfMatches(rideId: rideId)) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _openChat(context, rideId);
+      });
+    }
   }
 
   // El rideId solo se conoce una vez que Firebase entrega el primer
@@ -64,6 +85,10 @@ class _RideTrackingViewState extends State<_RideTrackingView> {
     if (rideId == null || rideId == _watchedRideId) return;
     _watchedRideId = rideId;
     _chatBloc.add(WatchMessages(rideId: rideId));
+    // Por si el push de chat (cold-start) llegó antes de que se conociera
+    // el rideId -- ahora que ya lo sabemos, revisamos si hay un pedido
+    // pendiente de esta misma carrera.
+    _onPendingChatChanged();
   }
 
   void _stopWatchingChat() {

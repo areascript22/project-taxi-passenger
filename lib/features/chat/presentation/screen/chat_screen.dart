@@ -175,13 +175,35 @@ class _MessageBubble extends StatelessWidget {
           color: isMine ? colorScheme.primary : colorScheme.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(16),
         ),
-        child: Text(
-          message.text,
-          style: TextStyle(
-            color: isMine ? colorScheme.onPrimary : colorScheme.onSurface,
-          ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              message.text,
+              style: TextStyle(
+                color: isMine ? colorScheme.onPrimary : colorScheme.onSurface,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              _formatTime(message.createdAt),
+              style: TextStyle(
+                fontSize: 11,
+                color: (isMine ? colorScheme.onPrimary : colorScheme.onSurface)
+                    .withValues(alpha: 0.6),
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
+}
+
+String _formatTime(DateTime dateTime) {
+  final local = dateTime.toLocal();
+  final hour = local.hour.toString().padLeft(2, '0');
+  final minute = local.minute.toString().padLeft(2, '0');
+  return '$hour:$minute';
 }

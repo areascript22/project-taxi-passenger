@@ -5,6 +5,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import '../../../core/error/errors.dart';
 import '../../../core/routing/app_routing.dart';
 import '../../chat_presence/service/chat_presence_tracker.dart';
+import '../../chat_presence/service/pending_chat_navigation_tracker.dart';
 import 'push_notifications_service.dart';
 
 const _androidChannel = AndroidNotificationChannel(
@@ -15,9 +16,13 @@ const _androidChannel = AndroidNotificationChannel(
 );
 
 class PushNotificationsServiceImpl implements PushNotificationsService {
-  PushNotificationsServiceImpl({required this.chatPresenceTracker});
+  PushNotificationsServiceImpl({
+    required this.chatPresenceTracker,
+    required this.pendingChatNavigationTracker,
+  });
 
   final ChatPresenceTracker chatPresenceTracker;
+  final PendingChatNavigationTracker pendingChatNavigationTracker;
   final FirebaseMessaging _messaging = FirebaseMessaging.instance;
   final FlutterLocalNotificationsPlugin _localNotifications =
       FlutterLocalNotificationsPlugin();
@@ -48,22 +53,33 @@ class PushNotificationsServiceImpl implements PushNotificationsService {
       );
 
       FirebaseMessaging.onMessage.listen(_showForegroundNotification);
-      FirebaseMessaging.onMessageOpenedApp.listen(
-        (message) => _navigate(message.data['route'] as String?),
-      );
+      // App en foreground o en background pero con el proceso vivo: en
+      // cualquiera de los dos casos RideTrackingScreen ya está montada
+      // dentro del stack del branch, así que basta con avisarle al tracker
+      // -- su listener reacciona al instante.
+      FirebaseMessaging.onMessageOpenedApp.listen(_handleOpenedMessage);
 
-      // A propósito NO se navega acá con getInitialMessage() (app abierta
-      // tocando la notificación estando completamente cerrada, "cold
-      // start"): en ese momento SessionBloc todavía no corrió su chequeo de
-      // sesión (recién va a arrancar el flujo splash -> SessionScreen), así
-      // que empujar la ruta ahora monta esa pantalla sin sesión resuelta --
-      // RideTrackingScreen resuelve su propio passengerId desde SessionBloc,
-      // así que sin sesión no dispara el tracking y queda sin datos (y no se
-      // reintenta después, porque go_router preserva el estado de la rama al
-      // navegar ahí de nuevo). El flujo normal de sesión ya detecta el viaje
-      // en curso (SessionAuthenticated.hasActiveRide) y navega al mismo
-      // lugar una vez la sesión está resuelta, con los datos completos
+      // A propósito NO se navega acá con getInitialMessage() para rutas
+      // genéricas (app abierta tocando la notificación estando
+      // completamente cerrada, "cold start"): en ese momento SessionBloc
+      // todavía no corrió su chequeo de sesión (recién va a arrancar el
+      // flujo splash -> SessionScreen), así que empujar la ruta ahora monta
+      // esa pantalla sin sesión resuelta -- RideTrackingScreen resuelve su
+      // propio passengerId desde SessionBloc, así que sin sesión no dispara
+      // el tracking y queda sin datos (y no se reintenta después, porque
+      // go_router preserva el estado de la rama al navegar ahí de nuevo).
+      // El flujo normal de sesión ya detecta el viaje en curso
+      // (SessionAuthenticated.hasActiveRide) y navega al mismo lugar una vez
+      // la sesión está resuelta, con los datos completos
       // (SessionAuthenticated.activeRide).
+      //
+      // Para chat sí hace falta dejar constancia del pedido: una vez que
+      // RideTrackingScreen se monte con esa misma carrera (flujo de arriba),
+      // recoge el pendiente y abre el chat encima.
+      final initialMessage = await _messaging.getInitialMessage();
+      if (initialMessage?.data['type'] == 'chat_message') {
+        _requestChatNavigation(initialMessage!.data);
+      }
 
       return const Right(unit);
     } catch (e) {
@@ -101,7 +117,13 @@ class PushNotificationsServiceImpl implements PushNotificationsService {
           ),
           iOS: const DarwinNotificationDetails(),
         ),
-        payload: message.data['route'] as String?,
+        // Los pushes de chat codifican el rideId en el payload (con un
+        // prefijo para distinguirlos) en vez de la route genérica, para que
+        // el tap navegue directo al chat -- ver _navigate.
+        payload:
+            data['type'] == 'chat_message'
+                ? 'chat:${data['rideId']}'
+                : data['route'] as String?,
       );
     } catch (e) {
       debugPrint(
@@ -110,9 +132,33 @@ class PushNotificationsServiceImpl implements PushNotificationsService {
     }
   }
 
-  void _navigate(String? route) {
-    if (route == null || route.isEmpty) return;
-    AppRouter.router.push(route);
+  void _handleOpenedMessage(RemoteMessage message) {
+    if (message.data['type'] == 'chat_message') {
+      _requestChatNavigation(message.data);
+      return;
+    }
+    _navigate(message.data['route'] as String?);
+  }
+
+  void _requestChatNavigation(Map<String, dynamic> data) {
+    final rideId = data['rideId'] as String?;
+    if (rideId == null || rideId.isEmpty) return;
+    pendingChatNavigationTracker.request(rideId: rideId);
+  }
+
+  static const _chatPayloadPrefix = 'chat:';
+
+  void _navigate(String? payload) {
+    if (payload == null || payload.isEmpty) return;
+
+    if (payload.startsWith(_chatPayloadPrefix)) {
+      final rideId = payload.substring(_chatPayloadPrefix.length);
+      if (rideId.isEmpty) return;
+      pendingChatNavigationTracker.request(rideId: rideId);
+      return;
+    }
+
+    AppRouter.router.push(payload);
   }
 
   @override

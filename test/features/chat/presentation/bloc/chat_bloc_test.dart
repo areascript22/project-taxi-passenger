@@ -75,6 +75,25 @@ void main() {
         verify(() => repository.watchMessages(rideId: 'ride_1')).called(1);
       },
     );
+
+    blocTest<ChatBloc, ChatState>(
+      'reports an error message when the messages stream errors out '
+      '(ex. permission-denied de Firestore) en vez de quedarse pegado',
+      build: buildBloc,
+      act: (bloc) async {
+        bloc.add(WatchMessages(rideId: 'ride_1'));
+        await Future.delayed(Duration.zero);
+        messagesController.addError(Exception('permission-denied'));
+      },
+      expect: () => [
+        predicate<ChatState>(
+          (s) =>
+              s.messages.isEmpty &&
+              s.errorMessage ==
+                  'No se pudieron cargar los mensajes. Intenta de nuevo.',
+        ),
+      ],
+    );
   });
 
   group('MarkMessagesRead', () {

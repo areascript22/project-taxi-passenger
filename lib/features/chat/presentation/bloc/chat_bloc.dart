@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:bloc/bloc.dart';
+import 'package:flutter/material.dart';
 import 'package:meta/meta.dart';
 import '../../domain/entity/chat_message_entity.dart';
 import '../../domain/repository/chat_repository.dart';
@@ -11,6 +12,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
   ChatBloc({required this.repository}) : super(const ChatState()) {
     on<WatchMessages>(_onWatch);
     on<_ChatMessagesUpdated>(_onMessagesUpdated);
+    on<_ChatMessagesErrored>(_onMessagesErrored);
     on<SendMessage>(_onSendMessage);
     on<MarkMessagesRead>(_onMarkRead);
     on<StopWatchingMessages>(_onStop);
@@ -30,7 +32,10 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     _lastReadAt = null;
     _subscription = repository
         .watchMessages(rideId: event.rideId)
-        .listen((messages) => add(_ChatMessagesUpdated(messages)));
+        .listen(
+          (messages) => add(_ChatMessagesUpdated(messages)),
+          onError: (Object error) => add(_ChatMessagesErrored(error)),
+        );
   }
 
   void _onMessagesUpdated(_ChatMessagesUpdated event, Emitter<ChatState> emit) {
@@ -45,6 +50,15 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
             .length;
 
     emit(state.copyWith(messages: event.messages, unreadCount: unreadCount));
+  }
+
+  void _onMessagesErrored(_ChatMessagesErrored event, Emitter<ChatState> emit) {
+    debugPrint('ChatDebug | Error en watchMessages: ${event.error}');
+    emit(
+      state.copyWith(
+        errorMessage: 'No se pudieron cargar los mensajes. Intenta de nuevo.',
+      ),
+    );
   }
 
   Future<void> _onSendMessage(SendMessage event, Emitter<ChatState> emit) async {
