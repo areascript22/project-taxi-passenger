@@ -31,6 +31,11 @@ class DriverEntity {
 class RideEntity {
   final DriverEntity driver;
   final RideTrackingStatus rideStatus;
+  // Id único de la carrera ({passengerId}_{timestamp}, ver
+  // RideService.requestRide) -- distinto del passengerId, que es la clave
+  // del nodo en Realtime Database. Lo usa el feature de chat para saber en
+  // qué colección de Firestore escuchar los mensajes.
+  final String? rideId;
   // Quién canceló el viaje ('passenger' | 'driver'), solo relevante cuando
   // rideStatus == cancelled.
   final String? cancelledBy;
@@ -54,6 +59,7 @@ class RideEntity {
   RideEntity({
     required this.driver,
     this.rideStatus = RideTrackingStatus.initial,
+    this.rideId,
     this.cancelledBy,
     this.pickupLatitude,
     this.pickupLongitude,
@@ -76,6 +82,7 @@ class RideEntity {
     return RideEntity(
       driver: DriverEntity.fromJson(driverMap),
       rideStatus: _statusMapper(json['status'] as String?),
+      rideId: json['rideId'] as String?,
       cancelledBy: json['cancelledBy'] as String?,
       pickupLatitude: (pickupMap?['latitude'] as num?)?.toDouble(),
       pickupLongitude: (pickupMap?['longitude'] as num?)?.toDouble(),

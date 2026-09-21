@@ -39,6 +39,7 @@ void main() {
     test('mapea un ride completo con status conocido', () {
       final ride = RideEntity.fromJson({
         'status': 'driverAssigned',
+        'rideId': 'p1_1234567890',
         'cancelledBy': null,
         'driver': {
           'data': {'displayName': 'Ana', 'photoUrl': 'p.png'},
@@ -54,6 +55,7 @@ void main() {
       });
 
       expect(ride.rideStatus, RideTrackingStatus.driverAssigned);
+      expect(ride.rideId, 'p1_1234567890');
       expect(ride.driver.name, 'Ana');
       expect(ride.driver.latitude, 1.0);
       expect(ride.pickupLatitude, 10.0);
@@ -79,6 +81,12 @@ void main() {
       final ride = RideEntity.fromJson({});
 
       expect(ride.rideStatus, RideTrackingStatus.initial);
+    });
+
+    test('rideId ausente queda en null', () {
+      final ride = RideEntity.fromJson({'status': 'driverAssigned'});
+
+      expect(ride.rideId, isNull);
     });
 
     test('status es case-insensitive', () {

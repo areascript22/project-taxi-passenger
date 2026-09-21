@@ -315,6 +315,7 @@ del otro. Ejemplo de tabla para un proyecto:
 | Trip                    | `TripDebug \|`         |
 | Payments                | `PaymentsDebug \|`     |
 | Notifications           | `NotificationsDebug \|`|
+| Chat                     | `ChatDebug \|`         |
 
 Cuando se cree un feature nuevo sin prefijo definido en esta tabla, se debe
 crear uno consistente con el nombre del feature (ej. `Chat` → `ChatDebug |`)

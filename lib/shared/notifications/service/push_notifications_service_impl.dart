@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import '../../../core/error/errors.dart';
 import '../../../core/routing/app_routing.dart';
+import '../../chat_presence/service/chat_presence_tracker.dart';
 import 'push_notifications_service.dart';
 
 const _androidChannel = AndroidNotificationChannel(
@@ -14,6 +15,9 @@ const _androidChannel = AndroidNotificationChannel(
 );
 
 class PushNotificationsServiceImpl implements PushNotificationsService {
+  PushNotificationsServiceImpl({required this.chatPresenceTracker});
+
+  final ChatPresenceTracker chatPresenceTracker;
   final FirebaseMessaging _messaging = FirebaseMessaging.instance;
   final FlutterLocalNotificationsPlugin _localNotifications =
       FlutterLocalNotificationsPlugin();
@@ -73,6 +77,14 @@ class PushNotificationsServiceImpl implements PushNotificationsService {
   Future<void> _showForegroundNotification(RemoteMessage message) async {
     final notification = message.notification;
     if (notification == null) return;
+
+    // El chat de esa misma carrera ya está abierto y renderiza el mensaje
+    // en vivo vía su stream de Firestore: mostrar el banner sería duplicado.
+    final data = message.data;
+    if (data['type'] == 'chat_message' &&
+        chatPresenceTracker.isOpen(rideId: data['rideId'] as String? ?? '')) {
+      return;
+    }
 
     try {
       await _localNotifications.show(
