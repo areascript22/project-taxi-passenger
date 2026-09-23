@@ -3,6 +3,7 @@ import 'package:passenger_app/core/routing/app_routes.dart';
 import 'package:passenger_app/features/auth/presentation/screen/session_screen.dart';
 import 'package:passenger_app/features/auth/presentation/screen/sign_in_screen.dart';
 import 'package:passenger_app/features/booking/presentation/screen/booking_sccreen.dart';
+import 'package:passenger_app/features/chat/presentation/screen/chat_screen.dart';
 import 'package:passenger_app/features/booking/presentation/screen/booking_sccreen_2.dart';
 import 'package:passenger_app/features/map/presentation/screen/map_picker_screen.dart';
 import 'package:passenger_app/features/passenger_profile/presentation/screen/passenger_onboarding_screen.dart';
@@ -74,6 +75,18 @@ class AppRouter {
                 path: rideTrackingRoute.route,
                 name: rideTrackingRoute.name,
                 builder: (context, state) => const RideTrackingScreen(),
+              ),
+
+              GoRoute(
+                path: chatRoute.route,
+                name: chatRoute.name,
+                builder: (context, state) {
+                  final args = state.extra as ChatScreenArgs;
+                  return ChatScreen(
+                    rideId: args.rideId,
+                    passengerId: args.passengerId,
+                  );
+                },
               ),
 
               GoRoute(

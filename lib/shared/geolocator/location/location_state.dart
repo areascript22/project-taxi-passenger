@@ -29,11 +29,12 @@ class LocationState {
     UserLocation? lastKnownLocation,
     String? errorMessage,
     LocationProcess? locationProcess,
+    bool clearError = false,
   }) {
     return LocationState(
       permissionStatus: permissionStatus ?? this.permissionStatus,
       lastKnownLocation: lastKnownLocation ?? this.lastKnownLocation,
-      errorMessage: errorMessage ?? this.errorMessage,
+      errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
       locationProcess: locationProcess ?? this.locationProcess,
     );
   }

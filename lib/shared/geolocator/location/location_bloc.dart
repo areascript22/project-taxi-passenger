@@ -39,7 +39,7 @@ class LocationBloc extends Bloc<LocationEvent, LocationState> {
           state.copyWith(
             locationProcess: LocationProcess.permissionsReady,
             permissionStatus: locationPermission,
-            errorMessage: null,
+            clearError: true,
           ),
         );
       },

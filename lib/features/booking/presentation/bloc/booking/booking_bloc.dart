@@ -34,7 +34,7 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
         pickupLat: event.latitude,
         pickupLng: event.longitude,
         // We clear any previous errors when starting a new request
-        errorMessage: null,
+        clearError: true,
       ),
     );
 

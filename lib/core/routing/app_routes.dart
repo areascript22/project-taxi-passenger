@@ -36,6 +36,12 @@ const rideTrackingRoute = NavigationEntity(
   route: '/ride_tracking',
 );
 
+const chatRoute = NavigationEntity(
+  key: 'chat_route_key',
+  name: 'chat',
+  route: '/ride_tracking/chat',
+);
+
 const bookingRoute = NavigationEntity(
   key: 'booking_route_key',
   name: 'booking',

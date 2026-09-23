@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
 import 'package:go_router/go_router.dart';
+import 'package:passenger_app/features/chat/presentation/bloc/chat_bloc.dart';
+import 'package:passenger_app/features/chat/presentation/screen/chat_screen.dart';
 import 'package:passenger_app/features/ride_tracking/domain/entity/ride_entity.dart';
 import 'package:passenger_app/features/ride_tracking/presentation/bloc/ride_tracking_bloc.dart';
 import 'package:passenger_app/features/ride_tracking/presentation/screen/widgets/confirm_cancel_ride_dialog.dart';
@@ -9,6 +11,7 @@ import 'package:passenger_app/features/ride_tracking/presentation/screen/widgets
 import 'package:passenger_app/features/ride_tracking/presentation/screen/widgets/driver_cancelled_dialog.dart';
 import 'package:passenger_app/features/ride_tracking/presentation/screen/widgets/trip_completed_dialog.dart';
 import 'package:passenger_app/features/ride_tracking/presentation/widget/driver_distance_indicator.dart';
+import 'package:passenger_app/shared/chat_presence/service/pending_chat_navigation_tracker.dart';
 import 'package:passenger_app/shared/feedback/feedback_service.dart';
 import 'package:passenger_app/shared/presentation/bloc/session/session_bloc.dart';
 import '../../../../core/routing/app_routes.dart';
@@ -33,6 +36,11 @@ class _RideTrackingView extends StatefulWidget {
 }
 
 class _RideTrackingViewState extends State<_RideTrackingView> {
+  final ChatBloc _chatBloc = GetIt.instance<ChatBloc>();
+  final PendingChatNavigationTracker _pendingChat =
+      GetIt.instance<PendingChatNavigationTracker>();
+  String? _watchedRideId;
+
   @override
   void initState() {
     super.initState();
@@ -41,6 +49,51 @@ class _RideTrackingViewState extends State<_RideTrackingView> {
     // -> confirmación) el tracking ya lo arrancó ConfirmationDialog, así que
     // este segundo dispatch es idempotente (solo reinicia la subscripción).
     _maybeStartTracking(context);
+
+    // Cubre los 3 casos de un push de chat tocado (ver
+    // PushNotificationsServiceImpl): si llega mientras esta pantalla sigue
+    // montada (foreground/background con la app viva), el listener
+    // reacciona al instante. El caso cold-start (rideId todavía no
+    // conocido acá) lo cubre _maybeWatchChat de abajo.
+    _pendingChat.pendingRideId.addListener(_onPendingChatChanged);
+  }
+
+  @override
+  void dispose() {
+    _pendingChat.pendingRideId.removeListener(_onPendingChatChanged);
+    _chatBloc.add(StopWatchingMessages());
+    super.dispose();
+  }
+
+  void _onPendingChatChanged() {
+    final rideId = _watchedRideId;
+    if (rideId == null) return;
+    if (_pendingChat.consumeIfMatches(rideId: rideId)) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _openChat(context, rideId);
+      });
+    }
+  }
+
+  // El rideId solo se conoce una vez que Firebase entrega el primer
+  // snapshot del viaje (no está disponible al montar la screen) -- por eso
+  // esto se llama desde el BlocListener<RideTrackingBloc> en vez de desde
+  // initState, y es idempotente por rideId para no reiniciar la
+  // suscripción del chat en cada RideUpdated.
+  void _maybeWatchChat(RideEntity? ride) {
+    final rideId = ride?.rideId;
+    if (rideId == null || rideId == _watchedRideId) return;
+    _watchedRideId = rideId;
+    _chatBloc.add(WatchMessages(rideId: rideId));
+    // Por si el push de chat (cold-start) llegó antes de que se conociera
+    // el rideId -- ahora que ya lo sabemos, revisamos si hay un pedido
+    // pendiente de esta misma carrera.
+    _onPendingChatChanged();
+  }
+
+  void _stopWatchingChat() {
+    _watchedRideId = null;
+    _chatBloc.add(StopWatchingMessages());
   }
 
   // Puede que esta screen se monte antes de que SessionBloc termine de
@@ -71,6 +124,7 @@ class _RideTrackingViewState extends State<_RideTrackingView> {
     }
 
     if (!context.mounted) return;
+    _stopWatchingChat();
     context.read<RideTrackingBloc>().add(StopRideTracking());
     context.go(bookingRoute.route);
   }
@@ -100,8 +154,19 @@ class _RideTrackingViewState extends State<_RideTrackingView> {
     await TripCompletedDialog.show(context: context);
 
     if (!context.mounted) return;
+    _stopWatchingChat();
     context.read<RideTrackingBloc>().add(StopRideTracking());
     context.go(bookingRoute.route);
+  }
+
+  void _openChat(BuildContext context, String rideId) {
+    final passengerId = _readPassengerId(context);
+    if (passengerId == null) return;
+
+    context.push(
+      chatRoute.route,
+      extra: ChatScreenArgs(rideId: rideId, passengerId: passengerId),
+    );
   }
 
   Future<void> _onStatusChanged(
@@ -135,6 +200,11 @@ class _RideTrackingViewState extends State<_RideTrackingView> {
           listenWhen: (previous, current) => previous.status != current.status,
           listener: _onStatusChanged,
         ),
+        BlocListener<RideTrackingBloc, RideTrackingState>(
+          listenWhen:
+              (previous, current) => previous.ride?.rideId != current.ride?.rideId,
+          listener: (context, state) => _maybeWatchChat(state.ride),
+        ),
       ],
       child: BlocBuilder<RideTrackingBloc, RideTrackingState>(
         builder: (context, state) {
@@ -146,7 +216,7 @@ class _RideTrackingViewState extends State<_RideTrackingView> {
                 padding: const EdgeInsets.symmetric(horizontal: 20.0),
                 child: Column(
                   children: [
-                    _buildHeader(context),
+                    _buildHeader(context, state.ride?.rideId),
 
                     Expanded(
                       child: SingleChildScrollView(
@@ -178,13 +248,14 @@ class _RideTrackingViewState extends State<_RideTrackingView> {
     );
   }
 
-  Widget _buildHeader(BuildContext context) {
+  Widget _buildHeader(BuildContext context, String? rideId) {
     final onSurface = Theme.of(context).colorScheme.onSurface;
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 20),
       child: Row(
         children: [
+          const SizedBox(width: 40),
           Expanded(
             child: Center(
               child: Text(
@@ -198,7 +269,22 @@ class _RideTrackingViewState extends State<_RideTrackingView> {
               ),
             ),
           ),
-          const SizedBox(width: 40),
+          if (rideId == null)
+            const SizedBox(width: 40)
+          else
+            BlocBuilder<ChatBloc, ChatState>(
+              bloc: _chatBloc,
+              builder: (context, state) {
+                return IconButton(
+                  onPressed: () => _openChat(context, rideId),
+                  icon: Badge(
+                    label: Text('${state.unreadCount}'),
+                    isLabelVisible: state.unreadCount > 0,
+                    child: const Icon(Icons.chat_bubble_outline_rounded),
+                  ),
+                );
+              },
+            ),
         ],
       ),
     );

@@ -315,6 +315,7 @@ del otro. Ejemplo de tabla para un proyecto:
 | Trip                    | `TripDebug \|`         |
 | Payments                | `PaymentsDebug \|`     |
 | Notifications           | `NotificationsDebug \|`|
+| Chat                     | `ChatDebug \|`         |
 
 Cuando se cree un feature nuevo sin prefijo definido en esta tabla, se debe
 crear uno consistente con el nombre del feature (ej. `Chat` → `ChatDebug |`)
@@ -336,6 +337,7 @@ Antes de dar por terminado un repositorio o servicio, verificar que:
 - [ ] El `catch` usa `debugPrint` con el prefijo de contexto correcto.
 - [ ] El `catch` retorna `Left(Failure(...))`, nunca relanza la excepción.
 - [ ] Si el repositorio/servicio es nuevo, está registrado en su `di/` correspondiente.
+- [ ] Tiene su test correspondiente (ver sección 9) — nuevo si no existía, actualizado si ya existía.
 
 ---
 
@@ -356,3 +358,55 @@ features/<feature_name>/
  └─ di/
      └─ <feature_name>_service_locator.dart
 ```
+
+---
+
+## 9. Tests obligatorios (unit tests y bloc/cubit tests)
+
+El proyecto usa `mocktail` (mocks sin codegen) y `bloc_test` (para probar
+Blocs/Cubits) como `dev_dependencies`. **Todo cambio grande debe venir
+acompañado de sus tests**, no es opcional ni se deja "para después".
+
+Se considera cambio grande: agregar o modificar un **repositorio**, un
+**servicio**, un **helper/util** (lógica pura, sin SDK de por medio), o un
+**Bloc/Cubit** (evento nuevo, estado nuevo, cambio de comportamiento en un
+handler existente).
+
+Regla simple: **si el archivo que tocaste ya tiene test, actualizalo para
+cubrir el cambio. Si no tiene test, creale uno antes de dar la tarea por
+terminada.** No se debe entregar un repositorio, helper o Bloc/Cubit nuevo
+(ni una modificación relevante de uno existente) sin su test.
+
+**Ubicación:** los tests viven en `test/`, replicando la ruta de `lib/`.
+Ejemplo: `lib/features/auth/presentation/bloc/auth_bloc.dart` →
+`test/features/auth/presentation/bloc/auth_bloc_test.dart`.
+
+**Qué cubrir según el tipo de archivo:**
+
+- **Repositorios/servicios:** mockear sus dependencias (Dio, SDKs, otros
+  repositorios) con `mocktail`. Cubrir el camino feliz (`Right(...)`) y el
+  camino de error (`Left(Failure(...))`), además de variantes relevantes
+  (listas vacías, valores opcionales nulos, excepciones distintas si el
+  `catch` las distingue).
+- **Helpers/utils puros** (sin dependencias pesadas de Flutter/plugins):
+  unit tests directos sin mocks, cubriendo casos borde (valores límite,
+  nulls, colecciones vacías, etc.).
+- **Blocs/Cubits:** usar `blocTest<XxxBloc, XxxState>(...)` de `bloc_test`,
+  mockeando con `mocktail` los repositorios/servicios inyectados por
+  constructor. Por cada evento, cubrir como mínimo:
+  - Estado inicial correcto.
+  - Camino feliz (repo/servicio devuelve `Right(...)`).
+  - Camino de error (repo/servicio devuelve `Left(Failure(...))`).
+  - Condiciones de guarda que hacen que el evento se ignore (no-op).
+  - Si el Bloc escucha un `Stream` (Firebase, Geolocator, etc.), verificar
+    la secuencia completa de estados emitidos, incluyendo el caso en que el
+    stream emite un error.
+  - Que se llaman los métodos correctos del mock con los argumentos
+    esperados (`verify(...)`).
+
+**Antes de dar el trabajo por terminado:** correr `flutter test` (el
+archivo de test nuevo/modificado como mínimo, idealmente la suite completa)
+y confirmar que todo pasa en verde. Si al escribir el test se descubre un
+bug real en el código de producción, no lo corrijas por tu cuenta sin
+avisar: documentalo en el test o en tu respuesta y preguntá antes de
+tocar código de producción no relacionado con el cambio pedido.
