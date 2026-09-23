@@ -4,6 +4,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:passenger_app/core/error/errors.dart';
 import '../../../../core/network/dio_client.dart';
 import '../../domain/repository/geocoding_repository.dart';
+import '../../utils/geocoding_result_parser.dart';
 
 class GeocodingRepositoryImpl implements GeocodingRepository {
   @override
@@ -29,9 +30,22 @@ class GeocodingRepositoryImpl implements GeocodingRepository {
         if (data['status'] == 'OK' &&
             data['results'] != null &&
             data['results'].isNotEmpty) {
-          final String formattedAddress =
-              data['results'][0]['formatted_address'];
-          return Right(formattedAddress);
+          final address = GeocodingResultParser.pickBestAddress(
+            results: data['results'] as List<dynamic>,
+            latitude: lat,
+            longitude: lng,
+          );
+
+          if (address != null && address.isNotEmpty) {
+            return Right(address);
+          }
+
+          return Left(
+            Failure(
+              message:
+                  'No se pudo encontrar una dirección legible para esta ubicación.',
+            ),
+          );
         } else {
           return Left(
             Failure(
