@@ -295,15 +295,36 @@ class _RideTrackingViewState extends State<_RideTrackingView> {
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: _cardDecoration(context),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildDriverPhoto(context, driver),
-          const SizedBox(width: 16),
-          Expanded(child: _buildDriverInfo(context, driver)),
-          _buildCallButton(context),
+          Row(
+            children: [
+              _buildDriverPhoto(context, driver),
+              const SizedBox(width: 16),
+              Expanded(child: _buildDriverInfo(context, driver)),
+            ],
+          ),
+          if (_hasVehicleInfo(driver)) ...[
+            const SizedBox(height: 16),
+            Divider(
+              height: 1,
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08),
+            ),
+            const SizedBox(height: 16),
+            _buildVehicleInfo(context, driver!),
+          ],
         ],
       ),
     );
+  }
+
+  bool _hasVehicleInfo(DriverEntity? driver) {
+    if (driver == null) return false;
+    return driver.vehicleBrand.isNotEmpty ||
+        driver.vehicleModel.isNotEmpty ||
+        driver.vehiclePlate.isNotEmpty ||
+        driver.vehicleColor.isNotEmpty;
   }
 
   Widget _buildDriverPhoto(BuildContext context, DriverEntity? driver) {
@@ -367,18 +388,63 @@ class _RideTrackingViewState extends State<_RideTrackingView> {
     );
   }
 
-  Widget _buildCallButton(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+  Widget _buildVehicleInfo(BuildContext context, DriverEntity driver) {
+    final onSurface = Theme.of(context).colorScheme.onSurface;
+    final vehicleLabel = [
+      driver.vehicleBrand,
+      driver.vehicleModel,
+    ].where((part) => part.isNotEmpty).join(' ');
 
-    return Container(
-      width: 44,
-      height: 44,
-      decoration: BoxDecoration(shape: BoxShape.circle, color: colorScheme.primary),
-      child: IconButton(
-        onPressed: () {},
-        icon: Icon(Icons.phone_rounded, color: colorScheme.onPrimary, size: 22),
-        padding: EdgeInsets.zero,
-      ),
+    return Row(
+      children: [
+        if (vehicleLabel.isNotEmpty || driver.vehicleColor.isNotEmpty)
+          Expanded(
+            child: Row(
+              children: [
+                Icon(
+                  Icons.directions_car_filled_rounded,
+                  size: 18,
+                  color: onSurface.withValues(alpha: 0.6),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    [
+                      vehicleLabel,
+                      driver.vehicleColor,
+                    ].where((part) => part.isNotEmpty).join(' · '),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: onSurface.withValues(alpha: 0.8),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        if (driver.vehiclePlate.isNotEmpty) ...[
+          const SizedBox(width: 12),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: onSurface.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Text(
+              driver.vehiclePlate.toUpperCase(),
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.5,
+                color: onSurface,
+              ),
+            ),
+          ),
+        ],
+      ],
     );
   }
 

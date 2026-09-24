@@ -9,18 +9,36 @@ void main() {
 
       expect(driver.name, '');
       expect(driver.photo, '');
+      expect(driver.phoneNumber, '');
+      expect(driver.vehiclePlate, '');
+      expect(driver.vehicleBrand, '');
+      expect(driver.vehicleModel, '');
+      expect(driver.vehicleColor, '');
       expect(driver.latitude, isNull);
       expect(driver.longitude, isNull);
     });
 
-    test('parsea data y location anidados', () {
+    test('parsea data y location anidados, incluyendo teléfono y vehículo', () {
       final driver = DriverEntity.fromJson({
-        'data': {'displayName': 'Juan Pérez', 'photoUrl': 'http://x/p.png'},
+        'data': {
+          'displayName': 'Juan Pérez',
+          'photoUrl': 'http://x/p.png',
+          'phoneNumber': '099123456',
+          'vehiclePlate': 'ABC-1234',
+          'vehicleBrand': 'Toyota',
+          'vehicleModel': 'Corolla',
+          'vehicleColor': 'Blanco',
+        },
         'location': {'latitude': -34.1, 'longitude': -58.2},
       });
 
       expect(driver.name, 'Juan Pérez');
       expect(driver.photo, 'http://x/p.png');
+      expect(driver.phoneNumber, '099123456');
+      expect(driver.vehiclePlate, 'ABC-1234');
+      expect(driver.vehicleBrand, 'Toyota');
+      expect(driver.vehicleModel, 'Corolla');
+      expect(driver.vehicleColor, 'Blanco');
       expect(driver.latitude, -34.1);
       expect(driver.longitude, -58.2);
     });
@@ -30,8 +48,24 @@ void main() {
 
       expect(driver.name, '');
       expect(driver.photo, '');
+      expect(driver.phoneNumber, '');
+      expect(driver.vehiclePlate, '');
+      expect(driver.vehicleBrand, '');
+      expect(driver.vehicleModel, '');
+      expect(driver.vehicleColor, '');
       expect(driver.latitude, isNull);
       expect(driver.longitude, isNull);
+    });
+
+    test('vehiculo ausente en data cae a valores por defecto', () {
+      final driver = DriverEntity.fromJson({
+        'data': {'displayName': 'Ana', 'photoUrl': 'p.png'},
+      });
+
+      expect(driver.vehiclePlate, '');
+      expect(driver.vehicleBrand, '');
+      expect(driver.vehicleModel, '');
+      expect(driver.vehicleColor, '');
     });
   });
 
