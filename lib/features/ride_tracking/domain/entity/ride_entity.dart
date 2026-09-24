@@ -3,12 +3,22 @@ import 'package:passenger_app/features/ride_tracking/presentation/bloc/ride_trac
 class DriverEntity {
   final String name;
   final String photo;
+  final String phoneNumber;
+  final String vehiclePlate;
+  final String vehicleBrand;
+  final String vehicleModel;
+  final String vehicleColor;
   final double? latitude;
   final double? longitude;
 
   DriverEntity({
     required this.name,
     required this.photo,
+    this.phoneNumber = '',
+    this.vehiclePlate = '',
+    this.vehicleBrand = '',
+    this.vehicleModel = '',
+    this.vehicleColor = '',
     this.latitude,
     this.longitude,
   });
@@ -22,6 +32,11 @@ class DriverEntity {
     return DriverEntity(
       name: data?['displayName'] as String? ?? '',
       photo: data?['photoUrl'] as String? ?? '',
+      phoneNumber: data?['phoneNumber'] as String? ?? '',
+      vehiclePlate: data?['vehiclePlate'] as String? ?? '',
+      vehicleBrand: data?['vehicleBrand'] as String? ?? '',
+      vehicleModel: data?['vehicleModel'] as String? ?? '',
+      vehicleColor: data?['vehicleColor'] as String? ?? '',
       latitude: (location?['latitude'] as num?)?.toDouble(),
       longitude: (location?['longitude'] as num?)?.toDouble(),
     );
