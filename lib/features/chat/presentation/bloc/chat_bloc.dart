@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:bloc/bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:meta/meta.dart';
+import '../../../../shared/connectivity/domain/repository/connectivity_repository.dart';
 import '../../domain/entity/chat_message_entity.dart';
 import '../../domain/repository/chat_repository.dart';
 
@@ -9,13 +10,16 @@ part 'chat_event.dart';
 part 'chat_state.dart';
 
 class ChatBloc extends Bloc<ChatEvent, ChatState> {
-  ChatBloc({required this.repository}) : super(const ChatState()) {
+  ChatBloc({required this.repository, required this.connectivityRepository})
+    : super(const ChatState()) {
     on<WatchMessages>(_onWatch);
     on<_ChatMessagesUpdated>(_onMessagesUpdated);
     on<_ChatMessagesErrored>(_onMessagesErrored);
     on<SendMessage>(_onSendMessage);
     on<MarkMessagesRead>(_onMarkRead);
     on<StopWatchingMessages>(_onStop);
+    on<_ConnectivityRestored>(_onConnectivityRestored);
+    _startWatchingConnectivity();
   }
 
   // Desde el punto de vista del pasajero, "sin leer" son los mensajes que
@@ -24,18 +28,39 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
   static const _otherSenderRole = 'driver';
 
   final ChatRepository repository;
+  final ConnectivityRepository connectivityRepository;
   StreamSubscription<List<ChatMessageEntity>>? _subscription;
+  StreamSubscription<bool>? _connectivitySubscription;
   DateTime? _lastReadAt;
 
+  // rideId de la última carrera para la que se pidió WatchMessages. Se usa
+  // para poder re-suscribir el stream de Firestore cuando vuelve la
+  // conexión, sin depender de que la pantalla de chat siga montada (este
+  // Bloc es singleton -- ver chat_service_locator.dart).
+  String? _currentRideId;
+
   void _onWatch(WatchMessages event, Emitter<ChatState> emit) {
-    _subscription?.cancel();
+    _currentRideId = event.rideId;
     _lastReadAt = null;
-    _subscription = repository
-        .watchMessages(rideId: event.rideId)
-        .listen(
-          (messages) => add(_ChatMessagesUpdated(messages)),
-          onError: (Object error) => add(_ChatMessagesErrored(error)),
-        );
+    _subscribeToMessages(event.rideId);
+  }
+
+  void _subscribeToMessages(String rideId) {
+    _subscription?.cancel();
+    try {
+      _subscription = repository
+          .watchMessages(rideId: rideId)
+          .listen(
+            (messages) => add(_ChatMessagesUpdated(messages)),
+            onError: (Object error) => add(_ChatMessagesErrored(error)),
+          );
+    } catch (e) {
+      debugPrint(
+        'ChatDebug | Error inesperado al suscribirse a watchMessages '
+        '(rideId=$rideId): $e',
+      );
+      add(_ChatMessagesErrored(e));
+    }
   }
 
   void _onMessagesUpdated(_ChatMessagesUpdated event, Emitter<ChatState> emit) {
@@ -49,7 +74,16 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
             )
             .length;
 
-    emit(state.copyWith(messages: event.messages, unreadCount: unreadCount));
+    // Un stream que vuelve a emitir con datos es la señal de que ya está
+    // sano -- limpia cualquier errorMessage que hubiera quedado de un corte
+    // de conexión anterior (ver _onMessagesErrored/_onConnectivityRestored).
+    emit(
+      state.copyWith(
+        messages: event.messages,
+        unreadCount: unreadCount,
+        errorMessage: null,
+      ),
+    );
   }
 
   void _onMessagesErrored(_ChatMessagesErrored event, Emitter<ChatState> emit) {
@@ -86,12 +120,57 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     await _subscription?.cancel();
     _subscription = null;
     _lastReadAt = null;
+    _currentRideId = null;
     emit(const ChatState());
+  }
+
+  void _startWatchingConnectivity() {
+    try {
+      _connectivitySubscription = connectivityRepository.watchConnection().listen(
+        (isOnline) {
+          if (isOnline) add(_ConnectivityRestored());
+        },
+        onError: (Object error) {
+          debugPrint(
+            'ChatDebug | Error en el stream de watchConnection: $error',
+          );
+        },
+      );
+    } catch (e) {
+      debugPrint(
+        'ChatDebug | Error inesperado al suscribirse a watchConnection: $e',
+      );
+    }
+  }
+
+  // Si el stream de Firestore quedó "colgado" tras un corte de conexión
+  // largo (no siempre se recupera solo -- ver análisis de este bug en la
+  // conversación del proyecto) o nunca llegó a suscribirse, se reintenta acá
+  // apenas vuelve la conexión. Si ya está sano (con subscription activa y
+  // sin error), no se toca -- resuscribirse en cada parpadeo de red sería
+  // ruido innecesario sobre Firestore.
+  void _onConnectivityRestored(
+    _ConnectivityRestored event,
+    Emitter<ChatState> emit,
+  ) {
+    final rideId = _currentRideId;
+    if (rideId == null) return;
+
+    final needsReconnect = _subscription == null || state.errorMessage != null;
+    if (!needsReconnect) return;
+
+    debugPrint(
+      'ChatDebug | Conexión restaurada, reintentando watchMessages '
+      '(rideId=$rideId)',
+    );
+    emit(state.copyWith(errorMessage: null));
+    _subscribeToMessages(rideId);
   }
 
   @override
   Future<void> close() {
     _subscription?.cancel();
+    _connectivitySubscription?.cancel();
     return super.close();
   }
 }

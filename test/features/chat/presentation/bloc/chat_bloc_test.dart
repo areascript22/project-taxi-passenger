@@ -8,8 +8,12 @@ import 'package:passenger_app/core/error/errors.dart';
 import 'package:passenger_app/features/chat/domain/entity/chat_message_entity.dart';
 import 'package:passenger_app/features/chat/domain/repository/chat_repository.dart';
 import 'package:passenger_app/features/chat/presentation/bloc/chat_bloc.dart';
+import 'package:passenger_app/shared/connectivity/domain/repository/connectivity_repository.dart';
 
 class MockChatRepository extends Mock implements ChatRepository {}
+
+class MockConnectivityRepository extends Mock
+    implements ConnectivityRepository {}
 
 ChatMessageEntity _message({
   required String id,
@@ -28,22 +32,33 @@ ChatMessageEntity _message({
 
 void main() {
   late MockChatRepository repository;
+  late MockConnectivityRepository connectivityRepository;
   late StreamController<List<ChatMessageEntity>> messagesController;
+  late StreamController<bool> connectivityController;
 
   setUp(() {
     repository = MockChatRepository();
+    connectivityRepository = MockConnectivityRepository();
     messagesController = StreamController<List<ChatMessageEntity>>.broadcast();
+    connectivityController = StreamController<bool>.broadcast();
 
     when(
       () => repository.watchMessages(rideId: any(named: 'rideId')),
     ).thenAnswer((_) => messagesController.stream);
+    when(
+      () => connectivityRepository.watchConnection(),
+    ).thenAnswer((_) => connectivityController.stream);
   });
 
   tearDown(() {
     messagesController.close();
+    connectivityController.close();
   });
 
-  ChatBloc buildBloc() => ChatBloc(repository: repository);
+  ChatBloc buildBloc() => ChatBloc(
+    repository: repository,
+    connectivityRepository: connectivityRepository,
+  );
 
   test('initial state is empty with no unread messages', () {
     final bloc = buildBloc();
@@ -190,5 +205,75 @@ void main() {
       await bloc.close();
       expect(messagesController.hasListener, isFalse);
     });
+  });
+
+  group('Connectivity reconnection', () {
+    blocTest<ChatBloc, ChatState>(
+      'resubscribes to watchMessages when the connection is restored after '
+      'the stream errored out',
+      build: buildBloc,
+      act: (bloc) async {
+        bloc.add(WatchMessages(rideId: 'ride_1'));
+        await Future.delayed(Duration.zero);
+        messagesController.addError(Exception('unavailable'));
+        await Future.delayed(Duration.zero);
+
+        connectivityController.add(true);
+        await Future.delayed(Duration.zero);
+        messagesController.add([
+          _message(id: 'm1', senderRole: 'driver', createdAt: DateTime(2020, 1, 1)),
+        ]);
+      },
+      expect: () => [
+        predicate<ChatState>(
+          (s) =>
+              s.errorMessage ==
+              'No se pudieron cargar los mensajes. Intenta de nuevo.',
+        ),
+        predicate<ChatState>((s) => s.errorMessage == null), // reintento
+        predicate<ChatState>(
+          (s) => s.messages.length == 1 && s.errorMessage == null,
+        ),
+      ],
+      verify: (_) {
+        verify(() => repository.watchMessages(rideId: 'ride_1')).called(2);
+      },
+    );
+
+    blocTest<ChatBloc, ChatState>(
+      'does not resubscribe when the stream is already healthy',
+      build: buildBloc,
+      act: (bloc) async {
+        bloc.add(WatchMessages(rideId: 'ride_1'));
+        await Future.delayed(Duration.zero);
+        messagesController.add([
+          _message(id: 'm1', senderRole: 'driver', createdAt: DateTime(2020, 1, 1)),
+        ]);
+        await Future.delayed(Duration.zero);
+
+        connectivityController.add(true);
+        await Future.delayed(Duration.zero);
+      },
+      expect: () => [
+        predicate<ChatState>((s) => s.messages.length == 1),
+      ],
+      verify: (_) {
+        verify(() => repository.watchMessages(rideId: 'ride_1')).called(1);
+      },
+    );
+
+    blocTest<ChatBloc, ChatState>(
+      'ignores connectivity restored events before any WatchMessages was '
+      'ever requested',
+      build: buildBloc,
+      act: (bloc) async {
+        connectivityController.add(true);
+        await Future.delayed(Duration.zero);
+      },
+      expect: () => [],
+      verify: (_) {
+        verifyNever(() => repository.watchMessages(rideId: any(named: 'rideId')));
+      },
+    );
   });
 }

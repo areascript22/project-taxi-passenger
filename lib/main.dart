@@ -8,6 +8,8 @@ import 'package:get_it/get_it.dart';
 import 'package:passenger_app/core/routing/app_routing.dart';
 import 'package:passenger_app/core/service_locator/main_service_locator.dart';
 import 'package:passenger_app/core/theme/app_theme.dart';
+import 'package:passenger_app/shared/connectivity/presentation/component/connectivity_banner.dart';
+import 'package:passenger_app/shared/connectivity/presentation/cubit/connectivity_cubit.dart';
 import 'package:passenger_app/shared/notifications/service/push_notifications_service.dart';
 import 'package:passenger_app/shared/presentation/bloc/session/session_bloc.dart';
 import 'package:passenger_app/shared/services/services_initializer.dart';
@@ -47,6 +49,13 @@ class MyApp extends StatelessWidget {
           create:
               (context) => GetIt.instance<SettingsBloc>()..add(LoadSettings()),
         ),
+        // Singleton de GetIt: vive durante toda la sesión, no solo mientras
+        // este widget está montado (igual que SessionBloc/SettingsBloc de
+        // arriba) -- así el banner de conectividad puede mostrarse desde el
+        // primer frame (splash) hasta el último.
+        BlocProvider<ConnectivityCubit>(
+          create: (context) => GetIt.instance<ConnectivityCubit>(),
+        ),
       ],
       child: BlocBuilder<SettingsBloc, SettingsState>(
         builder: (context, settingsState) {
@@ -57,6 +66,15 @@ class MyApp extends StatelessWidget {
             darkTheme: AppTheme.dark,
             themeMode: settingsState.themeMode,
             routerConfig: AppRouter.router,
+            // Envuelve TODO lo que arma go_router (incluidas splash/login,
+            // fuera del StatefulShellRoute) para que el banner de "sin
+            // conexión" pueda mostrarse sin importar la pantalla -- ver
+            // ConnectivityBannerOverlay.
+            builder: (context, child) {
+              return ConnectivityBannerOverlay(
+                child: child ?? const SizedBox.shrink(),
+              );
+            },
           );
         },
       ),

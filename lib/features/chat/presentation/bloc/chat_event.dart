@@ -38,3 +38,8 @@ class SendMessage extends ChatEvent {
 class MarkMessagesRead extends ChatEvent {}
 
 class StopWatchingMessages extends ChatEvent {}
+
+// Interno: se dispara cuando ConnectivityRepository detecta que volvió la
+// conexión, para reintentar watchMessages si el stream de Firestore quedó
+// caído o en error -- ver ChatBloc._onConnectivityRestored.
+class _ConnectivityRestored extends ChatEvent {}
