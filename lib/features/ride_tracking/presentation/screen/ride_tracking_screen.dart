@@ -50,11 +50,30 @@ class _RideTrackingViewState extends State<_RideTrackingView> {
     // este segundo dispatch es idempotente (solo reinicia la subscripción).
     _maybeStartTracking(context);
 
+    // RideTrackingBloc es singleton y arranca a escuchar la carrera desde
+    // TaxiConfirmationDialog/WaitingForDriverDialog -- bastante antes de que
+    // esta pantalla exista. El rideId ya viene en el nodo de Firebase desde
+    // que se crea la solicitud (no recién cuando el conductor la acepta), así
+    // que para cuando este widget se monta, RideTrackingBloc.state.ride ya
+    // trae un rideId fijo. El BlocListener de más abajo solo reacciona a
+    // TRANSICIONES futuras de rideId (previous != current) -- si el valor ya
+    // estaba fijo antes de montarse, esa transición nunca ocurre y el chat
+    // se queda sin arrancar (bug real: ni los mensajes propios llegaban a
+    // mostrarse). Por eso hace falta este chequeo inicial con el estado
+    // YA disponible, igual que _maybeStartTracking arriba.
+    final initialRide = context.read<RideTrackingBloc>().state.ride;
+    debugPrint(
+      'ChatFlowDebug | RideTrackingScreen.initState -> '
+      'rideId=${initialRide?.rideId} status=${initialRide?.rideStatus}',
+    );
+    _maybeWatchChat(initialRide);
+
     // Cubre los 3 casos de un push de chat tocado (ver
     // PushNotificationsServiceImpl): si llega mientras esta pantalla sigue
     // montada (foreground/background con la app viva), el listener
     // reacciona al instante. El caso cold-start (rideId todavía no
-    // conocido acá) lo cubre _maybeWatchChat de abajo.
+    // conocido acá) lo cubre el chequeo de arriba en cuanto RideTrackingBloc
+    // emita su primer estado con rideId.
     _pendingChat.pendingRideId.addListener(_onPendingChatChanged);
   }
 
@@ -82,7 +101,17 @@ class _RideTrackingViewState extends State<_RideTrackingView> {
   // suscripción del chat en cada RideUpdated.
   void _maybeWatchChat(RideEntity? ride) {
     final rideId = ride?.rideId;
-    if (rideId == null || rideId == _watchedRideId) return;
+    if (rideId == null || rideId == _watchedRideId) {
+      debugPrint(
+        'ChatFlowDebug | _maybeWatchChat NO-OP -> rideId=$rideId '
+        'yaObservado=$_watchedRideId',
+      );
+      return;
+    }
+    debugPrint(
+      'ChatFlowDebug | _maybeWatchChat -> disparando WatchMessages '
+      'rideId=$rideId (status=${ride?.rideStatus})',
+    );
     _watchedRideId = rideId;
     _chatBloc.add(WatchMessages(rideId: rideId));
     // Por si el push de chat (cold-start) llegó antes de que se conociera
@@ -275,13 +304,9 @@ class _RideTrackingViewState extends State<_RideTrackingView> {
             BlocBuilder<ChatBloc, ChatState>(
               bloc: _chatBloc,
               builder: (context, state) {
-                return IconButton(
-                  onPressed: () => _openChat(context, rideId),
-                  icon: Badge(
-                    label: Text('${state.unreadCount}'),
-                    isLabelVisible: state.unreadCount > 0,
-                    child: const Icon(Icons.chat_bubble_outline_rounded),
-                  ),
+                return _ChatButton(
+                  unreadCount: state.unreadCount,
+                  onTap: () => _openChat(context, rideId),
                 );
               },
             ),
@@ -568,6 +593,48 @@ class _RideTrackingViewState extends State<_RideTrackingView> {
       color: colorScheme.surface,
       borderRadius: BorderRadius.circular(20),
       border: Border.all(color: colorScheme.onSurface.withValues(alpha: 0.08)),
+    );
+  }
+}
+
+// Chip circular tintado (en vez de un IconButton "pelado") para que el
+// acceso al chat se lea como una acción de primer nivel en el header, no
+// como un ícono suelto -- mismo lenguaje visual que el resto de tarjetas de
+// esta pantalla (fondo tintado con el color de marca + borde sutil).
+class _ChatButton extends StatelessWidget {
+  const _ChatButton({required this.unreadCount, required this.onTap});
+
+  final int unreadCount;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Material(
+      color: colorScheme.primary.withValues(alpha: 0.1),
+      shape: const CircleBorder(),
+      child: Tooltip(
+        message: 'Chat con tu conductor',
+        child: InkWell(
+          customBorder: const CircleBorder(),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(8),
+            child: Badge(
+              label: Text('$unreadCount'),
+              isLabelVisible: unreadCount > 0,
+              child: Image.asset(
+                'assets/icons/chat_bubble.png',
+                width: 22,
+                height: 22,
+                color: colorScheme.primary,
+                colorBlendMode: BlendMode.srcIn,
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

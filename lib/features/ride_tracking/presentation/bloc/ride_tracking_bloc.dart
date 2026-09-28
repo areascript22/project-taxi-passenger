@@ -58,6 +58,9 @@ class RideTrackingBloc extends Bloc<RideTrackingEvent, RideTrackingState> {
     StartRideTracking event,
     Emitter<RideTrackingState> emit,
   ) async {
+    debugPrint(
+      'ChatFlowDebug | RideTrackingBloc._onStart -> passengerId=${event.passengerId}',
+    );
     emit(state.copyWith(status: RideTrackingStatus.connecting));
 
     await _subscription?.cancel();
@@ -76,6 +79,10 @@ class RideTrackingBloc extends Bloc<RideTrackingEvent, RideTrackingState> {
   ) async {
     final ride = event.ride;
     debugPrint("Ride update event called ; ${ride}");
+    debugPrint(
+      'ChatFlowDebug | RideTrackingBloc._onRideUpdated -> '
+      'rideId=${ride.rideId} status=${ride.rideStatus}',
+    );
 
     final distanceMeters = _distanceToPickup(ride);
     final progress = _computeProgress(ride: ride, distanceMeters: distanceMeters);

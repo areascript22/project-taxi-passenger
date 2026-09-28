@@ -13,24 +13,33 @@ class ChatRepositoryImpl implements ChatRepository {
 
   @override
   Stream<List<ChatMessageEntity>> watchMessages({required String rideId}) {
+    debugPrint(
+      'ChatFlowDebug | ChatRepositoryImpl.watchMessages -> query sobre '
+      'chats/$rideId/messages',
+    );
     return FirebaseFirestore.instance
         .collection('chats')
         .doc(rideId)
         .collection('messages')
         .orderBy('createdAt')
         .snapshots()
-        .map(
-          (snapshot) =>
-              snapshot.docs
-                  .map(
-                    (doc) => ChatMessageModel.fromMap(
-                      id: doc.id,
-                      rideId: rideId,
-                      map: doc.data(),
-                    ).toEntity(),
-                  )
-                  .toList(),
-        );
+        .map((snapshot) {
+          debugPrint(
+            'ChatFlowDebug | ChatRepositoryImpl.watchMessages -> snapshot '
+            'rideId=$rideId docs=${snapshot.docs.length} '
+            'fromCache=${snapshot.metadata.isFromCache} '
+            'hasPendingWrites=${snapshot.metadata.hasPendingWrites}',
+          );
+          return snapshot.docs
+              .map(
+                (doc) => ChatMessageModel.fromMap(
+                  id: doc.id,
+                  rideId: rideId,
+                  map: doc.data(),
+                ).toEntity(),
+              )
+              .toList();
+        });
   }
 
   @override

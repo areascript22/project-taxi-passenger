@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:bloc/bloc.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:meta/meta.dart';
 import '../../../../shared/connectivity/domain/repository/connectivity_repository.dart';
@@ -27,10 +28,25 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
   // como no leídos para sí mismo.
   static const _otherSenderRole = 'driver';
 
+  // El backend crea el doc padre chats/{rideId} (el que exige la regla de
+  // Firestore para autorizar la subcolección de mensajes) DESPUÉS de que el
+  // estado driverAssigned ya quedó escrito en Realtime Database -- que es
+  // justo la señal que hace que esta pantalla se abra y se suscriba a
+  // Firestore. En esa ventana de milisegundos el doc padre puede no existir
+  // todavía y Firestore corta el listener con permission-denied (a
+  // diferencia de un corte de red, esto NO se reintenta solo). Un puñado de
+  // reintentos cortos alcanza de sobra para esa ventana real (medida en
+  // logs: ~400ms) sin arriesgar un loop largo si el permiso de verdad no
+  // corresponde.
+  static const _permissionRetryDelay = Duration(milliseconds: 1200);
+  static const _maxPermissionRetries = 4;
+
   final ChatRepository repository;
   final ConnectivityRepository connectivityRepository;
   StreamSubscription<List<ChatMessageEntity>>? _subscription;
   StreamSubscription<bool>? _connectivitySubscription;
+  Timer? _permissionRetryTimer;
+  int _permissionRetryCount = 0;
   DateTime? _lastReadAt;
 
   // rideId de la última carrera para la que se pidió WatchMessages. Se usa
@@ -40,13 +56,20 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
   String? _currentRideId;
 
   void _onWatch(WatchMessages event, Emitter<ChatState> emit) {
+    debugPrint('ChatFlowDebug | ChatBloc._onWatch -> rideId=${event.rideId}');
     _currentRideId = event.rideId;
     _lastReadAt = null;
+    _permissionRetryCount = 0;
     _subscribeToMessages(event.rideId);
   }
 
   void _subscribeToMessages(String rideId) {
     _subscription?.cancel();
+    _permissionRetryTimer?.cancel();
+    debugPrint(
+      'ChatFlowDebug | ChatBloc._subscribeToMessages -> suscribiendo '
+      'rideId=$rideId',
+    );
     try {
       _subscription = repository
           .watchMessages(rideId: rideId)
@@ -54,7 +77,15 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
             (messages) => add(_ChatMessagesUpdated(messages)),
             onError: (Object error) => add(_ChatMessagesErrored(error)),
           );
+      debugPrint(
+        'ChatFlowDebug | ChatBloc._subscribeToMessages -> subscription '
+        'creada OK rideId=$rideId',
+      );
     } catch (e) {
+      debugPrint(
+        'ChatFlowDebug | ChatBloc._subscribeToMessages -> EXCEPCION al '
+        'suscribirse rideId=$rideId: $e',
+      );
       debugPrint(
         'ChatDebug | Error inesperado al suscribirse a watchMessages '
         '(rideId=$rideId): $e',
@@ -64,6 +95,13 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
   }
 
   void _onMessagesUpdated(_ChatMessagesUpdated event, Emitter<ChatState> emit) {
+    debugPrint(
+      'ChatFlowDebug | ChatBloc._onMessagesUpdated -> rideId=$_currentRideId '
+      'count=${event.messages.length}',
+    );
+    // El stream ya está sano -- si veníamos reintentando por un
+    // permission-denied momentáneo, se acabó, no hace falta seguir contando.
+    _permissionRetryCount = 0;
     final unreadSince = _lastReadAt ?? DateTime.fromMillisecondsSinceEpoch(0);
     final unreadCount =
         event.messages
@@ -87,7 +125,35 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
   }
 
   void _onMessagesErrored(_ChatMessagesErrored event, Emitter<ChatState> emit) {
+    debugPrint(
+      'ChatFlowDebug | ChatBloc._onMessagesErrored -> rideId=$_currentRideId '
+      'error=${event.error}',
+    );
     debugPrint('ChatDebug | Error en watchMessages: ${event.error}');
+
+    final rideId = _currentRideId;
+    final error = event.error;
+    final isPermissionDenied =
+        error is FirebaseException && error.code == 'permission-denied';
+
+    if (isPermissionDenied &&
+        rideId != null &&
+        _permissionRetryCount < _maxPermissionRetries) {
+      _permissionRetryCount++;
+      debugPrint(
+        'ChatFlowDebug | ChatBloc._onMessagesErrored -> permission-denied, '
+        'reintento $_permissionRetryCount/$_maxPermissionRetries en '
+        '${_permissionRetryDelay.inMilliseconds}ms (rideId=$rideId)',
+      );
+      // Silencioso a propósito: se espera que se resuelva solo en el
+      // próximo intento, no tiene sentido parpadear un mensaje de error que
+      // va a desaparecer en un instante.
+      _permissionRetryTimer = Timer(_permissionRetryDelay, () {
+        if (_currentRideId == rideId) _subscribeToMessages(rideId);
+      });
+      return;
+    }
+
     emit(
       state.copyWith(
         errorMessage: 'No se pudieron cargar los mensajes. Intenta de nuevo.',
@@ -119,6 +185,9 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
   Future<void> _onStop(StopWatchingMessages event, Emitter<ChatState> emit) async {
     await _subscription?.cancel();
     _subscription = null;
+    _permissionRetryTimer?.cancel();
+    _permissionRetryTimer = null;
+    _permissionRetryCount = 0;
     _lastReadAt = null;
     _currentRideId = null;
     emit(const ChatState());
@@ -154,6 +223,11 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     Emitter<ChatState> emit,
   ) {
     final rideId = _currentRideId;
+    debugPrint(
+      'ChatFlowDebug | ChatBloc._onConnectivityRestored -> rideId=$rideId '
+      'subscriptionActiva=${_subscription != null} '
+      'errorPrevio=${state.errorMessage}',
+    );
     if (rideId == null) return;
 
     final needsReconnect = _subscription == null || state.errorMessage != null;
@@ -171,6 +245,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
   Future<void> close() {
     _subscription?.cancel();
     _connectivitySubscription?.cancel();
+    _permissionRetryTimer?.cancel();
     return super.close();
   }
 }

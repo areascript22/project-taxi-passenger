@@ -1,7 +1,9 @@
 import 'dart:async';
 
 import 'package:bloc_test/bloc_test.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dartz/dartz.dart';
+import 'package:fake_async/fake_async.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:passenger_app/core/error/errors.dart';
@@ -273,6 +275,115 @@ void main() {
       expect: () => [],
       verify: (_) {
         verifyNever(() => repository.watchMessages(rideId: any(named: 'rideId')));
+      },
+    );
+  });
+
+  group('Permission-denied retry (race con createChatThread server-side)', () {
+    test(
+      'retries a permission-denied error and recovers automatically once '
+      'the parent doc becomes readable',
+      () {
+        fakeAsync((async) {
+          final bloc = buildBloc();
+          bloc.add(WatchMessages(rideId: 'ride_1'));
+          async.elapse(Duration.zero);
+
+          messagesController.addError(
+            FirebaseException(
+              plugin: 'cloud_firestore',
+              code: 'permission-denied',
+            ),
+          );
+          async.elapse(Duration.zero);
+
+          // Silencioso a propósito mientras reintenta -- no debe parpadear
+          // un error que se va a resolver solo en un instante.
+          expect(bloc.state.errorMessage, isNull);
+
+          async.elapse(const Duration(milliseconds: 1200));
+          messagesController.add([
+            _message(
+              id: 'm1',
+              senderRole: 'driver',
+              createdAt: DateTime(2020, 1, 1),
+            ),
+          ]);
+          async.elapse(Duration.zero);
+
+          expect(bloc.state.messages.length, 1);
+          expect(bloc.state.errorMessage, isNull);
+          verify(() => repository.watchMessages(rideId: 'ride_1')).called(2);
+
+          bloc.close();
+        });
+      },
+    );
+
+    test(
+      'gives up after exhausting retries and shows the error message',
+      () {
+        fakeAsync((async) {
+          final bloc = buildBloc();
+          bloc.add(WatchMessages(rideId: 'ride_1'));
+          async.elapse(Duration.zero);
+
+          FirebaseException permissionDenied() => FirebaseException(
+            plugin: 'cloud_firestore',
+            code: 'permission-denied',
+          );
+
+          // Intento inicial + 4 reintentos = 5 suscripciones en total antes
+          // de rendirse (ver ChatBloc._maxPermissionRetries).
+          messagesController.addError(permissionDenied());
+          async.elapse(Duration.zero);
+          async.elapse(const Duration(milliseconds: 1200));
+
+          messagesController.addError(permissionDenied());
+          async.elapse(Duration.zero);
+          async.elapse(const Duration(milliseconds: 1200));
+
+          messagesController.addError(permissionDenied());
+          async.elapse(Duration.zero);
+          async.elapse(const Duration(milliseconds: 1200));
+
+          messagesController.addError(permissionDenied());
+          async.elapse(Duration.zero);
+          async.elapse(const Duration(milliseconds: 1200));
+
+          messagesController.addError(permissionDenied());
+          async.elapse(Duration.zero);
+
+          expect(
+            bloc.state.errorMessage,
+            'No se pudieron cargar los mensajes. Intenta de nuevo.',
+          );
+          verify(() => repository.watchMessages(rideId: 'ride_1')).called(5);
+
+          bloc.close();
+        });
+      },
+    );
+
+    test(
+      'does not retry a plain (non-Firestore) error -- reports it right away',
+      () {
+        fakeAsync((async) {
+          final bloc = buildBloc();
+          bloc.add(WatchMessages(rideId: 'ride_1'));
+          async.elapse(Duration.zero);
+
+          messagesController.addError(Exception('some other failure'));
+          async.elapse(Duration.zero);
+
+          expect(
+            bloc.state.errorMessage,
+            'No se pudieron cargar los mensajes. Intenta de nuevo.',
+          );
+          verify(() => repository.watchMessages(rideId: 'ride_1')).called(1);
+
+          bloc.close();
+        });
       },
     );
   });
