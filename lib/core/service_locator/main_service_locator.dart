@@ -4,6 +4,7 @@ import 'package:passenger_app/features/passenger_profile/di/passenger_profile_se
 import 'package:passenger_app/features/profile/di/profile_service_locator.dart';
 import 'package:passenger_app/features/chat/di/chat_service_locator.dart';
 import 'package:passenger_app/shared/chat_presence/di/chat_presence_service_locator.dart';
+import 'package:passenger_app/shared/connectivity/di/connectivity_service_locator.dart';
 import 'package:passenger_app/shared/feedback/di/feedback_service_locator.dart';
 import 'package:passenger_app/shared/geocoding/di/geocoding_service_locator.dart';
 import 'package:passenger_app/shared/geolocator/di/geolocator_service_locator.dart';
@@ -21,6 +22,9 @@ import '../../shared/di/shared_service_locator.dart';
 final GetIt mainServiceLocator = GetIt.instance;
 
 Future<void> initMainServiceLocator() async {
+  // Antes que initChatDI: ChatBloc depende de ConnectivityRepository para
+  // reintentar watchMessages en cuanto vuelve la conexión.
+  initConnectivityDI(mainServiceLocator);
   initChatPresenceDI(mainServiceLocator);
   initPushNotificationsDI(mainServiceLocator);
   initImagePickerDI(mainServiceLocator);

@@ -1,15 +1,21 @@
 import 'dart:async';
 
 import 'package:bloc_test/bloc_test.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dartz/dartz.dart';
+import 'package:fake_async/fake_async.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:passenger_app/core/error/errors.dart';
 import 'package:passenger_app/features/chat/domain/entity/chat_message_entity.dart';
 import 'package:passenger_app/features/chat/domain/repository/chat_repository.dart';
 import 'package:passenger_app/features/chat/presentation/bloc/chat_bloc.dart';
+import 'package:passenger_app/shared/connectivity/domain/repository/connectivity_repository.dart';
 
 class MockChatRepository extends Mock implements ChatRepository {}
+
+class MockConnectivityRepository extends Mock
+    implements ConnectivityRepository {}
 
 ChatMessageEntity _message({
   required String id,
@@ -28,22 +34,33 @@ ChatMessageEntity _message({
 
 void main() {
   late MockChatRepository repository;
+  late MockConnectivityRepository connectivityRepository;
   late StreamController<List<ChatMessageEntity>> messagesController;
+  late StreamController<bool> connectivityController;
 
   setUp(() {
     repository = MockChatRepository();
+    connectivityRepository = MockConnectivityRepository();
     messagesController = StreamController<List<ChatMessageEntity>>.broadcast();
+    connectivityController = StreamController<bool>.broadcast();
 
     when(
       () => repository.watchMessages(rideId: any(named: 'rideId')),
     ).thenAnswer((_) => messagesController.stream);
+    when(
+      () => connectivityRepository.watchConnection(),
+    ).thenAnswer((_) => connectivityController.stream);
   });
 
   tearDown(() {
     messagesController.close();
+    connectivityController.close();
   });
 
-  ChatBloc buildBloc() => ChatBloc(repository: repository);
+  ChatBloc buildBloc() => ChatBloc(
+    repository: repository,
+    connectivityRepository: connectivityRepository,
+  );
 
   test('initial state is empty with no unread messages', () {
     final bloc = buildBloc();
@@ -190,5 +207,184 @@ void main() {
       await bloc.close();
       expect(messagesController.hasListener, isFalse);
     });
+  });
+
+  group('Connectivity reconnection', () {
+    blocTest<ChatBloc, ChatState>(
+      'resubscribes to watchMessages when the connection is restored after '
+      'the stream errored out',
+      build: buildBloc,
+      act: (bloc) async {
+        bloc.add(WatchMessages(rideId: 'ride_1'));
+        await Future.delayed(Duration.zero);
+        messagesController.addError(Exception('unavailable'));
+        await Future.delayed(Duration.zero);
+
+        connectivityController.add(true);
+        await Future.delayed(Duration.zero);
+        messagesController.add([
+          _message(id: 'm1', senderRole: 'driver', createdAt: DateTime(2020, 1, 1)),
+        ]);
+      },
+      expect: () => [
+        predicate<ChatState>(
+          (s) =>
+              s.errorMessage ==
+              'No se pudieron cargar los mensajes. Intenta de nuevo.',
+        ),
+        predicate<ChatState>((s) => s.errorMessage == null), // reintento
+        predicate<ChatState>(
+          (s) => s.messages.length == 1 && s.errorMessage == null,
+        ),
+      ],
+      verify: (_) {
+        verify(() => repository.watchMessages(rideId: 'ride_1')).called(2);
+      },
+    );
+
+    blocTest<ChatBloc, ChatState>(
+      'does not resubscribe when the stream is already healthy',
+      build: buildBloc,
+      act: (bloc) async {
+        bloc.add(WatchMessages(rideId: 'ride_1'));
+        await Future.delayed(Duration.zero);
+        messagesController.add([
+          _message(id: 'm1', senderRole: 'driver', createdAt: DateTime(2020, 1, 1)),
+        ]);
+        await Future.delayed(Duration.zero);
+
+        connectivityController.add(true);
+        await Future.delayed(Duration.zero);
+      },
+      expect: () => [
+        predicate<ChatState>((s) => s.messages.length == 1),
+      ],
+      verify: (_) {
+        verify(() => repository.watchMessages(rideId: 'ride_1')).called(1);
+      },
+    );
+
+    blocTest<ChatBloc, ChatState>(
+      'ignores connectivity restored events before any WatchMessages was '
+      'ever requested',
+      build: buildBloc,
+      act: (bloc) async {
+        connectivityController.add(true);
+        await Future.delayed(Duration.zero);
+      },
+      expect: () => [],
+      verify: (_) {
+        verifyNever(() => repository.watchMessages(rideId: any(named: 'rideId')));
+      },
+    );
+  });
+
+  group('Permission-denied retry (race con createChatThread server-side)', () {
+    test(
+      'retries a permission-denied error and recovers automatically once '
+      'the parent doc becomes readable',
+      () {
+        fakeAsync((async) {
+          final bloc = buildBloc();
+          bloc.add(WatchMessages(rideId: 'ride_1'));
+          async.elapse(Duration.zero);
+
+          messagesController.addError(
+            FirebaseException(
+              plugin: 'cloud_firestore',
+              code: 'permission-denied',
+            ),
+          );
+          async.elapse(Duration.zero);
+
+          // Silencioso a propósito mientras reintenta -- no debe parpadear
+          // un error que se va a resolver solo en un instante.
+          expect(bloc.state.errorMessage, isNull);
+
+          async.elapse(const Duration(milliseconds: 1200));
+          messagesController.add([
+            _message(
+              id: 'm1',
+              senderRole: 'driver',
+              createdAt: DateTime(2020, 1, 1),
+            ),
+          ]);
+          async.elapse(Duration.zero);
+
+          expect(bloc.state.messages.length, 1);
+          expect(bloc.state.errorMessage, isNull);
+          verify(() => repository.watchMessages(rideId: 'ride_1')).called(2);
+
+          bloc.close();
+        });
+      },
+    );
+
+    test(
+      'gives up after exhausting retries and shows the error message',
+      () {
+        fakeAsync((async) {
+          final bloc = buildBloc();
+          bloc.add(WatchMessages(rideId: 'ride_1'));
+          async.elapse(Duration.zero);
+
+          FirebaseException permissionDenied() => FirebaseException(
+            plugin: 'cloud_firestore',
+            code: 'permission-denied',
+          );
+
+          // Intento inicial + 4 reintentos = 5 suscripciones en total antes
+          // de rendirse (ver ChatBloc._maxPermissionRetries).
+          messagesController.addError(permissionDenied());
+          async.elapse(Duration.zero);
+          async.elapse(const Duration(milliseconds: 1200));
+
+          messagesController.addError(permissionDenied());
+          async.elapse(Duration.zero);
+          async.elapse(const Duration(milliseconds: 1200));
+
+          messagesController.addError(permissionDenied());
+          async.elapse(Duration.zero);
+          async.elapse(const Duration(milliseconds: 1200));
+
+          messagesController.addError(permissionDenied());
+          async.elapse(Duration.zero);
+          async.elapse(const Duration(milliseconds: 1200));
+
+          messagesController.addError(permissionDenied());
+          async.elapse(Duration.zero);
+
+          expect(
+            bloc.state.errorMessage,
+            'No se pudieron cargar los mensajes. Intenta de nuevo.',
+          );
+          verify(() => repository.watchMessages(rideId: 'ride_1')).called(5);
+
+          bloc.close();
+        });
+      },
+    );
+
+    test(
+      'does not retry a plain (non-Firestore) error -- reports it right away',
+      () {
+        fakeAsync((async) {
+          final bloc = buildBloc();
+          bloc.add(WatchMessages(rideId: 'ride_1'));
+          async.elapse(Duration.zero);
+
+          messagesController.addError(Exception('some other failure'));
+          async.elapse(Duration.zero);
+
+          expect(
+            bloc.state.errorMessage,
+            'No se pudieron cargar los mensajes. Intenta de nuevo.',
+          );
+          verify(() => repository.watchMessages(rideId: 'ride_1')).called(1);
+
+          bloc.close();
+        });
+      },
+    );
   });
 }

@@ -339,60 +339,74 @@ class _BookingViewState extends State<BookingView> {
     final colorScheme = Theme.of(context).colorScheme;
     final onSurface = colorScheme.onSurface;
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: onSurface.withValues(alpha: 0.1)),
-      ),
+    // IntrinsicHeight + stretch: el botón de "elegir en el mapa" queda
+    // como una tarjeta propia, del mismo alto que el buscador, en vez de un
+    // ícono suelto adentro del campo de texto -- se distingue de una vez
+    // como una acción alternativa a escribir, no como un simple adorno del
+    // input.
+    return IntrinsicHeight(
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Icon(Icons.search, color: onSurface.withValues(alpha: 0.5), size: 22),
-          const SizedBox(width: 12),
           Expanded(
-            child: TextField(
-              controller: _searchController,
-              style: TextStyle(color: onSurface),
-              onChanged: (value) {
-                context.read<LocationSearchBloc>().add(
-                  SearchQueryChanged(query: value),
-                );
-              },
-              decoration: InputDecoration(
-                hintText: "Buscar dirección o lugar...",
-                hintStyle: TextStyle(
-                  color: onSurface.withValues(alpha: 0.4),
-                  fontSize: 15,
-                ),
-                border: InputBorder.none,
-                // The close icon is added here as a suffixIcon
-                suffixIcon: IconButton(
-                  icon: Icon(
-                    Icons.close,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+              decoration: BoxDecoration(
+                color: colorScheme.surface,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: onSurface.withValues(alpha: 0.1)),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.search,
                     color: onSurface.withValues(alpha: 0.5),
-                    size: 20,
+                    size: 22,
                   ),
-                  onPressed: () {
-                    _searchController.clear();
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: TextField(
+                      controller: _searchController,
+                      style: TextStyle(color: onSurface),
+                      onChanged: (value) {
+                        context.read<LocationSearchBloc>().add(
+                          SearchQueryChanged(query: value),
+                        );
+                      },
+                      decoration: InputDecoration(
+                        hintText: "Buscar dirección o lugar...",
+                        hintStyle: TextStyle(
+                          color: onSurface.withValues(alpha: 0.4),
+                          fontSize: 15,
+                        ),
+                        border: InputBorder.none,
+                        // The close icon is added here as a suffixIcon
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            Icons.close,
+                            color: onSurface.withValues(alpha: 0.5),
+                            size: 20,
+                          ),
+                          onPressed: () {
+                            _searchController.clear();
 
-                    context.read<LocationSearchBloc>().add(
-                      ClearSearchResults(),
-                    );
+                            context.read<LocationSearchBloc>().add(
+                              ClearSearchResults(),
+                            );
 
-                    FocusScope.of(context).unfocus();
-                  },
-                ),
+                            FocusScope.of(context).unfocus();
+                          },
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
-          const SizedBox(width: 4),
-          IconButton(
-            icon: Icon(Icons.map_outlined, color: colorScheme.primary, size: 24),
-            tooltip: 'Elegir en el mapa',
-            onPressed: () => _openMapPicker(context),
-          ),
+          const SizedBox(width: 10),
+          _MapPickerButton(onTap: () => _openMapPicker(context)),
         ],
       ),
     );
@@ -523,6 +537,48 @@ class _BookingViewState extends State<BookingView> {
 
         return const SizedBox.shrink();
       },
+    );
+  }
+}
+
+// Tarjeta cuadrada tintada con el pin de marca en vez del IconButton
+// genérico que había antes -- mismo alto que el buscador (ver
+// IntrinsicHeight en _buildSearchBar) y un tap target de 56x56, bastante
+// más fácil de acertar que el ícono de 24px que tenía antes.
+class _MapPickerButton extends StatelessWidget {
+  const _MapPickerButton({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Tooltip(
+      message: 'Elegir en el mapa',
+      child: Material(
+        color: colorScheme.primary.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(16),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: onTap,
+          child: Container(
+            width: 56,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: colorScheme.primary.withValues(alpha: 0.25),
+              ),
+            ),
+            alignment: Alignment.center,
+            child: Image.asset(
+              'assets/icons/location.png',
+              width: 28,
+              height: 28,
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
