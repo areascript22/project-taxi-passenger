@@ -1,4 +1,5 @@
 import 'package:get_it/get_it.dart';
+import 'package:passenger_app/shared/account/di/account_service_locator.dart';
 import 'package:passenger_app/features/auth/di/auth_service_locator.dart';
 import 'package:passenger_app/features/passenger_profile/di/passenger_profile_service_locator.dart';
 import 'package:passenger_app/features/profile/di/profile_service_locator.dart';
@@ -40,6 +41,7 @@ Future<void> initMainServiceLocator() async {
   initDotEnvDI(mainServiceLocator);
   initGeolocator(mainServiceLocator);
   initSettingsDI(mainServiceLocator);
+  initAccountDI(mainServiceLocator);
   initVoiceDI(mainServiceLocator);
   initVibrationDI(mainServiceLocator);
   initFeedbackDI(mainServiceLocator);
