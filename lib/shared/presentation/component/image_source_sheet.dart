@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../image_picker/service/profile_image_picker_service.dart';
 
 class ImageSourceSheet extends StatelessWidget {
@@ -40,7 +41,7 @@ class ImageSourceSheet extends StatelessWidget {
               ),
             ),
             Text(
-              'Foto de perfil',
+              AppLocalizations.of(context).photoSheetTitle,
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
@@ -51,12 +52,12 @@ class ImageSourceSheet extends StatelessWidget {
             const SizedBox(height: 8),
             _OptionTile(
               icon: Icons.photo_camera_outlined,
-              label: 'Tomar foto',
+              label: AppLocalizations.of(context).photoTakePhoto,
               onTap: () => Navigator.of(context).pop(ProfileImageSource.camera),
             ),
             _OptionTile(
               icon: Icons.photo_library_outlined,
-              label: 'Elegir de galería',
+              label: AppLocalizations.of(context).photoFromGallery,
               onTap: () => Navigator.of(context).pop(ProfileImageSource.gallery),
             ),
           ],

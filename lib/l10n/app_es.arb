@@ -1,0 +1,590 @@
+{
+  "@@locale": "es",
+
+  "appTitle": "Taxi project",
+  "@appTitle": {
+    "description": "Nombre de la app que ve el sistema operativo (ej. el selector de apps de Android)"
+  },
+
+  "commonCancel": "Cancelar",
+  "@commonCancel": {
+    "description": "Botón para descartar una acción, compartido por varios diálogos"
+  },
+
+  "settingsTitle": "Ajustes",
+  "@settingsTitle": {
+    "description": "Título del AppBar de la pantalla de ajustes"
+  },
+  "settingsSectionAppearance": "APARIENCIA",
+  "@settingsSectionAppearance": {
+    "description": "Encabezado de sección. Va en mayúsculas a propósito (estilo visual de la pantalla), no es un grito"
+  },
+  "settingsThemeDark": "Oscuro",
+  "@settingsThemeDark": {
+    "description": "Opción de tema oscuro"
+  },
+  "settingsThemeLight": "Claro",
+  "@settingsThemeLight": {
+    "description": "Opción de tema claro"
+  },
+  "settingsThemeSystem": "Sistema",
+  "@settingsThemeSystem": {
+    "description": "Opción de tema que sigue al sistema operativo"
+  },
+  "settingsSectionNotifications": "NOTIFICACIONES",
+  "@settingsSectionNotifications": {
+    "description": "Encabezado de sección, en mayúsculas por estilo visual"
+  },
+  "settingsVoiceTitle": "Voz",
+  "@settingsVoiceTitle": {
+    "description": "Switch que activa los anuncios hablados (TTS)"
+  },
+  "settingsVoiceSubtitle": "Anuncios hablados de la app",
+  "@settingsVoiceSubtitle": {
+    "description": "Descripción del switch de voz"
+  },
+  "settingsVibrationTitle": "Vibración",
+  "@settingsVibrationTitle": {
+    "description": "Switch que activa la vibración"
+  },
+  "settingsVibrationSubtitle": "Vibrar en eventos importantes",
+  "@settingsVibrationSubtitle": {
+    "description": "Descripción del switch de vibración"
+  },
+  "settingsSectionAccount": "CUENTA",
+  "@settingsSectionAccount": {
+    "description": "Encabezado de sección, en mayúsculas por estilo visual"
+  },
+
+  "deleteAccountTitle": "Eliminar cuenta",
+  "@deleteAccountTitle": {
+    "description": "Usado en el tile de ajustes, en el título del diálogo de confirmación y en su botón de confirmar"
+  },
+  "deleteAccountSubtitle": "Esta acción no se puede deshacer",
+  "@deleteAccountSubtitle": {
+    "description": "Subtítulo del tile de eliminar cuenta en ajustes"
+  },
+  "deleteAccountDialogBody": "Esta acción es irreversible. Se eliminarán tu perfil, tu foto y tus chats. No podrás recuperar esta información.\n\n¿Seguro que deseas eliminar tu cuenta?",
+  "@deleteAccountDialogBody": {
+    "description": "Cuerpo del diálogo de confirmación. A diferencia de driver_app no menciona vehículo, porque el pasajero no tiene uno registrado"
+  },
+  "deleteAccountSuccess": "Cuenta eliminada correctamente",
+  "@deleteAccountSuccess": {
+    "description": "Toast de éxito tras eliminar la cuenta, justo antes del logout"
+  },
+
+  "bookingCancelCountdown": "Cancelaremos en {time}",
+  "@bookingCancelCountdown": {
+    "description": "Cuenta atrás en el popup de 'Buscando conductor': avisa cuánto falta para que la solicitud se cancele automáticamente",
+    "placeholders": {
+      "time": {
+        "type": "String",
+        "description": "Tiempo restante ya formateado como m:ss (ej. 0:27)",
+        "example": "0:27"
+      }
+    }
+  },
+  "commonRetry": "Reintentar",
+  "@commonRetry": {
+    "description": "Boton para reintentar una operacion que fallo"
+  },
+  "commonSignOut": "Cerrar sesión",
+  "@commonSignOut": {
+    "description": "Accion de cerrar sesion: titulo del dialogo, su boton, y el boton del perfil"
+  },
+  "commonEmail": "Correo electrónico",
+  "@commonEmail": {
+    "description": "Etiqueta del campo de correo"
+  },
+  "commonEmailShort": "Correo",
+  "@commonEmailShort": {
+    "description": "Version corta de la etiqueta de correo, usada en la vista de perfil"
+  },
+  "commonUnderstood": "Entendido",
+  "@commonUnderstood": {
+    "description": "Boton que solo cierra un dialogo informativo"
+  },
+  "commonPickupPoint": "Punto de recogida",
+  "@commonPickupPoint": {
+    "description": "Etiqueta del punto donde el conductor recoge al pasajero"
+  },
+  "fieldFirstName": "Nombres",
+  "@fieldFirstName": {
+    "description": "Etiqueta del campo de nombres"
+  },
+  "fieldLastName": "Apellidos",
+  "@fieldLastName": {
+    "description": "Etiqueta del campo de apellidos"
+  },
+  "logoutDialogBody": "¿Estás seguro de que deseas cerrar sesión?",
+  "@logoutDialogBody": {
+    "description": "Cuerpo del dialogo de confirmacion de cierre de sesion"
+  },
+  "navRequest": "Pedir",
+  "@navRequest": {
+    "description": "Pestania del bottom nav para pedir un taxi"
+  },
+  "navProfile": "Perfil",
+  "@navProfile": {
+    "description": "Pestania del bottom nav del perfil"
+  },
+  "photoSheetTitle": "Foto de perfil",
+  "@photoSheetTitle": {
+    "description": "Titulo del bottom sheet para elegir el origen de la foto"
+  },
+  "photoTakePhoto": "Tomar foto",
+  "@photoTakePhoto": {
+    "description": "Opcion de usar la camara"
+  },
+  "photoFromGallery": "Elegir de galería",
+  "@photoFromGallery": {
+    "description": "Opcion de elegir una foto existente"
+  },
+  "chatTitle": "Chat con tu conductor",
+  "@chatTitle": {
+    "description": "Titulo del AppBar del chat y etiqueta del boton de chat en el viaje"
+  },
+  "chatEmpty": "Todavía no hay mensajes",
+  "@chatEmpty": {
+    "description": "Mensaje cuando la conversacion esta vacia"
+  },
+  "chatInputHint": "Escribe un mensaje...",
+  "@chatInputHint": {
+    "description": "Placeholder del campo de texto del chat"
+  },
+  "sessionCheckFailed": "No se pudo verificar tu sesión. Revisa tu conexión e intenta de nuevo.",
+  "@sessionCheckFailed": {
+    "description": "Mensaje cuando falla el chequeo de sesion"
+  },
+  "signInWelcome": "Bienvenido Pasajero",
+  "@signInWelcome": {
+    "description": "Titulo de la pantalla de login"
+  },
+  "signInTagline": "Viaja de forma segura y rápida con nosotros.",
+  "@signInTagline": {
+    "description": "Frase bajo el titulo en el login"
+  },
+  "signInGoogle": "Continuar con Google",
+  "@signInGoogle": {
+    "description": "Boton de login con Google"
+  },
+  "bookingWhereTo": "¿A dónde vas?",
+  "@bookingWhereTo": {
+    "description": "Encabezado del home cuando el pasajero puede pedir un taxi"
+  },
+  "bookingReadyToRide": "¿Listo para viajar?",
+  "@bookingReadyToRide": {
+    "description": "Encabezado alternativo del home"
+  },
+  "bookingWelcomeAnnouncement": "Bienvenido a TaxiGo",
+  "@bookingWelcomeAnnouncement": {
+    "description": "Saludo hablado (TTS) al entrar al home"
+  },
+  "bookingRequestTaxi": "Solicitar taxi",
+  "@bookingRequestTaxi": {
+    "description": "Boton principal que inicia la solicitud"
+  },
+  "bookingCheckingPermissions": "Comprobando permisos...",
+  "@bookingCheckingPermissions": {
+    "description": "Estado mientras se verifica el permiso de ubicacion"
+  },
+  "bookingGettingLocation": "Obteniendo tu ubicación...",
+  "@bookingGettingLocation": {
+    "description": "Estado mientras se resuelve la ubicacion por GPS. OJO: el texto original decia 'Ubteniendo tu ubicacion...' (typo y sin acentos); se corrigio al migrar"
+  },
+  "bookingGettingAddress": "Obteniendo tu dirección...",
+  "@bookingGettingAddress": {
+    "description": "Estado mientras se geocodifica la direccion. Mismo typo corregido que bookingGettingLocation"
+  },
+  "bookingSearchHint": "Buscar dirección o lugar...",
+  "@bookingSearchHint": {
+    "description": "Placeholder del buscador de direcciones"
+  },
+  "bookingNoResults": "No se encontraron resultados",
+  "@bookingNoResults": {
+    "description": "Busqueda de direcciones sin resultados"
+  },
+  "bookingPickOnMap": "Elegir en el mapa",
+  "@bookingPickOnMap": {
+    "description": "Tooltip del boton que abre el selector de ubicacion en el mapa"
+  },
+  "bookingConfirmTitle": "¿Confirmar viaje?",
+  "@bookingConfirmTitle": {
+    "description": "Titulo del dialogo de confirmacion antes de pedir el taxi"
+  },
+  "bookingConfirmBody": "Un conductor será enviado a la siguiente ubicación:",
+  "@bookingConfirmBody": {
+    "description": "Cuerpo del dialogo de confirmacion, seguido de la direccion"
+  },
+  "bookingRequest": "Solicitar",
+  "@bookingRequest": {
+    "description": "Boton que confirma la solicitud en el dialogo"
+  },
+  "locationWhereAreYou": "¿Dónde te encuentras?",
+  "@locationWhereAreYou": {
+    "description": "Titulo de la pantalla que se muestra sin permiso de ubicacion"
+  },
+  "waitingTitle": "Buscando conductor...",
+  "@waitingTitle": {
+    "description": "Titulo del popup de espera"
+  },
+  "waitingBody": "Estamos buscando un taxi disponible para tu viaje. Por favor espera, un conductor aceptará tu solicitud en breve.",
+  "@waitingBody": {
+    "description": "Cuerpo del popup de espera"
+  },
+  "waitingRideAccepted": "Carrera aceptada",
+  "@waitingRideAccepted": {
+    "description": "Aviso cuando un conductor acepta la solicitud"
+  },
+  "waitingNoDrivers": "Ahora mismo no hay conductores disponibles. Intenta de nuevo en unos minutos.",
+  "@waitingNoDrivers": {
+    "description": "Toast cuando la solicitud se cancela por timeout o por el backend"
+  },
+  "waitingCancelRequest": "Cancelar solicitud",
+  "@waitingCancelRequest": {
+    "description": "Boton que cancela la solicitud mientras se busca conductor"
+  },
+  "waitingAutoCancelFailed": "No se pudo cancelar automáticamente. Intenta cancelar de nuevo.",
+  "@waitingAutoCancelFailed": {
+    "description": "Toast cuando falla la cancelacion automatica por timeout"
+  },
+  "waitingCancelFailed": "No se pudo cancelar la solicitud. Intenta de nuevo.",
+  "@waitingCancelFailed": {
+    "description": "Toast cuando falla la cancelacion manual"
+  },
+  "onboardingTitle": "Completa tu perfil",
+  "@onboardingTitle": {
+    "description": "Titulo del registro del pasajero"
+  },
+  "onboardingSubtitle": "Cuéntanos quién eres para poder identificarte en tus viajes.",
+  "@onboardingSubtitle": {
+    "description": "Subtitulo del registro del pasajero"
+  },
+  "onboardingSignOutPrompt": "¿No eres tú? Cerrar sesión",
+  "@onboardingSignOutPrompt": {
+    "description": "Enlace para cerrar sesion desde el registro"
+  },
+  "profileEdit": "Editar perfil",
+  "@profileEdit": {
+    "description": "Titulo de la pantalla de edicion y boton que la abre"
+  },
+  "profileUpdated": "Perfil actualizado",
+  "@profileUpdated": {
+    "description": "Toast de exito al guardar el perfil"
+  },
+  "rideDriverCancelledAnnouncement": "El conductor canceló el viaje",
+  "@rideDriverCancelledAnnouncement": {
+    "description": "Aviso hablado (TTS) de que el conductor cancelo"
+  },
+  "rideDriverArrivedAnnouncement": "El conductor ha llegado",
+  "@rideDriverArrivedAnnouncement": {
+    "description": "Aviso hablado (TTS) y titulo del dialogo de llegada del conductor"
+  },
+  "rideThanksAnnouncement": "Taxi Go te agradece por elegir nuestros servicios.",
+  "@rideThanksAnnouncement": {
+    "description": "Agradecimiento hablado (TTS) al completarse el viaje"
+  },
+  "rideYourTripTitle": "Tu viaje",
+  "@rideYourTripTitle": {
+    "description": "Titulo de la pantalla de seguimiento del viaje"
+  },
+  "rideLoadingDriver": "Buscando datos del conductor...",
+  "@rideLoadingDriver": {
+    "description": "Texto mientras no llegaron los datos del conductor asignado"
+  },
+  "rideDriverOnTheWay": "Tu conductor está en camino",
+  "@rideDriverOnTheWay": {
+    "description": "Estado del viaje mientras el conductor se acerca"
+  },
+  "rideLocationUnavailable": "Ubicación no disponible",
+  "@rideLocationUnavailable": {
+    "description": "Mostrado cuando no se conoce la direccion del punto de recogida"
+  },
+  "rideCancel": "Cancelar viaje",
+  "@rideCancel": {
+    "description": "Boton que cancela el viaje ya aceptado"
+  },
+  "rideArriving": "Llegando",
+  "@rideArriving": {
+    "description": "ETA cuando el conductor esta a menos de un minuto"
+  },
+  "rideEtaMinutes": "{minutes} min",
+  "@rideEtaMinutes": {
+    "description": "ETA en minutos",
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "rideDistanceMeters": "{meters} m",
+  "@rideDistanceMeters": {
+    "description": "Distancia en metros (bajo 1 km)",
+    "placeholders": {
+      "meters": {
+        "type": "int"
+      }
+    }
+  },
+  "rideDistanceKilometers": "{km} km",
+  "@rideDistanceKilometers": {
+    "description": "Distancia en kilometros, con un decimal",
+    "placeholders": {
+      "km": {
+        "type": "String"
+      }
+    }
+  },
+  "cancelRideDialogTitle": "¿Cancelar viaje?",
+  "@cancelRideDialogTitle": {
+    "description": "Titulo del dialogo de confirmacion de cancelacion"
+  },
+  "cancelRideDialogBody": "Tu conductor ya está en camino. Si cancelas ahora, es posible que se te aplique un cargo por cancelación.",
+  "@cancelRideDialogBody": {
+    "description": "Cuerpo del dialogo de confirmacion de cancelacion"
+  },
+  "cancelRideContinue": "Continuar viaje",
+  "@cancelRideContinue": {
+    "description": "Boton que descarta la cancelacion"
+  },
+  "driverArrivedBody": "Tu conductor te está esperando en el punto de recogida. Dirígete al vehículo.",
+  "@driverArrivedBody": {
+    "description": "Cuerpo del dialogo de llegada del conductor"
+  },
+  "driverArrivedConfirm": "En camino",
+  "@driverArrivedConfirm": {
+    "description": "Boton con el que el pasajero confirma que va hacia el auto"
+  },
+  "driverCancelledTitle": "Viaje cancelado",
+  "@driverCancelledTitle": {
+    "description": "Titulo del dialogo de viaje cancelado por el conductor"
+  },
+  "driverCancelledBody": "Tu conductor canceló el viaje. Puedes solicitar otro taxi cuando quieras.",
+  "@driverCancelledBody": {
+    "description": "Cuerpo del dialogo de viaje cancelado por el conductor"
+  },
+  "tripCompletedTitle": "Has llegado a tu destino",
+  "@tripCompletedTitle": {
+    "description": "Titulo del dialogo de viaje completado"
+  },
+  "tripCompletedBody": "Gracias por elegirnos. Esperamos verte pronto de nuevo.",
+  "@tripCompletedBody": {
+    "description": "Cuerpo del dialogo de viaje completado"
+  },
+  "distanceIndicatorTitle": "El conductor está en camino",
+  "@distanceIndicatorTitle": {
+    "description": "Titulo del indicador de distancia al conductor"
+  },
+  "distanceIndicatorSubtitle": "Su conductor se dirige al lugar de recogida.",
+  "@distanceIndicatorSubtitle": {
+    "description": "Subtitulo del indicador de distancia"
+  },
+  "distanceYourLocation": "Tu ubicación",
+  "@distanceYourLocation": {
+    "description": "Extremo del indicador que representa al pasajero"
+  },
+  "distanceDriver": "Conductor",
+  "@distanceDriver": {
+    "description": "Extremo del indicador que representa al conductor"
+  },
+  "distanceLabel": "Distancia",
+  "@distanceLabel": {
+    "description": "Etiqueta del dato de distancia"
+  },
+  "distanceEta": "Tiempo estimado",
+  "@distanceEta": {
+    "description": "Etiqueta del dato de tiempo estimado de llegada"
+  },
+  "mapPickerTitle": "Selecciona tu ubicación",
+  "@mapPickerTitle": {
+    "description": "Titulo de la pantalla del selector de ubicacion"
+  },
+  "mapPickerConfirm": "Confirmar ubicación",
+  "@mapPickerConfirm": {
+    "description": "Boton que confirma la ubicacion elegida en el mapa"
+  },
+  "mapPickerSearching": "Buscando dirección...",
+  "@mapPickerSearching": {
+    "description": "Texto mientras se geocodifica la posicion del mapa"
+  },
+  "mapPickerAddressFailed": "No se pudo obtener la dirección.",
+  "@mapPickerAddressFailed": {
+    "description": "Mensaje cuando falla la geocodificacion inversa"
+  },
+  "mapPickerHint": "Mueve el mapa para elegir tu ubicación",
+  "@mapPickerHint": {
+    "description": "Ayuda sobre el pin central del mapa"
+  },
+  "commonNotProvided": "No registrado",
+  "@commonNotProvided": {
+    "description": "Valor mostrado cuando un dato opcional del perfil esta vacio"
+  },
+  "commonSave": "Guardar",
+  "@commonSave": {
+    "description": "Boton que guarda un formulario"
+  },
+  "commonSaving": "Guardando...",
+  "@commonSaving": {
+    "description": "Estado del boton mientras se guarda"
+  },
+  "validationFirstName": "Ingresa tus nombres",
+  "@validationFirstName": {
+    "description": "Error de validacion del campo de nombres"
+  },
+  "validationLastName": "Ingresa tus apellidos",
+  "@validationLastName": {
+    "description": "Error de validacion del campo de apellidos"
+  },
+  "commonContinue": "Continuar",
+  "@commonContinue": {
+    "description": "Boton que avanza al paso siguiente o completa el registro del pasajero"
+  },
+  "failureSessionVerifyFailed": "No se pudo verificar tu sesión. Intenta de nuevo.",
+  "@failureSessionVerifyFailed": {
+    "description": "Mensaje de error para FailureCode.sessionVerifyFailed"
+  },
+  "failureSignInFailed": "No se pudo iniciar sesión. Intenta de nuevo.",
+  "@failureSignInFailed": {
+    "description": "Mensaje de error para FailureCode.signInFailed"
+  },
+  "failureSignOutFailed": "No se pudo cerrar sesión. Intenta de nuevo.",
+  "@failureSignOutFailed": {
+    "description": "Mensaje de error para FailureCode.signOutFailed"
+  },
+  "failureNotAuthenticated": "Tu sesión expiró. Inicia sesión de nuevo.",
+  "@failureNotAuthenticated": {
+    "description": "Mensaje de error para FailureCode.notAuthenticated"
+  },
+  "failureGpsDisabled": "El servicio de GPS del dispositivo está desactivado.",
+  "@failureGpsDisabled": {
+    "description": "Mensaje de error para FailureCode.gpsDisabled"
+  },
+  "failureLocationFetchFailed": "No se pudo obtener tu ubicación. Intenta de nuevo.",
+  "@failureLocationFetchFailed": {
+    "description": "Mensaje de error para FailureCode.locationFetchFailed"
+  },
+  "failureAddressNotFound": "No se pudo encontrar una dirección para esta ubicación.",
+  "@failureAddressNotFound": {
+    "description": "Mensaje de error para FailureCode.addressNotFound"
+  },
+  "failureLocationProcessFailed": "Ocurrió un error inesperado al procesar la ubicación.",
+  "@failureLocationProcessFailed": {
+    "description": "Mensaje de error para FailureCode.locationProcessFailed"
+  },
+  "failureNetworkError": "Revisa tu conexión a internet.",
+  "@failureNetworkError": {
+    "description": "Mensaje de error para FailureCode.networkError"
+  },
+  "failureMapsServerError": "No se pudo contactar al servicio de mapas. Intenta de nuevo.",
+  "@failureMapsServerError": {
+    "description": "Mensaje de error para FailureCode.mapsServerError"
+  },
+  "failurePlaceSuggestionsFailed": "No se pudieron buscar lugares. Intenta de nuevo.",
+  "@failurePlaceSuggestionsFailed": {
+    "description": "Mensaje de error para FailureCode.placeSuggestionsFailed"
+  },
+  "failurePlaceDetailsFailed": "No se pudo obtener el detalle del lugar. Intenta de nuevo.",
+  "@failurePlaceDetailsFailed": {
+    "description": "Mensaje de error para FailureCode.placeDetailsFailed"
+  },
+  "failureRideRequestFailed": "No se pudo solicitar el taxi. Intenta de nuevo.",
+  "@failureRideRequestFailed": {
+    "description": "Mensaje de error para FailureCode.rideRequestFailed"
+  },
+  "failureRideRequestCancelFailed": "No se pudo cancelar la solicitud. Intenta de nuevo.",
+  "@failureRideRequestCancelFailed": {
+    "description": "Mensaje de error para FailureCode.rideRequestCancelFailed"
+  },
+  "failureRideRequestCancelUnavailable": "La solicitud ya no está disponible para cancelar.",
+  "@failureRideRequestCancelUnavailable": {
+    "description": "Mensaje de error para FailureCode.rideRequestCancelUnavailable"
+  },
+  "failureRideCancelNotAllowed": "No tienes permiso para cancelar este viaje.",
+  "@failureRideCancelNotAllowed": {
+    "description": "Mensaje de error para FailureCode.rideCancelNotAllowed"
+  },
+  "failureRideCancelUnavailable": "El viaje ya no está disponible para cancelar.",
+  "@failureRideCancelUnavailable": {
+    "description": "Mensaje de error para FailureCode.rideCancelUnavailable"
+  },
+  "failureRideCancelFailed": "No se pudo cancelar el viaje. Intenta de nuevo.",
+  "@failureRideCancelFailed": {
+    "description": "Mensaje de error para FailureCode.rideCancelFailed"
+  },
+  "failureActiveTripCheckFailed": "No se pudo verificar si tienes un viaje en curso.",
+  "@failureActiveTripCheckFailed": {
+    "description": "Mensaje de error para FailureCode.activeTripCheckFailed"
+  },
+  "failureConfirmFailed": "No se pudo confirmar. Intenta de nuevo.",
+  "@failureConfirmFailed": {
+    "description": "Mensaje de error para FailureCode.confirmFailed"
+  },
+  "failureChatWriteNotAllowed": "No tienes permiso para escribir en este viaje.",
+  "@failureChatWriteNotAllowed": {
+    "description": "Mensaje de error para FailureCode.chatWriteNotAllowed"
+  },
+  "failureChatRideFinished": "El viaje ya finalizó, no se pueden enviar más mensajes.",
+  "@failureChatRideFinished": {
+    "description": "Mensaje de error para FailureCode.chatRideFinished"
+  },
+  "failureChatSendFailed": "No se pudo enviar el mensaje. Intenta de nuevo.",
+  "@failureChatSendFailed": {
+    "description": "Mensaje de error para FailureCode.chatSendFailed"
+  },
+  "failureAccountHasActiveRide": "Tienes un viaje activo. Finalízalo o cancélalo antes de eliminar tu cuenta.",
+  "@failureAccountHasActiveRide": {
+    "description": "Mensaje de error para FailureCode.accountHasActiveRide"
+  },
+  "failureAccountDeleteFailed": "No se pudo eliminar tu cuenta. Intenta nuevamente.",
+  "@failureAccountDeleteFailed": {
+    "description": "Mensaje de error para FailureCode.accountDeleteFailed"
+  },
+  "failurePassengerProfileCheckFailed": "No se pudo verificar tu información de pasajero",
+  "@failurePassengerProfileCheckFailed": {
+    "description": "Mensaje de error para FailureCode.passengerProfileCheckFailed"
+  },
+  "failureProfileSaveFailed": "No se pudo guardar tu información. Intenta nuevamente.",
+  "@failureProfileSaveFailed": {
+    "description": "Mensaje de error para FailureCode.profileSaveFailed"
+  },
+  "failureProfileUpdateFailed": "No se pudo actualizar tu información. Intenta nuevamente.",
+  "@failureProfileUpdateFailed": {
+    "description": "Mensaje de error para FailureCode.profileUpdateFailed"
+  },
+  "failureImagePickFailed": "No se pudo obtener la imagen seleccionada",
+  "@failureImagePickFailed": {
+    "description": "Mensaje de error para FailureCode.imagePickFailed"
+  },
+  "failureUnexpected": "Ocurrió un error inesperado. Intenta de nuevo.",
+  "@failureUnexpected": {
+    "description": "Mensaje de error para FailureCode.unexpected"
+  },
+  "failureChatMessagesLoadFailed": "No se pudieron cargar los mensajes. Intenta de nuevo.",
+  "@failureChatMessagesLoadFailed": {
+    "description": "Mensaje de error para FailureCode.chatMessagesLoadFailed"
+  },
+  "failureProfileLoadFailed": "No se pudo cargar tu información",
+  "@failureProfileLoadFailed": {
+    "description": "Mensaje de error para FailureCode.profileLoadFailed"
+  },
+  "failureLocationPermissionDenied": "No tienes permisos de ubicación.",
+  "@failureLocationPermissionDenied": {
+    "description": "Mensaje de error para FailureCode.locationPermissionDenied"
+  },
+  "settingsSectionLanguage": "IDIOMA",
+  "@settingsSectionLanguage": {
+    "description": "Encabezado de la seccion de idioma en ajustes, en mayusculas por estilo visual"
+  },
+  "settingsLanguageSystem": "Sistema",
+  "@settingsLanguageSystem": {
+    "description": "Opcion que sigue el idioma del dispositivo (es el default)"
+  },
+  "settingsLanguageSpanish": "Español",
+  "@settingsLanguageSpanish": {
+    "description": "Nombre del idioma espanol. NO se traduce: por convencion cada idioma se muestra en si mismo, para que alguien que no entiende el idioma actual lo reconozca"
+  },
+  "settingsLanguageEnglish": "English",
+  "@settingsLanguageEnglish": {
+    "description": "Nombre del idioma ingles. NO se traduce, mismo criterio que settingsLanguageSpanish"
+  }
+}

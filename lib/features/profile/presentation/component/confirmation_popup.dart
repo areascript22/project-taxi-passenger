@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:passenger_app/core/routing/app_routes.dart';
 import 'package:passenger_app/shared/presentation/bloc/session/session_bloc.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../../../shared/presentation/component/custom_button.dart';
 
 class ConfirmationPopup extends StatelessWidget {
@@ -28,6 +29,7 @@ class ConfirmationPopup extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final colorScheme = Theme.of(context).colorScheme;
 
     return BlocListener<SessionBloc, SessionState>(
@@ -39,7 +41,7 @@ class ConfirmationPopup extends StatelessWidget {
       child: AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(
-          "Cerrar Sesión",
+          l10n.commonSignOut,
           style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.bold,
@@ -47,7 +49,7 @@ class ConfirmationPopup extends StatelessWidget {
           ),
         ),
         content: Text(
-          "¿Estás seguro de que deseas cerrar sesión?",
+          l10n.logoutDialogBody,
           style: TextStyle(
             fontSize: 16,
             color: colorScheme.onSurface.withValues(alpha: 0.7),
@@ -60,7 +62,7 @@ class ConfirmationPopup extends StatelessWidget {
               Navigator.of(context).pop();
             },
             child: Text(
-              "Cancelar",
+              l10n.commonCancel,
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
@@ -73,7 +75,7 @@ class ConfirmationPopup extends StatelessWidget {
             child: SizedBox(
               width: 120,
               child: CustomButton(
-                textButton: "Cerrar Sesión",
+                textButton: l10n.commonSignOut,
                 onTap: () {
                   // Dispatch logout event
                   context.read<SessionBloc>().add(SessionLogoutRequested());

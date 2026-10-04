@@ -376,11 +376,11 @@ void main() {
     );
 
     blocTest<RideTrackingBloc, RideTrackingState>(
-      'emite errorMessage y apaga isCancelling si el repo falla',
+      'emite errorCode y apaga isCancelling si el repo falla',
       build: () {
         when(
           () => repository.cancelRide(passengerId: any(named: 'passengerId')),
-        ).thenAnswer((_) async => Left(Failure(message: 'no se pudo cancelar')));
+        ).thenAnswer((_) async => Left(Failure(code: FailureCode.unexpected)));
         return buildBloc();
       },
       act: (bloc) => bloc.add(CancelRideRequested(passengerId: 'p1')),
@@ -392,11 +392,7 @@ void main() {
         ),
         isA<RideTrackingState>()
             .having((s) => s.isCancelling, 'isCancelling', isFalse)
-            .having(
-              (s) => s.errorMessage,
-              'errorMessage',
-              'no se pudo cancelar',
-            ),
+            .having((s) => s.errorCode, 'errorCode', FailureCode.unexpected),
       ],
     );
   });
@@ -417,22 +413,18 @@ void main() {
     );
 
     blocTest<RideTrackingBloc, RideTrackingState>(
-      'emite errorMessage si el repo falla',
+      'emite errorCode si el repo falla',
       build: () {
         when(
           () => repository.confirmOnTheWay(
             passengerId: any(named: 'passengerId'),
           ),
-        ).thenAnswer((_) async => Left(Failure(message: 'error de red')));
+        ).thenAnswer((_) async => Left(Failure(code: FailureCode.unexpected)));
         return buildBloc();
       },
       act: (bloc) => bloc.add(ConfirmOnTheWayRequested(passengerId: 'p1')),
       expect: () => [
-        isA<RideTrackingState>().having(
-          (s) => s.errorMessage,
-          'errorMessage',
-          'error de red',
-        ),
+        isA<RideTrackingState>().having((s) => s.errorCode, 'errorCode', FailureCode.unexpected),
       ],
     );
   });

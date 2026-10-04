@@ -57,7 +57,7 @@ void main() {
       'emite permissionsError cuando el servicio falla',
       build: () {
         when(() => locationService.checkAndRequestPermission()).thenAnswer(
-          (_) async => Left(Failure(message: 'denegado por el usuario')),
+          (_) async => Left(Failure(code: FailureCode.unexpected)),
         );
         return buildBloc();
       },
@@ -74,11 +74,7 @@ void main() {
               'locationProcess',
               LocationProcess.permissionsError,
             )
-            .having(
-              (s) => s.errorMessage,
-              'errorMessage',
-              'denegado por el usuario',
-            ),
+            .having((s) => s.errorCode, 'errorCode', FailureCode.unexpected),
       ],
     );
 
@@ -90,7 +86,7 @@ void main() {
         );
         return buildBloc();
       },
-      seed: () => const LocationState(errorMessage: 'error anterior'),
+      seed: () => const LocationState(errorCode: FailureCode.unexpected),
       act: (bloc) => bloc.add(CheckAndRequestPermissionEvent()),
       expect: () => [
         isA<LocationState>(),
@@ -100,7 +96,7 @@ void main() {
               'locationProcess',
               LocationProcess.permissionsReady,
             )
-            .having((s) => s.errorMessage, 'errorMessage', isNull),
+            .having((s) => s.errorCode, 'errorCode', isNull),
       ],
     );
   });
@@ -125,9 +121,9 @@ void main() {
               LocationProcess.permissionsError,
             )
             .having(
-              (s) => s.errorMessage,
-              'errorMessage',
-              'No tiene permisos de ubicación.',
+              (s) => s.errorCode,
+              'errorCode',
+              FailureCode.locationPermissionDenied,
             ),
       ],
       verify: (_) {
@@ -190,7 +186,7 @@ void main() {
       'emite currentCordsError si el servicio falla con permiso otorgado',
       build: () {
         when(() => locationService.getCurrentPosition()).thenAnswer(
-          (_) async => Left(Failure(message: 'GPS apagado')),
+          (_) async => Left(Failure(code: FailureCode.unexpected)),
         );
         return buildBloc();
       },
@@ -205,7 +201,7 @@ void main() {
               'locationProcess',
               LocationProcess.currentCordsError,
             )
-            .having((s) => s.errorMessage, 'errorMessage', 'GPS apagado'),
+            .having((s) => s.errorCode, 'errorCode', FailureCode.unexpected),
       ],
     );
 

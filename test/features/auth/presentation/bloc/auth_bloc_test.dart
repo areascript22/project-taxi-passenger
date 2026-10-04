@@ -44,18 +44,14 @@ void main() {
       'emite [AuthLoading, AuthError] cuando el repositorio devuelve Left',
       build: () {
         when(() => authRepository.signInWithGoogle()).thenAnswer(
-          (_) async => Left(Failure(message: 'Google sign-in cancelado')),
+          (_) async => Left(Failure(code: FailureCode.unexpected)),
         );
         return AuthBloc(authRepository: authRepository);
       },
       act: (bloc) => bloc.add(AuthSignInWithGoogle()),
       expect: () => [
         isA<AuthLoading>(),
-        isA<AuthError>().having(
-          (s) => s.message,
-          'message',
-          'Google sign-in cancelado',
-        ),
+        isA<AuthError>().having((s) => s.code, 'code', FailureCode.unexpected),
       ],
     );
 
@@ -66,7 +62,7 @@ void main() {
         when(() => authRepository.signInWithGoogle()).thenAnswer((_) async {
           callCount++;
           if (callCount == 1) {
-            return Left(Failure(message: 'falló'));
+            return Left(Failure(code: FailureCode.unexpected));
           }
           return Right(user);
         });

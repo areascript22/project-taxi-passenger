@@ -37,7 +37,7 @@ class PassengerProfileRepositoryImpl implements PassengerProfileRepository {
     } catch (e) {
       debugPrint('PassengerProfileDebug | Error en getPassenger: $e');
       return Left(
-        Failure(message: 'No se pudo verificar tu información de pasajero'),
+        Failure(code: FailureCode.passengerProfileCheckFailed),
       );
     }
   }
@@ -74,9 +74,7 @@ class PassengerProfileRepositoryImpl implements PassengerProfileRepository {
     } catch (e) {
       debugPrint('PassengerProfileDebug | Error en registerPassenger: $e');
       return Left(
-        Failure(
-          message: 'No se pudo guardar tu información. Intenta nuevamente.',
-        ),
+        Failure(code: FailureCode.profileSaveFailed),
       );
     }
   }
@@ -114,9 +112,7 @@ class PassengerProfileRepositoryImpl implements PassengerProfileRepository {
     } catch (e) {
       debugPrint('PassengerProfileDebug | Error en updatePassenger: $e');
       return Left(
-        Failure(
-          message: 'No se pudo actualizar tu información. Intenta nuevamente.',
-        ),
+        Failure(code: FailureCode.profileUpdateFailed),
       );
     }
   }
@@ -125,16 +121,36 @@ class PassengerProfileRepositoryImpl implements PassengerProfileRepository {
   Future<Either<Failure, Unit>> updateFcmToken({
     required String passengerId,
     required String token,
+    required String language,
   }) async {
     try {
       await _firestore.collection(_passengersCollection).doc(passengerId).update({
         'fcmToken': token,
+        'language': language,
       });
       return const Right(unit);
     } catch (e) {
       debugPrint('PassengerProfileDebug | Error en updateFcmToken: $e');
       return Left(
-        Failure(message: 'No se pudo registrar el token de notificaciones'),
+        Failure(code: FailureCode.fcmTokenSaveFailed),
+      );
+    }
+  }
+
+  @override
+  Future<Either<Failure, Unit>> updateLanguage({
+    required String passengerId,
+    required String language,
+  }) async {
+    try {
+      await _firestore.collection(_passengersCollection).doc(passengerId).update({
+        'language': language,
+      });
+      return const Right(unit);
+    } catch (e) {
+      debugPrint('PassengerProfileDebug | Error en updateLanguage: $e');
+      return Left(
+        Failure(code: FailureCode.pushLanguageSaveFailed),
       );
     }
   }

@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:passenger_app/core/l10n/app_language.dart';
 import 'package:passenger_app/core/routing/app_routes.dart';
 import 'package:passenger_app/core/service_locator/main_service_locator.dart';
 import 'package:passenger_app/core/theme/app_colors.dart';
+import 'package:passenger_app/l10n/app_localizations.dart';
 import 'package:passenger_app/shared/account/presentation/component/delete_account_confirm_dialog.dart';
 import 'package:passenger_app/shared/account/presentation/cubit/account_cubit.dart';
 import 'package:passenger_app/shared/presentation/bloc/session/session_bloc.dart';
+import 'package:passenger_app/shared/presentation/component/app_toast.dart';
+import 'package:passenger_app/shared/presentation/failure_text.dart';
 import '../bloc/settings_bloc.dart';
 
 class SettingsScreen extends StatelessWidget {
@@ -27,20 +31,22 @@ class _SettingsView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final l10n = AppLocalizations.of(context);
 
     return MultiBlocListener(
       listeners: [
         BlocListener<AccountCubit, AccountState>(
           listener: (context, state) {
             if (state.wasDeleted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Cuenta eliminada correctamente')),
+              // El toast vive en el overlay raíz, así que sobrevive al logout
+              // y a la navegación al login que vienen justo después.
+              AppToast.success(
+                context,
+                message: l10n.deleteAccountSuccess,
               );
               context.read<SessionBloc>().add(SessionLogoutRequested());
-            } else if (state.errorMessage != null) {
-              ScaffoldMessenger.of(
-                context,
-              ).showSnackBar(SnackBar(content: Text(state.errorMessage!)));
+            } else if (state.errorCode != null) {
+              AppToast.error(context, message: context.failureText(state.errorCode!));
             }
           },
         ),
@@ -67,8 +73,8 @@ class _SettingsView extends StatelessWidget {
         child: Scaffold(
           backgroundColor: Colors.transparent,
           appBar: AppBar(
-            title: const Text(
-              'Ajustes',
+            title: Text(
+              l10n.settingsTitle,
               style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 0.5),
             ),
           ),
@@ -88,11 +94,15 @@ class _SettingsView extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _SectionLabel(text: 'APARIENCIA'),
+                    _SectionLabel(text: l10n.settingsSectionAppearance),
                     const SizedBox(height: 12),
                     _ThemeModeSelector(themeMode: state.themeMode),
                     const SizedBox(height: 28),
-                    _SectionLabel(text: 'NOTIFICACIONES'),
+                    _SectionLabel(text: l10n.settingsSectionLanguage),
+                    const SizedBox(height: 12),
+                    _LanguageSelector(language: state.language),
+                    const SizedBox(height: 28),
+                    _SectionLabel(text: l10n.settingsSectionNotifications),
                     const SizedBox(height: 12),
                     Container(
                       decoration: BoxDecoration(
@@ -107,8 +117,8 @@ class _SettingsView extends StatelessWidget {
                           _buildToggleTile(
                             context,
                             icon: Icons.record_voice_over_rounded,
-                            title: 'Voz',
-                            subtitle: 'Anuncios hablados de la app',
+                            title: l10n.settingsVoiceTitle,
+                            subtitle: l10n.settingsVoiceSubtitle,
                             value: state.voiceEnabled,
                             onChanged:
                                 (_) => context.read<SettingsBloc>().add(
@@ -125,8 +135,8 @@ class _SettingsView extends StatelessWidget {
                           _buildToggleTile(
                             context,
                             icon: Icons.vibration_rounded,
-                            title: 'Vibración',
-                            subtitle: 'Vibrar en eventos importantes',
+                            title: l10n.settingsVibrationTitle,
+                            subtitle: l10n.settingsVibrationSubtitle,
                             value: state.vibrationEnabled,
                             onChanged:
                                 (_) => context.read<SettingsBloc>().add(
@@ -137,7 +147,7 @@ class _SettingsView extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 28),
-                    _SectionLabel(text: 'CUENTA'),
+                    _SectionLabel(text: l10n.settingsSectionAccount),
                     const SizedBox(height: 12),
                     BlocBuilder<AccountCubit, AccountState>(
                       builder: (context, accountState) {
@@ -232,6 +242,7 @@ class _ThemeModeSelector extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final l10n = AppLocalizations.of(context);
 
     return Container(
       padding: const EdgeInsets.all(6),
@@ -246,7 +257,7 @@ class _ThemeModeSelector extends StatelessWidget {
         children: [
           _ThemeModeOption(
             icon: Icons.dark_mode_rounded,
-            label: 'Oscuro',
+            label: l10n.settingsThemeDark,
             selected: themeMode == ThemeMode.dark,
             onTap:
                 () => context.read<SettingsBloc>().add(
@@ -255,7 +266,7 @@ class _ThemeModeSelector extends StatelessWidget {
           ),
           _ThemeModeOption(
             icon: Icons.light_mode_rounded,
-            label: 'Claro',
+            label: l10n.settingsThemeLight,
             selected: themeMode == ThemeMode.light,
             onTap:
                 () => context.read<SettingsBloc>().add(
@@ -264,7 +275,7 @@ class _ThemeModeSelector extends StatelessWidget {
           ),
           _ThemeModeOption(
             icon: Icons.settings_suggest_rounded,
-            label: 'Sistema',
+            label: l10n.settingsThemeSystem,
             selected: themeMode == ThemeMode.system,
             onTap:
                 () => context.read<SettingsBloc>().add(
@@ -343,6 +354,7 @@ class _DeleteAccountTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final l10n = AppLocalizations.of(context);
 
     return Container(
       decoration: BoxDecoration(
@@ -365,7 +377,7 @@ class _DeleteAccountTile extends StatelessWidget {
           ),
         ),
         title: Text(
-          'Eliminar cuenta',
+          l10n.deleteAccountTitle,
           style: TextStyle(
             color: colorScheme.error,
             fontSize: 15,
@@ -373,7 +385,7 @@ class _DeleteAccountTile extends StatelessWidget {
           ),
         ),
         subtitle: Text(
-          'Esta acción no se puede deshacer',
+          l10n.deleteAccountSubtitle,
           style: TextStyle(
             color: colorScheme.error.withValues(alpha: 0.7),
             fontSize: 12,
@@ -391,6 +403,103 @@ class _DeleteAccountTile extends StatelessWidget {
                 )
                 : null,
         onTap: isDeleting ? null : onTap,
+      ),
+    );
+  }
+}
+
+// Mismo contenedor y mismas pills que _ThemeModeSelector, pero sin icono: un
+// idioma no tiene un icono que lo represente sin caer en banderas, que mapean
+// paises y no idiomas (el espanol no es "Espania").
+class _LanguageSelector extends StatelessWidget {
+  final AppLanguage language;
+
+  const _LanguageSelector({required this.language});
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final l10n = AppLocalizations.of(context);
+
+    return Container(
+      padding: const EdgeInsets.all(6),
+      decoration: BoxDecoration(
+        color: colorScheme.onSurface.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: colorScheme.onSurface.withValues(alpha: 0.08),
+        ),
+      ),
+      child: Row(
+        children: [
+          _LanguageOption(
+            label: l10n.settingsLanguageSystem,
+            selected: language == AppLanguage.system,
+            onTap:
+                () => context.read<SettingsBloc>().add(
+                  ChangeLanguage(AppLanguage.system),
+                ),
+          ),
+          _LanguageOption(
+            label: l10n.settingsLanguageSpanish,
+            selected: language == AppLanguage.spanish,
+            onTap:
+                () => context.read<SettingsBloc>().add(
+                  ChangeLanguage(AppLanguage.spanish),
+                ),
+          ),
+          _LanguageOption(
+            label: l10n.settingsLanguageEnglish,
+            selected: language == AppLanguage.english,
+            onTap:
+                () => context.read<SettingsBloc>().add(
+                  ChangeLanguage(AppLanguage.english),
+                ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _LanguageOption extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _LanguageOption({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: selected ? colorScheme.primary : Colors.transparent,
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color:
+                  selected
+                      ? colorScheme.onPrimary
+                      : colorScheme.onSurface.withValues(alpha: 0.5),
+            ),
+          ),
+        ),
       ),
     );
   }

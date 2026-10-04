@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:passenger_app/core/routing/app_routes.dart';
 import 'package:passenger_app/features/ride_tracking/presentation/bloc/ride_tracking_bloc.dart';
+import 'package:passenger_app/l10n/app_localizations.dart';
 import 'package:passenger_app/shared/presentation/bloc/session/session_bloc.dart';
 
 class SessionScreen extends StatefulWidget {
@@ -69,9 +70,8 @@ class SessionView extends StatelessWidget {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Text(
-                      'No se pudo verificar tu sesión. Revisa tu conexión e '
-                      'intenta de nuevo.',
+                    Text(
+                      AppLocalizations.of(context).sessionCheckFailed,
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 16),
@@ -79,7 +79,7 @@ class SessionView extends StatelessWidget {
                       onPressed: () => context.read<SessionBloc>().add(
                         SessionCheckRequested(),
                       ),
-                      child: const Text('Reintentar'),
+                      child: Text(AppLocalizations.of(context).commonRetry),
                     ),
                   ],
                 ),

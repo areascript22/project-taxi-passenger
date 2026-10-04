@@ -6,7 +6,7 @@ class PassengerOnboardingState {
   final File? profileImage;
   final bool isPickingImage;
   final bool isSubmitting;
-  final String? errorMessage;
+  final FailureCode? errorCode;
   final bool registrationSuccess;
 
   const PassengerOnboardingState({
@@ -14,7 +14,7 @@ class PassengerOnboardingState {
     this.profileImage,
     this.isPickingImage = false,
     this.isSubmitting = false,
-    this.errorMessage,
+    this.errorCode,
     this.registrationSuccess = false,
   });
 
@@ -23,7 +23,7 @@ class PassengerOnboardingState {
     File? profileImage,
     bool? isPickingImage,
     bool? isSubmitting,
-    String? errorMessage,
+    FailureCode? errorCode,
     bool? registrationSuccess,
   }) {
     return PassengerOnboardingState(
@@ -31,7 +31,7 @@ class PassengerOnboardingState {
       profileImage: profileImage ?? this.profileImage,
       isPickingImage: isPickingImage ?? this.isPickingImage,
       isSubmitting: isSubmitting ?? this.isSubmitting,
-      errorMessage: errorMessage,
+      errorCode: errorCode,
       registrationSuccess: registrationSuccess ?? this.registrationSuccess,
     );
   }

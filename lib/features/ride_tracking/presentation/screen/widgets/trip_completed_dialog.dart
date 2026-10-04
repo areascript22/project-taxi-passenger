@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:passenger_app/core/theme/app_colors.dart';
+import 'package:passenger_app/l10n/app_localizations.dart';
 
 // Diálogo informativo mostrado al pasajero cuando el conductor finaliza el
 // viaje. Solo tiene un botón de confirmación; quien lo invoca decide qué
@@ -18,6 +19,7 @@ class TripCompletedDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final colorScheme = Theme.of(context).colorScheme;
     final success = context.appColors.success;
 
@@ -53,7 +55,7 @@ class TripCompletedDialog extends StatelessWidget {
               ),
               const SizedBox(height: 20),
               Text(
-                "Has llegado a tu destino",
+                l10n.tripCompletedTitle,
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
@@ -63,7 +65,7 @@ class TripCompletedDialog extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               Text(
-                "Gracias por elegirnos. Esperamos verte pronto de nuevo.",
+                l10n.tripCompletedBody,
                 style: TextStyle(
                   fontSize: 14,
                   color: colorScheme.onSurface.withValues(alpha: 0.6),
@@ -85,8 +87,8 @@ class TripCompletedDialog extends StatelessWidget {
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  child: const Text(
-                    "Entendido",
+                  child: Text(
+                    l10n.commonUnderstood,
                     style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
                   ),
                 ),

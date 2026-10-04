@@ -17,7 +17,7 @@ enum RideTrackingStatus {
 class RideTrackingState {
   final RideTrackingStatus status;
   final RideEntity? ride;
-  final String? errorMessage;
+  final FailureCode? errorCode;
   final bool isCancelling;
   // Calculados en RideTrackingBloc a partir de ride.driver.location y
   // ride.pickupLatitude/Longitude cada vez que llega un RideUpdated. Una vez
@@ -31,7 +31,7 @@ class RideTrackingState {
   const RideTrackingState({
     this.status = RideTrackingStatus.initial,
     this.ride,
-    this.errorMessage,
+    this.errorCode,
     this.isCancelling = false,
     this.distanceMeters,
     this.etaMinutes,
@@ -41,7 +41,7 @@ class RideTrackingState {
   RideTrackingState copyWith({
     RideTrackingStatus? status,
     RideEntity? ride,
-    String? errorMessage,
+    FailureCode? errorCode,
     bool? isCancelling,
     double? distanceMeters,
     int? etaMinutes,
@@ -52,7 +52,7 @@ class RideTrackingState {
       ride: ride ?? this.ride,
       // Siempre explícito: pasar null limpia el error anterior en vez de
       // arrastrarlo indefinidamente.
-      errorMessage: errorMessage,
+      errorCode: errorCode,
       isCancelling: isCancelling ?? this.isCancelling,
       distanceMeters: distanceMeters ?? this.distanceMeters,
       etaMinutes: etaMinutes ?? this.etaMinutes,

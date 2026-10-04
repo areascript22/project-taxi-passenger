@@ -4,6 +4,8 @@ import 'package:get_it/get_it.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:passenger_app/shared/domain/entity/place_entity.dart';
 import 'package:passenger_app/shared/presentation/component/custom_button.dart';
+import 'package:passenger_app/shared/presentation/failure_text.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../bloc/map_picker/map_picker_bloc.dart';
 
 // Fallback center used when no prior pickup location is known yet,
@@ -92,7 +94,7 @@ class _MapPickerViewState extends State<MapPickerView> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Selecciona tu ubicación'),
+        title: Text(AppLocalizations.of(context).mapPickerTitle),
         backgroundColor: colorScheme.surface,
         elevation: 0,
         foregroundColor: colorScheme.onSurface,
@@ -140,7 +142,7 @@ class _MapPickerViewState extends State<MapPickerView> {
                     BlocBuilder<MapPickerBloc, MapPickerState>(
                       builder: (context, state) {
                         return CustomButton(
-                          textButton: 'Confirmar ubicación',
+                          textButton: AppLocalizations.of(context).mapPickerConfirm,
                           onTap: state.status == MapPickerStatus.addressReady
                               ? () => _onAccept(state)
                               : null,
@@ -200,7 +202,7 @@ class _AddressBubble extends StatelessWidget {
           ),
           const SizedBox(width: 12),
           Text(
-            'Buscando dirección...',
+            AppLocalizations.of(context).mapPickerSearching,
             style: TextStyle(fontSize: 14, color: onSurface.withValues(alpha: 0.5)),
           ),
         ],
@@ -209,7 +211,9 @@ class _AddressBubble extends StatelessWidget {
 
     if (state.status == MapPickerStatus.error) {
       return Text(
-        state.errorMessage ?? 'No se pudo obtener la dirección.',
+        state.errorCode != null
+            ? context.failureText(state.errorCode!)
+            : AppLocalizations.of(context).mapPickerAddressFailed,
         style: TextStyle(fontSize: 14, color: colorScheme.error),
       );
     }
@@ -234,7 +238,7 @@ class _AddressBubble extends StatelessWidget {
     }
 
     return Text(
-      'Mueve el mapa para elegir tu ubicación',
+      AppLocalizations.of(context).mapPickerHint,
       style: TextStyle(fontSize: 14, color: onSurface.withValues(alpha: 0.5)),
     );
   }

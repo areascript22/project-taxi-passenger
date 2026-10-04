@@ -4,6 +4,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:get_it/get_it.dart';
 import 'package:go_router/go_router.dart';
 import 'package:passenger_app/core/routing/app_routes.dart';
+import 'package:passenger_app/core/theme/app_colors.dart';
 import 'package:passenger_app/features/booking/domain/entity/request_entity.dart';
 import 'package:passenger_app/features/booking/presentation/bloc/booking/booking_bloc.dart';
 import 'package:passenger_app/features/booking/presentation/component/booking_header.dart';
@@ -15,9 +16,10 @@ import 'package:passenger_app/features/ride_tracking/presentation/bloc/ride_trac
 import 'package:passenger_app/shared/domain/entity/place_entity.dart';
 import 'package:passenger_app/shared/geolocator/location/location_bloc.dart';
 import 'package:passenger_app/shared/presentation/bloc/session/session_bloc.dart';
-import 'package:passenger_app/core/theme/app_colors.dart';
 import 'package:passenger_app/shared/presentation/component/custom_button.dart';
 import 'package:passenger_app/shared/presentation/component/custom_loader.dart';
+import 'package:passenger_app/shared/presentation/failure_text.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../../../shared/feedback/feedback_service.dart';
 import '../bloc/location_search/location_search_bloc.dart';
 
@@ -78,7 +80,19 @@ class _BookingViewState extends State<BookingView> {
     // conductor" -- no tiene sentido saludar de bienvenida encima.
     if (widget.recoveredRide != null) return;
 
-    GetIt.instance<FeedbackService>().announce('Bienvenido a TaxiGo');
+    // El saludo se difiere al primer frame (igual que
+    // _maybeResumeWaitingDialog) porque AppLocalizations es un
+    // InheritedWidget: leerlo durante initState revienta con
+    // "dependOnInheritedWidgetOfExactType called before initState completed".
+    // Antes de la traducción esto era un string literal y no dependía del
+    // árbol, así que la llamada directa funcionaba.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+
+      GetIt.instance<FeedbackService>().announce(
+        AppLocalizations.of(context).bookingWelcomeAnnouncement,
+      );
+    });
   }
 
   // Resume el diálogo "Buscando conductor" si SessionScreen detectó que el
@@ -143,7 +157,7 @@ class _BookingViewState extends State<BookingView> {
                     BlocBuilder<BookingBloc, BookingState>(
                       builder: (context, state) {
                         return CustomButton(
-                          textButton: "Solicitar taxi",
+                          textButton: AppLocalizations.of(context).bookingRequestTaxi,
                           onTap:
                               state.pickupAddress != null
                                   ? () {
@@ -221,17 +235,23 @@ class _BookingViewState extends State<BookingView> {
       },
       builder: (context, state) {
         if (state.locationProcess == LocationProcess.checkingPermissions) {
-          return const Center(
+          return Center(
             child: Column(
-              children: [CustomLoader(), Text('Comprobando permisos...')],
+              children: [
+                const CustomLoader(),
+                Text(AppLocalizations.of(context).bookingCheckingPermissions),
+              ],
             ),
           );
         }
 
         if (state.locationProcess == LocationProcess.gettingCurrentCords) {
-          return const Center(
+          return Center(
             child: Column(
-              children: [CustomLoader(), Text('Ubteniendo tu ubicacion...')],
+              children: [
+                const CustomLoader(),
+                Text(AppLocalizations.of(context).bookingGettingLocation),
+              ],
             ),
           );
         }
@@ -256,11 +276,11 @@ class _BookingViewState extends State<BookingView> {
         return BlocBuilder<BookingBloc, BookingState>(
           builder: (context, state) {
             if (state.status == BookingStatus.fetchingAddress) {
-              return const Center(
+              return Center(
                 child: Column(
                   children: [
-                    CustomLoader(),
-                    Text('Ubteniendo tu direccion...'),
+                    const CustomLoader(),
+                    Text(AppLocalizations.of(context).bookingGettingAddress),
                   ],
                 ),
               );
@@ -375,7 +395,7 @@ class _BookingViewState extends State<BookingView> {
                         );
                       },
                       decoration: InputDecoration(
-                        hintText: "Buscar dirección o lugar...",
+                        hintText: AppLocalizations.of(context).bookingSearchHint,
                         hintStyle: TextStyle(
                           color: onSurface.withValues(alpha: 0.4),
                           fontSize: 15,
@@ -479,7 +499,7 @@ class _BookingViewState extends State<BookingView> {
           return Padding(
             padding: const EdgeInsets.only(top: 16.0),
             child: Text(
-              state.message,
+              context.failureText(state.code),
               style: TextStyle(color: colorScheme.error, fontSize: 14),
             ),
           );
@@ -490,7 +510,7 @@ class _BookingViewState extends State<BookingView> {
             return Padding(
               padding: const EdgeInsets.only(top: 16.0),
               child: Text(
-                "No se encontraron resultados",
+                AppLocalizations.of(context).bookingNoResults,
                 style: TextStyle(color: onSurface.withValues(alpha: 0.5)),
               ),
             );
@@ -555,7 +575,7 @@ class _MapPickerButton extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Tooltip(
-      message: 'Elegir en el mapa',
+      message: AppLocalizations.of(context).bookingPickOnMap,
       child: Material(
         color: colorScheme.primary.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(16),

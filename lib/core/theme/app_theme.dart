@@ -92,11 +92,11 @@ class AppTheme {
                   : null,
         ),
       ),
-      snackBarTheme: SnackBarThemeData(
-        backgroundColor: colorScheme.error,
-        contentTextStyle: TextStyle(color: colorScheme.onError),
-        behavior: SnackBarBehavior.floating,
-      ),
+      // Ya no hay snackBarTheme: la app no usa SnackBar, usa AppToast (ver
+      // shared/presentation/component/app_toast.dart). El tema que había acá
+      // pintaba TODO SnackBar con colorScheme.error, así que los mensajes de
+      // éxito salían rojos -- dejarlo sería un error silencioso esperando al
+      // próximo SnackBar que alguien agregue.
     );
   }
 }

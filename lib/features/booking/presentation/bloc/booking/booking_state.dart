@@ -18,7 +18,7 @@ class BookingState {
   final double? pickupLng;
   final String? pickupAddress;
   final String? destinationAddress;
-  final String? errorMessage;
+  final FailureCode? errorCode;
 
   const BookingState({
     this.status = BookingStatus.initial,
@@ -26,7 +26,7 @@ class BookingState {
     this.pickupLng,
     this.pickupAddress,
     this.destinationAddress,
-    this.errorMessage,
+    this.errorCode,
   });
 
   BookingState copyWith({
@@ -35,7 +35,7 @@ class BookingState {
     double? pickupLng,
     String? pickupAddress,
     String? destinationAddress,
-    String? errorMessage,
+    FailureCode? errorCode,
     bool clearError = false,
   }) {
     return BookingState(
@@ -44,7 +44,7 @@ class BookingState {
       pickupLng: pickupLng ?? this.pickupLng,
       pickupAddress: pickupAddress ?? this.pickupAddress,
       destinationAddress: destinationAddress ?? this.destinationAddress,
-      errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
+      errorCode: clearError ? null : (errorCode ?? this.errorCode),
     );
   }
 }

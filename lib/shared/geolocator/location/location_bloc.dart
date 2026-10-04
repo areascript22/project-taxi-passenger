@@ -1,6 +1,7 @@
 import 'package:bloc/bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:passenger_app/core/error/errors.dart';
 import 'package:passenger_app/shared/geolocator/service/geolocator/geolocator_service.dart';
 import '../../domain/entity/user_location.dart';
 
@@ -30,7 +31,7 @@ class LocationBloc extends Bloc<LocationEvent, LocationState> {
         emit(
           state.copyWith(
             locationProcess: LocationProcess.permissionsError,
-            errorMessage: failure.message,
+            errorCode: failure.code,
           ),
         );
       },
@@ -56,7 +57,7 @@ class LocationBloc extends Bloc<LocationEvent, LocationState> {
       emit(
         state.copyWith(
           locationProcess: LocationProcess.permissionsError,
-          errorMessage: "No tiene permisos de ubicación.",
+          errorCode: FailureCode.locationPermissionDenied,
         ),
       );
       return;
@@ -67,7 +68,7 @@ class LocationBloc extends Bloc<LocationEvent, LocationState> {
       (failure) => emit(
         state.copyWith(
           locationProcess: LocationProcess.currentCordsError,
-          errorMessage: failure.message,
+          errorCode: failure.code,
         ),
       ),
       (location) => emit(

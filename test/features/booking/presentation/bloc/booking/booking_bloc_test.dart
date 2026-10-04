@@ -74,7 +74,7 @@ void main() {
             lat: any(named: 'lat'),
             lng: any(named: 'lng'),
           ),
-        ).thenAnswer((_) async => Left(Failure(message: 'sin conexión')));
+        ).thenAnswer((_) async => Left(Failure(code: FailureCode.unexpected)));
         return buildBloc();
       },
       act: (bloc) =>
@@ -87,7 +87,7 @@ void main() {
         ),
         isA<BookingState>()
             .having((s) => s.status, 'status', BookingStatus.error)
-            .having((s) => s.errorMessage, 'errorMessage', 'sin conexión'),
+            .having((s) => s.errorCode, 'errorCode', FailureCode.unexpected),
       ],
     );
   });
@@ -156,7 +156,7 @@ void main() {
       build: () {
         when(
           () => bookingRepository.requestTaxi(request: any(named: 'request')),
-        ).thenAnswer((_) async => Left(Failure(message: 'no hay conductores')));
+        ).thenAnswer((_) async => Left(Failure(code: FailureCode.unexpected)));
         return buildBloc();
       },
       act: (bloc) => bloc.add(RequestTaxi(request: request)),
@@ -168,11 +168,7 @@ void main() {
         ),
         isA<BookingState>()
             .having((s) => s.status, 'status', BookingStatus.error)
-            .having(
-              (s) => s.errorMessage,
-              'errorMessage',
-              'no hay conductores',
-            ),
+            .having((s) => s.errorCode, 'errorCode', FailureCode.unexpected),
       ],
     );
   });
@@ -206,7 +202,7 @@ void main() {
       'emite error si la cancelación falla en el backend',
       build: () {
         when(() => bookingRepository.cancelTaxiRequest()).thenAnswer(
-          (_) async => Left(Failure(message: 'no se pudo cancelar')),
+          (_) async => Left(Failure(code: FailureCode.unexpected)),
         );
         return buildBloc();
       },
@@ -220,11 +216,7 @@ void main() {
         ),
         isA<BookingState>()
             .having((s) => s.status, 'status', BookingStatus.error)
-            .having(
-              (s) => s.errorMessage,
-              'errorMessage',
-              'no se pudo cancelar',
-            ),
+            .having((s) => s.errorCode, 'errorCode', FailureCode.unexpected),
       ],
     );
   });

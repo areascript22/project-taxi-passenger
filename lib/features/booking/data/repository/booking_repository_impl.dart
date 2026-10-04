@@ -32,12 +32,12 @@ class BookingRepositoryImpl implements BookingRepository {
     } on DioException catch (e) {
       debugPrint('BookingDebug | Error en requestTaxi: $e');
       return Left(
-        Failure(message: 'No se pudo solicitar el taxi. Intente de nuevo.'),
+        Failure(code: FailureCode.rideRequestFailed),
       );
     } catch (e) {
       debugPrint('BookingDebug | Error inesperado en requestTaxi: $e');
       return Left(
-        Failure(message: 'No se pudo solicitar el taxi. Intente de nuevo.'),
+        Failure(code: FailureCode.rideRequestFailed),
       );
     }
   }
@@ -54,7 +54,7 @@ class BookingRepositoryImpl implements BookingRepository {
 
       if (currentUser == null) {
         return Left(
-          Failure(message: 'Usuario no autenticado. Inicie sesión nuevamente.'),
+          Failure(code: FailureCode.notAuthenticated),
         );
       }
 
@@ -64,16 +64,16 @@ class BookingRepositoryImpl implements BookingRepository {
       debugPrint('BookingDebug | Error en cancelTaxiRequest: $e');
       if (e.response?.statusCode == 404 || e.response?.statusCode == 409) {
         return Left(
-          Failure(message: 'La solicitud ya no está disponible para cancelar.'),
+          Failure(code: FailureCode.rideRequestCancelUnavailable),
         );
       }
       return Left(
-        Failure(message: 'No se pudo cancelar la solicitud. Intente de nuevo.'),
+        Failure(code: FailureCode.rideRequestCancelFailed),
       );
     } catch (e) {
       debugPrint('BookingDebug | Error inesperado en cancelTaxiRequest: $e');
       return Left(
-        Failure(message: 'No se pudo cancelar la solicitud. Intente de nuevo.'),
+        Failure(code: FailureCode.rideRequestCancelFailed),
       );
     }
   }

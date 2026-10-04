@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:passenger_app/core/theme/app_colors.dart';
+import 'package:passenger_app/l10n/app_localizations.dart';
 
 class LocationDenied extends StatelessWidget {
   final bool isPermanentlyDenied;
@@ -13,6 +14,7 @@ class LocationDenied extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final onSurface = Theme.of(context).colorScheme.onSurface;
     final warning = context.appColors.warning;
 
@@ -33,7 +35,7 @@ class LocationDenied extends StatelessWidget {
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  "¿Dónde te encuentras?",
+                  l10n.locationWhereAreYou,
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,

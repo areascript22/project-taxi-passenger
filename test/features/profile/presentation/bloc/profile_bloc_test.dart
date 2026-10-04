@@ -71,13 +71,13 @@ void main() {
     );
 
     blocTest<ProfileBloc, ProfileState>(
-      'errorMessage genérico cuando el repo devuelve Left',
+      'errorCode genérico cuando el repo devuelve Left',
       build: () {
         when(
           () => passengerProfileRepository.getPassenger(
             passengerId: any(named: 'passengerId'),
           ),
-        ).thenAnswer((_) async => Left(Failure(message: 'network error')));
+        ).thenAnswer((_) async => Left(Failure(code: FailureCode.unexpected)));
         return buildBloc();
       },
       act: (bloc) => bloc.add(ProfileLoadRequested(passengerId: 'p1')),
@@ -85,16 +85,12 @@ void main() {
         isA<ProfileState>().having((s) => s.isLoading, 'isLoading', isTrue),
         isA<ProfileState>()
             .having((s) => s.isLoading, 'isLoading', isFalse)
-            .having(
-              (s) => s.errorMessage,
-              'errorMessage',
-              'No se pudo cargar tu información',
-            ),
+            .having((s) => s.errorCode, 'errorCode', FailureCode.profileLoadFailed),
       ],
     );
 
     blocTest<ProfileBloc, ProfileState>(
-      'errorMessage también cuando el repo devuelve Right(null) (pasajero inexistente)',
+      'errorCode también cuando el repo devuelve Right(null) (pasajero inexistente)',
       build: () {
         when(
           () => passengerProfileRepository.getPassenger(
@@ -106,28 +102,24 @@ void main() {
       act: (bloc) => bloc.add(ProfileLoadRequested(passengerId: 'p1')),
       expect: () => [
         isA<ProfileState>().having((s) => s.isLoading, 'isLoading', isTrue),
-        isA<ProfileState>().having(
-          (s) => s.errorMessage,
-          'errorMessage',
-          'No se pudo cargar tu información',
-        ),
+        isA<ProfileState>().having((s) => s.errorCode, 'errorCode', FailureCode.profileLoadFailed),
       ],
     );
   });
 
   group('ProfileEditStarted', () {
     blocTest<ProfileBloc, ProfileState>(
-      'limpia localImage y errorMessage previos',
+      'limpia localImage y errorCode previos',
       build: buildBloc,
       seed: () => ProfileState(
         localImage: File('previo.png'),
-        errorMessage: 'error viejo',
+        errorCode: FailureCode.unexpected,
       ),
       act: (bloc) => bloc.add(ProfileEditStarted()),
       expect: () => [
         isA<ProfileState>()
             .having((s) => s.localImage, 'localImage', isNull)
-            .having((s) => s.errorMessage, 'errorMessage', isNull),
+            .having((s) => s.errorCode, 'errorCode', isNull),
       ],
     );
   });
@@ -224,14 +216,14 @@ void main() {
     );
 
     blocTest<ProfileBloc, ProfileState>(
-      'emite errorMessage si falla la actualización',
+      'emite errorCode si falla la actualización',
       build: () {
         when(
           () => passengerProfileRepository.updatePassenger(
             passenger: any(named: 'passenger'),
             profileImage: any(named: 'profileImage'),
           ),
-        ).thenAnswer((_) async => Left(Failure(message: 'no autorizado')));
+        ).thenAnswer((_) async => Left(Failure(code: FailureCode.unexpected)));
         return buildBloc();
       },
       seed: () => ProfileState(passenger: passenger),
@@ -245,7 +237,10 @@ void main() {
         ),
         isA<ProfileState>()
             .having((s) => s.isSubmitting, 'isSubmitting', isFalse)
-            .having((s) => s.errorMessage, 'errorMessage', 'no autorizado'),
+            // El codigo viene del repositorio mockeado, no del bloc: por eso
+            // es `unexpected` y no `profileLoadFailed` (ese lo pone el bloc
+            // cuando el repo devuelve Right(null)).
+            .having((s) => s.errorCode, 'errorCode', FailureCode.unexpected),
       ],
     );
   });

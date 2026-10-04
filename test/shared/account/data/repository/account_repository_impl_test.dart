@@ -1,3 +1,4 @@
+import 'package:passenger_app/core/error/errors.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -63,7 +64,7 @@ void main() {
 
         expect(result.isLeft(), isTrue);
         result.fold(
-          (failure) => expect(failure.message, contains('viaje activo')),
+          (failure) => expect(failure.code, FailureCode.accountHasActiveRide),
           (_) => fail('expected a Left'),
         );
       },

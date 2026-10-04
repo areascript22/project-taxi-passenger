@@ -15,35 +15,35 @@ final class LocationSearchInitial extends LocationSearchState {}
 final class LocationSearchLoading extends LocationSearchState {}
 
 final class LocationSearchError extends LocationSearchState {
-  final String message;
+  final FailureCode code;
 
-  LocationSearchError({required this.message});
+  LocationSearchError({required this.code});
 }
 
 final class LocationSearchLoaded extends LocationSearchState {
   final List<PlaceEntity> places;
   final PlaceEntity? placeWithCords;
   final SearchLoadedProcess searchLoadedProcess;
-  final String? cordsError;
+  final FailureCode? cordsErrorCode;
 
   LocationSearchLoaded({
     required this.places,
     this.placeWithCords,
     this.searchLoadedProcess = SearchLoadedProcess.initial,
-    this.cordsError,
+    this.cordsErrorCode,
   });
 
   LocationSearchLoaded copyWith({
     List<PlaceEntity>? places,
     PlaceEntity? placeWithCords,
     SearchLoadedProcess? searchLoadedProcess,
-    String? cordsError,
+    FailureCode? cordsErrorCode,
   }) {
     return LocationSearchLoaded(
       places: places ?? this.places,
       placeWithCords: placeWithCords ?? this.placeWithCords,
       searchLoadedProcess: searchLoadedProcess ?? this.searchLoadedProcess,
-      cordsError: cordsError ?? this.cordsError,
+      cordsErrorCode: cordsErrorCode ?? this.cordsErrorCode,
     );
   }
 }

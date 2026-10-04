@@ -14,7 +14,9 @@ final class AuthAuthenticated extends AuthState {
 }
 
 final class AuthError extends AuthState {
-  final String message;
+  // Lleva el codigo, no el texto: el texto lo resuelve la pantalla con
+  // context.failureText(code) -- ver core/error/errors.dart.
+  final FailureCode code;
 
-  AuthError(this.message);
+  AuthError(this.code);
 }

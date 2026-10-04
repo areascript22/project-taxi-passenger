@@ -22,7 +22,7 @@ void main() {
   test('initial state is not deleting, with no error and not deleted', () {
     final cubit = buildCubit();
     expect(cubit.state.isDeleting, isFalse);
-    expect(cubit.state.errorMessage, isNull);
+    expect(cubit.state.errorCode, isNull);
     expect(cubit.state.wasDeleted, isFalse);
   });
 
@@ -35,16 +35,16 @@ void main() {
       build: buildCubit,
       act: (cubit) => cubit.deleteAccount(),
       expect: () => [
-        predicate<AccountState>((s) => s.isDeleting && s.errorMessage == null),
+        predicate<AccountState>((s) => s.isDeleting && s.errorCode == null),
         predicate<AccountState>((s) => !s.isDeleting && s.wasDeleted),
       ],
     );
 
     blocTest<AccountCubit, AccountState>(
-      'emits isDeleting true then an errorMessage on failure (e.g. active ride conflict)',
+      'emits isDeleting true then an errorCode on failure (e.g. active ride conflict)',
       setUp: () {
         when(() => repository.deleteAccount()).thenAnswer(
-          (_) async => Left(Failure(message: 'Tienes un viaje activo.')),
+          (_) async => Left(Failure(code: FailureCode.unexpected)),
         );
       },
       build: buildCubit,
@@ -52,7 +52,7 @@ void main() {
       expect: () => [
         predicate<AccountState>((s) => s.isDeleting),
         predicate<AccountState>(
-          (s) => !s.isDeleting && s.errorMessage == 'Tienes un viaje activo.' && !s.wasDeleted,
+          (s) => !s.isDeleting && s.errorCode != null && !s.wasDeleted,
         ),
       ],
     );
@@ -63,10 +63,10 @@ void main() {
         when(() => repository.deleteAccount()).thenAnswer((_) async => const Right(unit));
       },
       build: buildCubit,
-      seed: () => const AccountState(errorMessage: 'error previo'),
+      seed: () => const AccountState(errorCode: FailureCode.unexpected),
       act: (cubit) => cubit.deleteAccount(),
       expect: () => [
-        predicate<AccountState>((s) => s.isDeleting && s.errorMessage == null),
+        predicate<AccountState>((s) => s.isDeleting && s.errorCode == null),
         predicate<AccountState>((s) => !s.isDeleting && s.wasDeleted),
       ],
     );
@@ -82,7 +82,7 @@ void main() {
       final cubit = buildCubit();
       final pending = cubit.deleteAccount();
       await cubit.close();
-      completer.complete(Left(Failure(message: 'falló tarde')));
+      completer.complete(Left(Failure(code: FailureCode.unexpected)));
 
       await expectLater(pending, completes);
     });

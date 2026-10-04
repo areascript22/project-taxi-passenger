@@ -59,7 +59,7 @@ void main() {
             lat: any(named: 'lat'),
             lng: any(named: 'lng'),
           ),
-        ).thenAnswer((_) async => Left(Failure(message: 'sin señal')));
+        ).thenAnswer((_) async => Left(Failure(code: FailureCode.unexpected)));
         return buildBloc();
       },
       act: (bloc) =>
@@ -72,7 +72,7 @@ void main() {
         ),
         isA<MapPickerState>()
             .having((s) => s.status, 'status', MapPickerStatus.error)
-            .having((s) => s.errorMessage, 'errorMessage', 'sin señal'),
+            .having((s) => s.errorCode, 'errorCode', FailureCode.unexpected),
       ],
     );
   });

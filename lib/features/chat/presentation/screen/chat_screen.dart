@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
+import 'package:passenger_app/shared/presentation/failure_text.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../../../shared/chat_presence/service/chat_presence_tracker.dart';
 import '../../domain/entity/chat_message_entity.dart';
 import '../bloc/chat_bloc.dart';
@@ -72,14 +74,16 @@ class _ChatViewState extends State<_ChatView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Chat con tu conductor')),
+      appBar: AppBar(title: Text(AppLocalizations.of(context).chatTitle)),
       body: Column(
         children: [
           Expanded(
             child: BlocBuilder<ChatBloc, ChatState>(
               builder: (context, state) {
                 if (state.messages.isEmpty) {
-                  return const Center(child: Text('Todavía no hay mensajes'));
+                  return Center(
+                    child: Text(AppLocalizations.of(context).chatEmpty),
+                  );
                 }
 
                 return ListView.builder(
@@ -100,11 +104,11 @@ class _ChatViewState extends State<_ChatView> {
           ),
           BlocBuilder<ChatBloc, ChatState>(
             builder: (context, state) {
-              if (state.errorMessage == null) return const SizedBox.shrink();
+              if (state.errorCode == null) return const SizedBox.shrink();
               return Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Text(
-                  state.errorMessage!,
+                  context.failureText(state.errorCode!),
                   style: TextStyle(color: Theme.of(context).colorScheme.error),
                 ),
               );
@@ -121,8 +125,8 @@ class _ChatViewState extends State<_ChatView> {
                       controller: _textController,
                       minLines: 1,
                       maxLines: 4,
-                      decoration: const InputDecoration(
-                        hintText: 'Escribe un mensaje...',
+                      decoration: InputDecoration(
+                        hintText: AppLocalizations.of(context).chatInputHint,
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.all(Radius.circular(24)),
                         ),

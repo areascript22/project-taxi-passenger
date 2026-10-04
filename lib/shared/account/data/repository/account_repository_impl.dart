@@ -41,19 +41,16 @@ class AccountRepositoryImpl implements AccountRepository {
       debugPrint('AccountDebug | Error en deleteAccount: $e');
       if (e.response?.statusCode == 409) {
         return Left(
-          Failure(
-            message:
-                'Tienes un viaje activo. Finalízalo o cancélalo antes de eliminar tu cuenta.',
-          ),
+          Failure(code: FailureCode.accountHasActiveRide),
         );
       }
       return Left(
-        Failure(message: 'No se pudo eliminar tu cuenta. Intenta nuevamente.'),
+        Failure(code: FailureCode.accountDeleteFailed),
       );
     } catch (e) {
       debugPrint('AccountDebug | Error inesperado en deleteAccount: $e');
       return Left(
-        Failure(message: 'No se pudo eliminar tu cuenta. Intenta nuevamente.'),
+        Failure(code: FailureCode.accountDeleteFailed),
       );
     }
   }

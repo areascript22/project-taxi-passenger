@@ -61,6 +61,14 @@ dependencies:
   firebase_messaging: ^16.6.0
   flutter_local_notifications: ^19.5.0
   connectivity_plus: ^6.1.4
+  # Toasts de la app (ver shared/presentation/component/app_toast.dart).
+  # Resuelve a 3.0.3 y no a la última: toastification 3.1.0 subió su mínimo a
+  # Flutter 3.38 y este proyecto está en 3.29.2. No es un pin manual -- cuando
+  # se suba Flutter, `flutter pub upgrade` toma sola la versión nueva.
+  toastification: ^3.0.3
+  flutter_localizations:
+    sdk: flutter
+  intl: ^0.19.0
 
 dependency_overrides:
   package_info_plus: ^8.0.0
@@ -89,6 +97,9 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
+
+  # Corre `gen-l10n` en cada build a partir de lib/l10n/*.arb (ver l10n.yaml).
+  generate: true
 
   # To add assets to your application, add an assets section, like this:
   assets:

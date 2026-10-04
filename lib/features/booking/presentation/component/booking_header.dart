@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:passenger_app/l10n/app_localizations.dart';
 
 class BookingHeader extends StatelessWidget {
   const BookingHeader({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final colorScheme = Theme.of(context).colorScheme;
     final onSurface = colorScheme.onSurface;
 
@@ -23,7 +25,7 @@ class BookingHeader extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                "¿A dónde vas?",
+                l10n.bookingWhereTo,
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
@@ -32,7 +34,7 @@ class BookingHeader extends StatelessWidget {
               ),
               const SizedBox(height: 4),
               Text(
-                "¿Listo para viajar?",
+                l10n.bookingReadyToRide,
                 style: TextStyle(
                   fontSize: 14,
                   color: onSurface.withValues(alpha: 0.6),

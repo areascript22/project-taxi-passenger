@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:bloc/bloc.dart';
 import 'package:flutter/material.dart';
+import 'package:passenger_app/core/error/errors.dart';
 import '../../../../shared/domain/entity/user_entity.dart';
 import '../../../../shared/image_picker/service/profile_image_picker_service.dart';
 import '../../domain/entity/passenger_entity.dart';
@@ -34,13 +35,13 @@ class PassengerOnboardingBloc
     PassengerOnboardingImagePicked event,
     Emitter<PassengerOnboardingState> emit,
   ) async {
-    emit(state.copyWith(isPickingImage: true, errorMessage: null));
+    emit(state.copyWith(isPickingImage: true, errorCode: null));
 
     final result = await imagePickerService.pickImage(source: event.source);
 
     result.fold(
       (failure) => emit(
-        state.copyWith(isPickingImage: false, errorMessage: failure.message),
+        state.copyWith(isPickingImage: false, errorCode: failure.code),
       ),
       (file) {
         if (file == null) {
@@ -61,7 +62,7 @@ class PassengerOnboardingBloc
       return;
     }
 
-    emit(state.copyWith(isSubmitting: true, errorMessage: null));
+    emit(state.copyWith(isSubmitting: true, errorCode: null));
 
     final passenger = PassengerEntity(
       id: user.id,
@@ -78,7 +79,7 @@ class PassengerOnboardingBloc
 
     result.fold(
       (failure) => emit(
-        state.copyWith(isSubmitting: false, errorMessage: failure.message),
+        state.copyWith(isSubmitting: false, errorCode: failure.code),
       ),
       (_) => emit(
         state.copyWith(isSubmitting: false, registrationSuccess: true),

@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:passenger_app/shared/presentation/failure_text.dart';
 import '../../../../core/routing/app_routes.dart';
 import '../../../../core/service_locator/main_service_locator.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../../../shared/domain/entity/user_entity.dart';
 import '../../../../shared/presentation/bloc/session/session_bloc.dart';
 import '../../../../shared/presentation/component/app_text_field.dart';
+import '../../../../shared/presentation/component/app_toast.dart';
 import '../../../../shared/presentation/component/custom_button.dart';
 import '../../../../shared/presentation/component/image_source_sheet.dart';
 import '../../../../shared/presentation/component/profile_avatar_picker.dart';
@@ -95,10 +98,8 @@ class _PassengerOnboardingViewState extends State<PassengerOnboardingView> {
       child: Scaffold(
         body: BlocConsumer<PassengerOnboardingBloc, PassengerOnboardingState>(
           listener: (context, state) {
-            if (state.errorMessage != null) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(state.errorMessage!)),
-              );
+            if (state.errorCode != null) {
+              AppToast.error(context, message: context.failureText(state.errorCode!));
             }
             if (state.registrationSuccess) {
               context.goNamed(sessionRoute.name);
@@ -125,7 +126,7 @@ class _PassengerOnboardingViewState extends State<PassengerOnboardingView> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Completa tu perfil',
+                                AppLocalizations.of(context).onboardingTitle,
                                 style: TextStyle(
                                   fontSize: 24,
                                   fontWeight: FontWeight.bold,
@@ -134,7 +135,7 @@ class _PassengerOnboardingViewState extends State<PassengerOnboardingView> {
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                'Cuéntanos quién eres para poder identificarte en tus viajes.',
+                                AppLocalizations.of(context).onboardingSubtitle,
                                 style: TextStyle(
                                   fontSize: 14,
                                   color: colorScheme.onSurface.withValues(
@@ -153,31 +154,31 @@ class _PassengerOnboardingViewState extends State<PassengerOnboardingView> {
                               ),
                               const SizedBox(height: 32),
                               AppTextField(
-                                label: 'Nombres',
+                                label: AppLocalizations.of(context).fieldFirstName,
                                 controller: _firstNameController,
                                 textCapitalization: TextCapitalization.words,
                                 validator: (value) {
                                   if (value == null || value.trim().isEmpty) {
-                                    return 'Ingresa tus nombres';
+                                    return AppLocalizations.of(context).validationFirstName;
                                   }
                                   return null;
                                 },
                               ),
                               const SizedBox(height: 16),
                               AppTextField(
-                                label: 'Apellidos',
+                                label: AppLocalizations.of(context).fieldLastName,
                                 controller: _lastNameController,
                                 textCapitalization: TextCapitalization.words,
                                 validator: (value) {
                                   if (value == null || value.trim().isEmpty) {
-                                    return 'Ingresa tus apellidos';
+                                    return AppLocalizations.of(context).validationLastName;
                                   }
                                   return null;
                                 },
                               ),
                               const SizedBox(height: 16),
                               AppTextField(
-                                label: 'Correo electrónico',
+                                label: AppLocalizations.of(context).commonEmail,
                                 controller: _emailController,
                                 enabled: false,
                               ),
@@ -185,8 +186,8 @@ class _PassengerOnboardingViewState extends State<PassengerOnboardingView> {
                               CustomButton(
                                 textButton:
                                     state.isSubmitting
-                                        ? 'Guardando...'
-                                        : 'Continuar',
+                                        ? AppLocalizations.of(context).commonSaving
+                                        : AppLocalizations.of(context).commonContinue,
                                 backgroundColor: colorScheme.primary,
                                 onTap: state.isSubmitting ? null : _submit,
                               ),
@@ -203,7 +204,7 @@ class _PassengerOnboardingViewState extends State<PassengerOnboardingView> {
                         context.goNamed(signInRoute.name);
                       },
                       child: Text(
-                        '¿No eres tú? Cerrar sesión',
+                        AppLocalizations.of(context).onboardingSignOutPrompt,
                         style: TextStyle(
                           color: colorScheme.onSurface.withValues(alpha: 0.4),
                         ),

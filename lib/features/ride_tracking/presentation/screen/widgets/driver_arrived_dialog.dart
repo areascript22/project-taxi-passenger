@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
 import 'package:passenger_app/core/theme/app_colors.dart';
 import 'package:passenger_app/features/ride_tracking/presentation/bloc/ride_tracking_bloc.dart';
+import 'package:passenger_app/l10n/app_localizations.dart';
 
 // Diálogo informativo mostrado al pasajero cuando el conductor llega al
 // punto de recogida. El botón "En camino" confirma al conductor que el
@@ -29,6 +30,7 @@ class DriverArrivedDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final colorScheme = Theme.of(context).colorScheme;
     final success = context.appColors.success;
 
@@ -64,7 +66,7 @@ class DriverArrivedDialog extends StatelessWidget {
               ),
               const SizedBox(height: 20),
               Text(
-                "El conductor ha llegado",
+                l10n.rideDriverArrivedAnnouncement,
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
@@ -74,7 +76,7 @@ class DriverArrivedDialog extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               Text(
-                "Tu conductor te está esperando en el punto de recogida. Dirígete al vehículo.",
+                l10n.driverArrivedBody,
                 style: TextStyle(
                   fontSize: 14,
                   color: colorScheme.onSurface.withValues(alpha: 0.6),
@@ -101,8 +103,8 @@ class DriverArrivedDialog extends StatelessWidget {
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  child: const Text(
-                    "En camino",
+                  child: Text(
+                    l10n.driverArrivedConfirm,
                     style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
                   ),
                 ),

@@ -4,8 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:passenger_app/shared/domain/entity/place_entity.dart';
 import '../../../../core/error/errors.dart';
-import '../../domain/repository/location_search_repository.dart';
 import '../../../../core/network/dio_client.dart';
+import '../../domain/repository/location_search_repository.dart';
 
 class LocationSearchRepositoryImpl implements LocationSearchRepository {
   final String apiKey = dotenv.env['PLACES_API_KEY'] ?? '';
@@ -53,16 +53,16 @@ class LocationSearchRepositoryImpl implements LocationSearchRepository {
 
         return right(places);
       } else {
-        return left(Failure(message: "Failed to fetch place suggestions."));
+        return left(Failure(code: FailureCode.placeSuggestionsFailed));
       }
     } on DioException catch (e) {
       debugPrint(
         "Places API Dio Error: ${e.response?.statusCode} - ${e.response?.data}",
       );
-      return left(Failure(message: "Failed to fetch place suggestions."));
+      return left(Failure(code: FailureCode.placeSuggestionsFailed));
     } catch (e) {
       debugPrint("Exception in getAutocompletePlaces: $e");
-      return left(Failure(message: "An unexpected error occurred."));
+      return left(Failure(code: FailureCode.unexpectedUpstream));
     }
   }
 
@@ -71,7 +71,7 @@ class LocationSearchRepositoryImpl implements LocationSearchRepository {
     required String placeId,
   }) async {
     if (placeId.isEmpty) {
-      return left(Failure(message: "Place ID is required"));
+      return left(Failure(code: FailureCode.placeIdMissing));
     }
 
     try {
@@ -92,21 +92,21 @@ class LocationSearchRepositoryImpl implements LocationSearchRepository {
 
         // Verificamos que tenga coordenadas
         if (place.latitude == null || place.longitude == null) {
-          return left(Failure(message: "Place has no coordinates available"));
+          return left(Failure(code: FailureCode.placeWithoutCoordinates));
         }
 
         return right(place);
       } else {
-        return left(Failure(message: "Failed to fetch place details."));
+        return left(Failure(code: FailureCode.placeDetailsFailed));
       }
     } on DioException catch (e) {
       debugPrint(
         "Places API Details Dio Error: ${e.response?.statusCode} - ${e.response?.data}",
       );
-      return left(Failure(message: "Failed to fetch place details."));
+      return left(Failure(code: FailureCode.placeDetailsFailed));
     } catch (e) {
       debugPrint("Exception in getPlaceDetails: $e");
-      return left(Failure(message: "An unexpected error occurred."));
+      return left(Failure(code: FailureCode.unexpectedUpstream));
     }
   }
 }

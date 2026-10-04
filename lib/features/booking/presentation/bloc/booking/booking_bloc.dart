@@ -1,8 +1,9 @@
 import 'package:bloc/bloc.dart';
 import 'package:meta/meta.dart';
-import 'package:passenger_app/shared/domain/entity/place_entity.dart';
+import 'package:passenger_app/core/error/errors.dart';
 import 'package:passenger_app/features/booking/domain/entity/request_entity.dart';
 import 'package:passenger_app/features/booking/domain/repository/booking_repository.dart';
+import 'package:passenger_app/shared/domain/entity/place_entity.dart';
 import 'package:passenger_app/shared/geocoding/domain/repository/geocoding_repository.dart';
 
 part 'booking_event.dart';
@@ -50,7 +51,7 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
         emit(
           state.copyWith(
             status: BookingStatus.error,
-            errorMessage: failure.message,
+            errorCode: failure.code,
           ),
         );
       },
@@ -87,7 +88,7 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
 
     response.fold(
       (l) => emit(
-        state.copyWith(status: BookingStatus.error, errorMessage: l.message),
+        state.copyWith(status: BookingStatus.error, errorCode: l.code),
       ),
       (r) => emit(state.copyWith(status: BookingStatus.requestInQueue)),
     );
@@ -105,7 +106,7 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
 
     response.fold(
       (l) => emit(
-        state.copyWith(status: BookingStatus.error, errorMessage: l.message),
+        state.copyWith(status: BookingStatus.error, errorCode: l.code),
       ),
       (r) => emit(state.copyWith(status: BookingStatus.initial)),
     );

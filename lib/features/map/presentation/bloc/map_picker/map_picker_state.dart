@@ -8,14 +8,14 @@ class MapPickerState {
   final double latitude;
   final double longitude;
   final String? address;
-  final String? errorMessage;
+  final FailureCode? errorCode;
 
   const MapPickerState({
     this.status = MapPickerStatus.initial,
     this.latitude = 0,
     this.longitude = 0,
     this.address,
-    this.errorMessage,
+    this.errorCode,
   });
 
   MapPickerState copyWith({
@@ -23,14 +23,14 @@ class MapPickerState {
     double? latitude,
     double? longitude,
     String? address,
-    String? errorMessage,
+    FailureCode? errorCode,
   }) {
     return MapPickerState(
       status: status ?? this.status,
       latitude: latitude ?? this.latitude,
       longitude: longitude ?? this.longitude,
       address: address ?? this.address,
-      errorMessage: errorMessage ?? this.errorMessage,
+      errorCode: errorCode ?? this.errorCode,
     );
   }
 }

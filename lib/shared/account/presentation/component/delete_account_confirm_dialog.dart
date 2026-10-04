@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:passenger_app/l10n/app_localizations.dart';
 
 class DeleteAccountConfirmDialog extends StatelessWidget {
   const DeleteAccountConfirmDialog({super.key});
@@ -13,11 +14,12 @@ class DeleteAccountConfirmDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final l10n = AppLocalizations.of(context);
 
     return AlertDialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       title: Text(
-        'Eliminar cuenta',
+        l10n.deleteAccountTitle,
         style: TextStyle(
           fontSize: 20,
           fontWeight: FontWeight.bold,
@@ -25,9 +27,7 @@ class DeleteAccountConfirmDialog extends StatelessWidget {
         ),
       ),
       content: Text(
-        'Esta acción es irreversible. Se eliminarán tu perfil, tu foto y tus '
-        'chats. No podrás recuperar esta información.\n\n¿Seguro que deseas '
-        'eliminar tu cuenta?',
+        l10n.deleteAccountDialogBody,
         style: TextStyle(
           fontSize: 16,
           color: colorScheme.onSurface.withValues(alpha: 0.7),
@@ -37,7 +37,7 @@ class DeleteAccountConfirmDialog extends StatelessWidget {
         TextButton(
           onPressed: () => Navigator.of(context).pop(false),
           child: Text(
-            'Cancelar',
+            l10n.commonCancel,
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w600,
@@ -48,7 +48,7 @@ class DeleteAccountConfirmDialog extends StatelessWidget {
         TextButton(
           onPressed: () => Navigator.of(context).pop(true),
           child: Text(
-            'Eliminar cuenta',
+            l10n.deleteAccountTitle,
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w600,

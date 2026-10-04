@@ -15,6 +15,7 @@ import 'package:passenger_app/shared/chat_presence/service/pending_chat_navigati
 import 'package:passenger_app/shared/feedback/feedback_service.dart';
 import 'package:passenger_app/shared/presentation/bloc/session/session_bloc.dart';
 import '../../../../core/routing/app_routes.dart';
+import '../../../../l10n/app_localizations.dart';
 
 class RideTrackingScreen extends StatelessWidget {
   const RideTrackingScreen({super.key});
@@ -146,7 +147,7 @@ class _RideTrackingViewState extends State<_RideTrackingView> {
     // confirmación); 'driver' == el conductor canceló, así que aviso aquí.
     if (ride?.cancelledBy == 'driver') {
       GetIt.instance<FeedbackService>().announce(
-        'El conductor canceló el viaje',
+        AppLocalizations.of(context).rideDriverCancelledAnnouncement,
         withVibration: true,
       );
       await DriverCancelledDialog.show(context: context);
@@ -169,7 +170,7 @@ class _RideTrackingViewState extends State<_RideTrackingView> {
     if (passengerId == null) return;
 
     GetIt.instance<FeedbackService>().announce(
-      'El conductor ha llegado',
+      AppLocalizations.of(context).rideDriverArrivedAnnouncement,
       withVibration: true,
     );
     await DriverArrivedDialog.show(context: context, passengerId: passengerId);
@@ -177,7 +178,7 @@ class _RideTrackingViewState extends State<_RideTrackingView> {
 
   Future<void> _onTripCompleted(BuildContext context) async {
     GetIt.instance<FeedbackService>().announce(
-      'Taxi Go te agradece por elegir nuestros servicios.',
+      AppLocalizations.of(context).rideThanksAnnouncement,
       withVibration: true,
     );
     await TripCompletedDialog.show(context: context);
@@ -254,8 +255,14 @@ class _RideTrackingViewState extends State<_RideTrackingView> {
                           children: [
                             DriverDistanceIndicator(
                               progress: state.progress ?? 1.0,
-                              distanceLabel: _formatDistance(state.distanceMeters),
-                              etaLabel: _formatEta(state.etaMinutes),
+                              distanceLabel: _formatDistance(
+                                l10n: AppLocalizations.of(context),
+                                meters: state.distanceMeters,
+                              ),
+                              etaLabel: _formatEta(
+                                l10n: AppLocalizations.of(context),
+                                minutes: state.etaMinutes,
+                              ),
                             ),
                             const SizedBox(height: 20),
                             _buildDriverCard(context, driver),
@@ -288,7 +295,7 @@ class _RideTrackingViewState extends State<_RideTrackingView> {
           Expanded(
             child: Center(
               child: Text(
-                'Tu viaje',
+                AppLocalizations.of(context).rideYourTripTitle,
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.w600,
@@ -389,7 +396,7 @@ class _RideTrackingViewState extends State<_RideTrackingView> {
     final driverName =
         (driver != null && driver.name.isNotEmpty)
             ? driver.name
-            : 'Buscando datos del conductor...';
+            : AppLocalizations.of(context).rideLoadingDriver;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -406,7 +413,7 @@ class _RideTrackingViewState extends State<_RideTrackingView> {
         ),
         const SizedBox(height: 4),
         Text(
-          'Tu conductor está en camino',
+          AppLocalizations.of(context).rideDriverOnTheWay,
           style: TextStyle(fontSize: 14, color: onSurface.withValues(alpha: 0.6)),
         ),
       ],
@@ -485,10 +492,10 @@ class _RideTrackingViewState extends State<_RideTrackingView> {
           _buildInfoRow(
             context,
             icon: Icons.location_on_rounded,
-            label: 'Punto de recogida',
+            label: AppLocalizations.of(context).commonPickupPoint,
             value:
                 (pickupAddress == null || pickupAddress.isEmpty)
-                    ? 'Ubicación no disponible'
+                    ? AppLocalizations.of(context).rideLocationUnavailable
                     : pickupAddress,
           ),
         ],
@@ -574,7 +581,7 @@ class _RideTrackingViewState extends State<_RideTrackingView> {
           padding: const EdgeInsets.symmetric(vertical: 12),
         ),
         child: Text(
-          'Cancelar viaje',
+          AppLocalizations.of(context).rideCancel,
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w600,
@@ -615,7 +622,7 @@ class _ChatButton extends StatelessWidget {
       color: colorScheme.primary.withValues(alpha: 0.1),
       shape: const CircleBorder(),
       child: Tooltip(
-        message: 'Chat con tu conductor',
+        message: AppLocalizations.of(context).chatTitle,
         child: InkWell(
           customBorder: const CircleBorder(),
           onTap: onTap,
@@ -641,20 +648,20 @@ class _ChatButton extends StatelessWidget {
 
 // Redondeado al múltiplo de 10m más cercano para que no "tiemble" con cada
 // actualización de ubicación del conductor (~cada 5s).
-String _formatDistance(double? meters) {
+String _formatDistance({required AppLocalizations l10n, double? meters}) {
   if (meters == null) return '--';
 
   if (meters < 1000) {
     final rounded = (meters / 10).round() * 10;
-    return '$rounded m';
+    return l10n.rideDistanceMeters(rounded);
   }
 
   final km = meters / 1000;
-  return '${km.toStringAsFixed(1)} km';
+  return l10n.rideDistanceKilometers(km.toStringAsFixed(1));
 }
 
-String _formatEta(int? minutes) {
+String _formatEta({required AppLocalizations l10n, int? minutes}) {
   if (minutes == null) return '--';
-  if (minutes <= 0) return 'Llegando';
-  return '$minutes min';
+  if (minutes <= 0) return l10n.rideArriving;
+  return l10n.rideEtaMinutes(minutes);
 }

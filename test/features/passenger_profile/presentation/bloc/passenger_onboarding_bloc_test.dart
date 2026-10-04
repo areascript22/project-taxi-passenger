@@ -108,12 +108,12 @@ void main() {
     );
 
     blocTest<PassengerOnboardingBloc, PassengerOnboardingState>(
-      'emite errorMessage cuando el picker falla',
+      'emite errorCode cuando el picker falla',
       build: () {
         when(
           () => imagePickerService.pickImage(source: any(named: 'source')),
         ).thenAnswer(
-          (_) async => Left(Failure(message: 'permiso denegado')),
+          (_) async => Left(Failure(code: FailureCode.unexpected)),
         );
         return buildBloc();
       },
@@ -126,11 +126,7 @@ void main() {
           'isPickingImage',
           isTrue,
         ),
-        isA<PassengerOnboardingState>().having(
-          (s) => s.errorMessage,
-          'errorMessage',
-          'permiso denegado',
-        ),
+        isA<PassengerOnboardingState>().having((s) => s.errorCode, 'errorCode', FailureCode.unexpected),
       ],
     );
   });
@@ -197,7 +193,7 @@ void main() {
     );
 
     blocTest<PassengerOnboardingBloc, PassengerOnboardingState>(
-      'emite errorMessage si el registro falla',
+      'emite errorCode si el registro falla',
       build: () {
         when(
           () => passengerProfileRepository.registerPassenger(
@@ -205,7 +201,7 @@ void main() {
             profileImage: any(named: 'profileImage'),
           ),
         ).thenAnswer(
-          (_) async => Left(Failure(message: 'email ya registrado')),
+          (_) async => Left(Failure(code: FailureCode.unexpected)),
         );
         return buildBloc();
       },
@@ -221,11 +217,7 @@ void main() {
         ),
         isA<PassengerOnboardingState>()
             .having((s) => s.isSubmitting, 'isSubmitting', isFalse)
-            .having(
-              (s) => s.errorMessage,
-              'errorMessage',
-              'email ya registrado',
-            ),
+            .having((s) => s.errorCode, 'errorCode', FailureCode.unexpected),
       ],
     );
   });

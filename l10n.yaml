@@ -1,0 +1,24 @@
+# Configuración del generador oficial del SDK (`flutter gen-l10n`), no de un
+# paquete de terceros. Corre solo en cada build porque `flutter: generate: true`
+# está activado en pubspec.yaml; también se puede forzar con `flutter gen-l10n`.
+#
+# El español es el idioma fuente (template-arb-file): todo el copy original de
+# la app está en español, así que app_es.arb es la referencia y app_en.arb la
+# traducción. Si una key falta en app_en.arb, el generador avisa y en runtime
+# cae al español.
+arb-dir: lib/l10n
+template-arb-file: app_es.arb
+output-localization-file: app_localizations.dart
+output-class: AppLocalizations
+
+# Los archivos generados se escriben dentro de lib/ (synthetic-package: false)
+# en vez de en el paquete sintético .dart_tool/flutter_gen. Así el import es un
+# import normal del paquete (`package:passenger_app/l10n/app_localizations.dart`),
+# que funciona igual en la app y en los tests, y el código generado es visible
+# en el repo en vez de ser magia oculta.
+output-dir: lib/l10n
+synthetic-package: false
+
+# AppLocalizations.of(context) devuelve no-nullable: si falta el delegate es un
+# error en arranque, no un `!` repartido por cada call site.
+nullable-getter: false

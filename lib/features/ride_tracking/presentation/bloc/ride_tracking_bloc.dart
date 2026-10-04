@@ -3,6 +3,7 @@ import 'package:bloc/bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:meta/meta.dart';
+import 'package:passenger_app/core/error/errors.dart';
 import '../../domain/entity/ride_entity.dart';
 import '../../domain/repository/ride_tracking_repository.dart';
 
@@ -119,7 +120,7 @@ class RideTrackingBloc extends Bloc<RideTrackingEvent, RideTrackingState> {
 
     result.fold(
       (failure) => emit(
-        state.copyWith(isCancelling: false, errorMessage: failure.message),
+        state.copyWith(isCancelling: false, errorCode: failure.code),
       ),
       // El stream de watchRideTrack ya recibirá status == cancelled y
       // actualizará el estado; aquí solo apagamos el loading.
@@ -136,7 +137,7 @@ class RideTrackingBloc extends Bloc<RideTrackingEvent, RideTrackingState> {
     );
 
     result.fold(
-      (failure) => emit(state.copyWith(errorMessage: failure.message)),
+      (failure) => emit(state.copyWith(errorCode: failure.code)),
       // El stream de watchRideTrack ya recibirá status == tripStarted.
       (_) {},
     );

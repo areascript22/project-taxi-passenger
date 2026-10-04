@@ -1,7 +1,8 @@
 import 'package:bloc/bloc.dart';
 import 'package:meta/meta.dart';
-import 'package:passenger_app/shared/domain/entity/place_entity.dart';
+import 'package:passenger_app/core/error/errors.dart';
 import 'package:passenger_app/features/booking/domain/repository/location_search_repository.dart';
+import 'package:passenger_app/shared/domain/entity/place_entity.dart';
 import 'package:passenger_app/shared/utils/debouncer.dart';
 
 part 'location_search_event.dart';
@@ -42,7 +43,7 @@ class LocationSearchBloc
     );
 
     results.fold(
-      (l) => emit(LocationSearchError(message: l.message)),
+      (l) => emit(LocationSearchError(code: l.code)),
       (places) => emit(LocationSearchLoaded(places: places)),
     );
   }
@@ -68,7 +69,7 @@ class LocationSearchBloc
       (error) => emit(
         (state as LocationSearchLoaded).copyWith(
           searchLoadedProcess: SearchLoadedProcess.gettingCordsError,
-          cordsError: error.message,
+          cordsErrorCode: error.code,
         ),
       ),
       (data) => emit(

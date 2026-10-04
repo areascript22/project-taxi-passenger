@@ -1,5 +1,6 @@
 import 'package:bloc/bloc.dart';
 import 'package:meta/meta.dart';
+import 'package:passenger_app/core/error/errors.dart';
 import 'package:passenger_app/shared/geocoding/domain/repository/geocoding_repository.dart';
 import 'package:passenger_app/shared/utils/debouncer.dart';
 
@@ -74,7 +75,7 @@ class MapPickerBloc extends Bloc<MapPickerEvent, MapPickerState> {
       (failure) => emit(
         state.copyWith(
           status: MapPickerStatus.error,
-          errorMessage: failure.message,
+          errorCode: failure.code,
         ),
       ),
       (address) => emit(

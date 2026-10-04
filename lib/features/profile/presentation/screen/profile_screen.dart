@@ -6,9 +6,11 @@ import 'package:passenger_app/features/profile/presentation/component/confirmati
 import 'package:passenger_app/shared/presentation/bloc/session/session_bloc.dart';
 import 'package:passenger_app/shared/presentation/component/app_version.dart';
 import 'package:passenger_app/shared/presentation/component/custom_button.dart';
+import 'package:passenger_app/shared/presentation/failure_text.dart';
 import '../../../../core/routing/app_routes.dart';
 import '../../../../core/service_locator/main_service_locator.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../bloc/profile_bloc.dart';
 
 class ProfileScreen extends StatelessWidget {
@@ -46,7 +48,7 @@ class ProfileView extends StatelessWidget {
               if (state.passenger == null) return const SizedBox.shrink();
               return IconButton(
                 icon: const Icon(Icons.edit_outlined),
-                tooltip: 'Editar perfil',
+                tooltip: AppLocalizations.of(context).profileEdit,
                 onPressed:
                     () => context.push(
                       editProfileRoute.route,
@@ -80,7 +82,9 @@ class ProfileView extends StatelessWidget {
             if (state.passenger == null) {
               return Center(
                 child: Text(
-                  state.errorMessage ??
+                  state.errorCode != null
+                      ? context.failureText(state.errorCode!)
+                      :
                       'No se encontró información del pasajero',
                   style: TextStyle(
                     color: colorScheme.onSurface.withValues(alpha: 0.7),
@@ -186,8 +190,8 @@ class ProfileView extends StatelessWidget {
           _buildInfoTile(
             context,
             icon: Icons.badge_outlined,
-            title: 'Nombres',
-            value: passenger.firstName.isEmpty ? 'No registrado' : passenger.firstName,
+            title: AppLocalizations.of(context).fieldFirstName,
+            value: passenger.firstName.isEmpty ? AppLocalizations.of(context).commonNotProvided : passenger.firstName,
             isFirst: true,
           ),
           Divider(
@@ -198,8 +202,8 @@ class ProfileView extends StatelessWidget {
           _buildInfoTile(
             context,
             icon: Icons.badge_outlined,
-            title: 'Apellidos',
-            value: passenger.lastName.isEmpty ? 'No registrado' : passenger.lastName,
+            title: AppLocalizations.of(context).fieldLastName,
+            value: passenger.lastName.isEmpty ? AppLocalizations.of(context).commonNotProvided : passenger.lastName,
           ),
           Divider(
             height: 1,
@@ -209,7 +213,7 @@ class ProfileView extends StatelessWidget {
           _buildInfoTile(
             context,
             icon: Icons.email_outlined,
-            title: 'Correo',
+            title: AppLocalizations.of(context).commonEmailShort,
             value: passenger.email,
           ),
         ],
@@ -264,7 +268,7 @@ class ProfileView extends StatelessWidget {
 
   Widget _buildSignOutButton(BuildContext context) {
     return CustomButton(
-      textButton: 'Cerrar sesión',
+      textButton: AppLocalizations.of(context).commonSignOut,
       onTap: () {
         ConfirmationPopup.show(context: context);
       },

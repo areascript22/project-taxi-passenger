@@ -65,18 +65,14 @@ void main() {
       build: () {
         when(
           () => repository.getAutocompletePlaces(query: any(named: 'query')),
-        ).thenAnswer((_) async => Left(Failure(message: 'sin resultados')));
+        ).thenAnswer((_) async => Left(Failure(code: FailureCode.unexpected)));
         return buildBloc();
       },
       act: (bloc) => bloc.add(SearchQueryChanged(query: 'zzz')),
       wait: const Duration(milliseconds: 600),
       expect: () => [
         isA<LocationSearchLoading>(),
-        isA<LocationSearchError>().having(
-          (s) => s.message,
-          'message',
-          'sin resultados',
-        ),
+        isA<LocationSearchError>().having((s) => s.code, 'code', FailureCode.unexpected),
       ],
     );
 
@@ -183,7 +179,7 @@ void main() {
     );
 
     blocTest<LocationSearchBloc, LocationSearchState>(
-      'propaga el error de getPlaceDetails en cordsError',
+      'propaga el error de getPlaceDetails en cordsErrorCode',
       build: () {
         when(
           () => repository.getAutocompletePlaces(query: any(named: 'query')),
@@ -193,7 +189,7 @@ void main() {
         when(
           () => repository.getPlaceDetails(placeId: any(named: 'placeId')),
         ).thenAnswer(
-          (_) async => Left(Failure(message: 'place no encontrado')),
+          (_) async => Left(Failure(code: FailureCode.unexpected)),
         );
         return buildBloc();
       },
@@ -215,7 +211,11 @@ void main() {
               'process',
               SearchLoadedProcess.gettingCordsError,
             )
-            .having((s) => s.cordsError, 'cordsError', 'place no encontrado'),
+            .having(
+              (s) => s.cordsErrorCode,
+              'cordsErrorCode',
+              FailureCode.unexpected,
+            ),
       ],
     );
   });

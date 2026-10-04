@@ -1,28 +1,29 @@
 import 'package:bloc/bloc.dart';
 import 'package:flutter/material.dart';
+import 'package:passenger_app/core/error/errors.dart';
 import 'package:passenger_app/shared/account/domain/repository/account_repository.dart';
 
 @immutable
 class AccountState {
   final bool isDeleting;
-  final String? errorMessage;
+  final FailureCode? errorCode;
   final bool wasDeleted;
 
   const AccountState({
     this.isDeleting = false,
-    this.errorMessage,
+    this.errorCode,
     this.wasDeleted = false,
   });
 
   AccountState copyWith({
     bool? isDeleting,
-    String? errorMessage,
+    FailureCode? errorCode,
     bool? wasDeleted,
     bool clearError = false,
   }) {
     return AccountState(
       isDeleting: isDeleting ?? this.isDeleting,
-      errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
+      errorCode: clearError ? null : (errorCode ?? this.errorCode),
       wasDeleted: wasDeleted ?? this.wasDeleted,
     );
   }
@@ -56,8 +57,8 @@ class AccountCubit extends Cubit<AccountState> {
 
     result.fold(
       (failure) {
-        debugPrint('AccountDebug | deleteAccount falló: ${failure.message}');
-        emit(state.copyWith(isDeleting: false, errorMessage: failure.message));
+        debugPrint('AccountDebug | deleteAccount falló: ${failure.code}');
+        emit(state.copyWith(isDeleting: false, errorCode: failure.code));
       },
       (_) {
         debugPrint('AccountDebug | deleteAccount OK, emitiendo wasDeleted');

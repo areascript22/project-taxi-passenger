@@ -15,7 +15,7 @@ class GeocodingRepositoryImpl implements GeocodingRepository {
     final apiKey = dotenv.env['GEOCODING_API'];
 
     if (apiKey == null || apiKey.isEmpty) {
-      return Left(Failure(message: 'Error interno: API Key no configurada.'));
+      return Left(Failure(code: FailureCode.mapsApiKeyMissing));
     }
 
     final url =
@@ -41,33 +41,25 @@ class GeocodingRepositoryImpl implements GeocodingRepository {
           }
 
           return Left(
-            Failure(
-              message:
-                  'No se pudo encontrar una dirección legible para esta ubicación.',
-            ),
+            Failure(code: FailureCode.addressNotFound),
           );
         } else {
           return Left(
-            Failure(
-              message:
-                  'No se pudo encontrar una dirección para esta ubicación.',
-            ),
+            Failure(code: FailureCode.addressNotFound),
           );
         }
       } else {
         return Left(
-          Failure(message: 'Error de servidor al contactar a Google Maps.'),
+          Failure(code: FailureCode.mapsServerError),
         );
       }
     } on DioException catch (e) {
       return Left(
-        Failure(message: 'Error de red: Revise su conexión a internet.'),
+        Failure(code: FailureCode.networkError),
       );
     } catch (e) {
       return Left(
-        Failure(
-          message: 'Ocurrió un error inesperado al procesar la ubicación.',
-        ),
+        Failure(code: FailureCode.locationProcessFailed),
       );
     }
   }
