@@ -415,6 +415,18 @@
   "@mapPickerHint": {
     "description": "Ayuda sobre el pin central del mapa"
   },
+  "mapPickerOutOfCoverage": "Fuera de la zona de cobertura",
+  "@mapPickerOutOfCoverage": {
+    "description": "Mensaje en el selector de mapa cuando el pin cae fuera de los sectores de Riobamba; el boton de confirmar queda deshabilitado"
+  },
+  "bookingOutOfCoverageTitle": "Fuera de la zona de cobertura",
+  "@bookingOutOfCoverageTitle": {
+    "description": "Titulo de la tarjeta de ubicacion cuando el punto elegido no pertenece a ningun sector de Riobamba"
+  },
+  "bookingOutOfCoverageMessage": "Elige un punto dentro de Riobamba para pedir tu taxi.",
+  "@bookingOutOfCoverageMessage": {
+    "description": "Explicacion debajo del titulo de fuera de cobertura, en la pantalla de pedir taxi"
+  },
   "commonNotProvided": "No registrado",
   "@commonNotProvided": {
     "description": "Valor mostrado cuando un dato opcional del perfil esta vacio"

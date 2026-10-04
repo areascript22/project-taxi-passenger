@@ -3,11 +3,21 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:passenger_app/shared/domain/entity/place_entity.dart';
+import 'package:passenger_app/shared/sectors/domain/entity/sector_entity.dart';
+import 'package:passenger_app/shared/sectors/domain/service/sector_service.dart';
 import '../../../../core/error/errors.dart';
 import '../../../../core/network/dio_client.dart';
 import '../../domain/repository/location_search_repository.dart';
 
 class LocationSearchRepositoryImpl implements LocationSearchRepository {
+  LocationSearchRepositoryImpl({required this.sectorService});
+
+  // Para restringir las sugerencias a la zona de cobertura real en vez de a un
+  // círculo a ojo. No reemplaza al filtro por polígono (que corre en
+  // BookingBloc con las coordenadas del lugar elegido): esto solo evita gastar
+  // cuota de Places y ofrecer lugares que después vamos a rechazar.
+  final SectorService sectorService;
+
   final String apiKey = dotenv.env['PLACES_API_KEY'] ?? '';
 
   @override
@@ -31,12 +41,7 @@ class LocationSearchRepositoryImpl implements LocationSearchRepository {
         ),
         data: {
           "input": query,
-          "locationRestriction": {
-            "circle": {
-              "center": {"latitude": -1.6702, "longitude": -78.6631},
-              "radius": 15000.0,
-            },
-          },
+          "locationRestriction": await _locationRestriction(),
           // Incluimos solo lugares que tengan coordenadas
           "includePureServiceAreaBusinesses": false,
         },
@@ -64,6 +69,39 @@ class LocationSearchRepositoryImpl implements LocationSearchRepository {
       debugPrint("Exception in getAutocompletePlaces: $e");
       return left(Failure(code: FailureCode.unexpectedUpstream));
     }
+  }
+
+  // Rectángulo que envuelve a los sectores de Riobamba. Si el archivo no se
+  // puede leer se cae al círculo que se usaba antes (15 km alrededor del
+  // centro): perder el ajuste fino es mejor que quedarse sin sugerencias.
+  Future<Map<String, dynamic>> _locationRestriction() async {
+    final boundsResult = await sectorService.coverageBounds();
+    final bounds = boundsResult.fold<SectorBounds?>(
+      (_) => null,
+      (value) => value,
+    );
+
+    if (bounds == null) {
+      return {
+        "circle": {
+          "center": {"latitude": -1.6702, "longitude": -78.6631},
+          "radius": 15000.0,
+        },
+      };
+    }
+
+    return {
+      "rectangle": {
+        "low": {
+          "latitude": bounds.minLatitude,
+          "longitude": bounds.minLongitude,
+        },
+        "high": {
+          "latitude": bounds.maxLatitude,
+          "longitude": bounds.maxLongitude,
+        },
+      },
+    };
   }
 
   @override

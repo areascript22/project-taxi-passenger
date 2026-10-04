@@ -677,6 +677,24 @@ abstract class AppLocalizations {
   /// **'Mueve el mapa para elegir tu ubicación'**
   String get mapPickerHint;
 
+  /// Mensaje en el selector de mapa cuando el pin cae fuera de los sectores de Riobamba; el boton de confirmar queda deshabilitado
+  ///
+  /// In es, this message translates to:
+  /// **'Fuera de la zona de cobertura'**
+  String get mapPickerOutOfCoverage;
+
+  /// Titulo de la tarjeta de ubicacion cuando el punto elegido no pertenece a ningun sector de Riobamba
+  ///
+  /// In es, this message translates to:
+  /// **'Fuera de la zona de cobertura'**
+  String get bookingOutOfCoverageTitle;
+
+  /// Explicacion debajo del titulo de fuera de cobertura, en la pantalla de pedir taxi
+  ///
+  /// In es, this message translates to:
+  /// **'Elige un punto dentro de Riobamba para pedir tu taxi.'**
+  String get bookingOutOfCoverageMessage;
+
   /// Valor mostrado cuando un dato opcional del perfil esta vacio
   ///
   /// In es, this message translates to:

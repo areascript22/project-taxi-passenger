@@ -26,6 +26,7 @@ enum FailureCode {
   placeDetailsFailed,
   placeIdMissing,
   placeWithoutCoordinates,
+  sectorsLoadFailed,
   rideRequestFailed,
   rideRequestCancelFailed,
   rideRequestCancelUnavailable,

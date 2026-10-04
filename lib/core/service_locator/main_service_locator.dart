@@ -11,6 +11,7 @@ import 'package:passenger_app/shared/geocoding/di/geocoding_service_locator.dart
 import 'package:passenger_app/shared/geolocator/di/geolocator_service_locator.dart';
 import 'package:passenger_app/shared/image_picker/di/image_picker_service_locator.dart';
 import 'package:passenger_app/shared/notifications/di/push_notifications_service_locator.dart';
+import 'package:passenger_app/shared/sectors/di/sector_service_locator.dart';
 import 'package:passenger_app/shared/services/dotenv/dotenv_service_locator.dart';
 import 'package:passenger_app/shared/settings/di/settings_service_locator.dart';
 import 'package:passenger_app/shared/vibration/di/vibration_service_locator.dart';
@@ -34,6 +35,9 @@ Future<void> initMainServiceLocator() async {
   initSharedDI(mainServiceLocator);
   initAuthDI(mainServiceLocator);
   initGeocodingDI(mainServiceLocator);
+  // Antes que initBooking/initMap: BookingBloc y MapPickerBloc dependen del
+  // SectorService para decidir si el punto elegido está en cobertura.
+  initSectorDI(mainServiceLocator);
   initBooking(mainServiceLocator);
   initMap(mainServiceLocator);
   initRideTracking(mainServiceLocator);

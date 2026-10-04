@@ -34,6 +34,10 @@ extension FailureTextX on BuildContext {
       FailureCode.placeIdMissing => l10n.failureUnexpected,
       // solo para logs; si llega a la UI, mensaje genarico
       FailureCode.placeWithoutCoordinates => l10n.failureUnexpected,
+      // solo para logs: si el .geojson no se puede leer, el pasajero no tiene
+      // nada que hacer al respecto y la app sigue andando sin el filtro de
+      // cobertura (ver BookingBloc._resolveSector)
+      FailureCode.sectorsLoadFailed => l10n.failureUnexpected,
       FailureCode.rideRequestFailed => l10n.failureRideRequestFailed,
       FailureCode.rideRequestCancelFailed => l10n.failureRideRequestCancelFailed,
       FailureCode.rideRequestCancelUnavailable => l10n.failureRideRequestCancelUnavailable,

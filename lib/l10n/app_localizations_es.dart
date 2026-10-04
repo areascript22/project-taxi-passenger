@@ -308,6 +308,15 @@ class AppLocalizationsEs extends AppLocalizations {
   String get mapPickerHint => 'Mueve el mapa para elegir tu ubicación';
 
   @override
+  String get mapPickerOutOfCoverage => 'Fuera de la zona de cobertura';
+
+  @override
+  String get bookingOutOfCoverageTitle => 'Fuera de la zona de cobertura';
+
+  @override
+  String get bookingOutOfCoverageMessage => 'Elige un punto dentro de Riobamba para pedir tu taxi.';
+
+  @override
   String get commonNotProvided => 'No registrado';
 
   @override

@@ -108,6 +108,10 @@ flutter:
     - assets/icons/
     - assets/icons/svg/
     - assets/env/
+    # sectors.geojson: los 59 poligonos de Riobamba. Son la zona de cobertura
+    # (no se puede pedir taxi fuera) y de ahi sale el "sector" que escucha el
+    # conductor -- ver shared/sectors/.
+    - assets/json/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

@@ -26,6 +26,11 @@ class BookingRepositoryImpl implements BookingRepository {
           'latitude': request.pickupLat,
           'longitude': request.pickupLng,
           'address': request.pickupAddress,
+          // El backend lo persiste en pickupLocation.sector y driver_app lo
+          // usa para la alerta hablada. Se manda '' y no null cuando no se
+          // pudo resolver: el server lo sanea igual, pero así el payload no
+          // cambia de forma entre pedidos.
+          'sector': request.pickupSector ?? '',
         },
       );
       return const Right(unit);

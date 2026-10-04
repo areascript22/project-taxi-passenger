@@ -308,6 +308,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mapPickerHint => 'Move the map to pick your location';
 
   @override
+  String get mapPickerOutOfCoverage => 'Outside the service area';
+
+  @override
+  String get bookingOutOfCoverageTitle => 'Outside the service area';
+
+  @override
+  String get bookingOutOfCoverageMessage => 'Pick a point inside Riobamba to request your taxi.';
+
+  @override
   String get commonNotProvided => 'Not provided';
 
   @override

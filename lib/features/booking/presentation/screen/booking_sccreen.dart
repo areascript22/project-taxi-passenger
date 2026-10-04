@@ -158,8 +158,11 @@ class _BookingViewState extends State<BookingView> {
                       builder: (context, state) {
                         return CustomButton(
                           textButton: AppLocalizations.of(context).bookingRequestTaxi,
+                          // canRequestTaxi incluye estar DENTRO de la zona de
+                          // cobertura: fuera de los sectores de Riobamba el
+                          // botón queda deshabilitado.
                           onTap:
-                              state.pickupAddress != null
+                              state.canRequestTaxi
                                   ? () {
                                     _onRequestTaxi(state);
                                   }
@@ -184,11 +187,10 @@ class _BookingViewState extends State<BookingView> {
       context: context,
       address: state.pickupAddress!,
       onConfirm: () {
-        final isPickUpReady =
-            state.pickupLng != null ||
-            state.pickupLat != null ||
-            state.pickupAddress != null;
-        if (!isPickUpReady) {
+        // canRequestTaxi reemplaza al chequeo anterior, que usaba `||` donde
+        // correspondía `&&`: con solo una de las tres cosas presente seguía de
+        // largo y reventaba en los `!` de abajo.
+        if (!state.canRequestTaxi) {
           return;
         }
 
@@ -196,6 +198,7 @@ class _BookingViewState extends State<BookingView> {
           pickupLat: state.pickupLat!,
           pickupLng: state.pickupLng!,
           pickupAddress: state.pickupAddress!,
+          pickupSector: state.pickupSector,
         );
         context.read<BookingBloc>().add(RequestTaxi(request: request));
       },
@@ -288,7 +291,7 @@ class _BookingViewState extends State<BookingView> {
 
             return Column(
               children: [
-                _buildLocationCard(context, address: state.pickupAddress),
+                _buildLocationCard(context, state: state),
 
                 const SizedBox(height: 24),
 
@@ -303,52 +306,59 @@ class _BookingViewState extends State<BookingView> {
     );
   }
 
-  Widget _buildLocationCard(BuildContext context, {String? address}) {
+  Widget _buildLocationCard(BuildContext context, {required BookingState state}) {
     final colorScheme = Theme.of(context).colorScheme;
     final onSurface = colorScheme.onSurface;
     final success = context.appColors.success;
+    final isOutOfCoverage = state.isOutOfCoverage;
+    // Fuera de cobertura la tarjeta se pinta con el rojo del tema: el pasajero
+    // tiene que ver que ese punto no sirve antes de buscar el botón.
+    final accent = isOutOfCoverage ? colorScheme.error : success;
 
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: onSurface.withValues(alpha: 0.08)),
+        border: Border.all(
+          color:
+              isOutOfCoverage
+                  ? colorScheme.error.withValues(alpha: 0.3)
+                  : onSurface.withValues(alpha: 0.08),
+        ),
       ),
       child: Row(
         children: [
 
           BlocBuilder<LocationSearchBloc, LocationSearchState>(
-            builder: (context, state) {
-              if(state is LocationSearchLoaded && state.searchLoadedProcess == SearchLoadedProcess.gettingCords){
+            builder: (context, searchState) {
+              if(searchState is LocationSearchLoaded && searchState.searchLoadedProcess == SearchLoadedProcess.gettingCords){
                 return CustomLoader();
               }
               return Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: success.withValues(alpha: 0.15),
+                  color: accent.withValues(alpha: 0.15),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(Icons.circle, color: success, size: 20),
+                child: Icon(
+                  isOutOfCoverage ? Icons.location_off_rounded : Icons.circle,
+                  color: accent,
+                  size: 20,
+                ),
               );
             },
           ),
 
           const SizedBox(width: 16),
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  address ?? '',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: onSurface.withValues(alpha: 0.6),
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
+            child:
+                isOutOfCoverage
+                    ? _OutOfCoverageText(address: state.pickupAddress)
+                    : _PickupText(
+                      sector: state.pickupSector,
+                      address: state.pickupAddress,
+                    ),
           ),
         ],
       ),
@@ -599,6 +609,94 @@ class _MapPickerButton extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+// El sector va arriba y en negrita porque es la referencia que el conductor va
+// a escuchar; la dirección exacta queda como detalle debajo.
+class _PickupText extends StatelessWidget {
+  final String? sector;
+  final String? address;
+
+  const _PickupText({required this.sector, required this.address});
+
+  @override
+  Widget build(BuildContext context) {
+    final onSurface = Theme.of(context).colorScheme.onSurface;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (sector != null && sector!.isNotEmpty) ...[
+          Text(
+            sector!,
+            style: TextStyle(
+              fontSize: 14,
+              color: onSurface,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 2),
+        ],
+        Text(
+          address ?? '',
+          style: TextStyle(
+            fontSize: 12,
+            color: onSurface.withValues(alpha: 0.6),
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _OutOfCoverageText extends StatelessWidget {
+  final String? address;
+
+  const _OutOfCoverageText({required this.address});
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final l10n = AppLocalizations.of(context);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          l10n.bookingOutOfCoverageTitle,
+          style: TextStyle(
+            fontSize: 14,
+            color: colorScheme.error,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          l10n.bookingOutOfCoverageMessage,
+          style: TextStyle(
+            fontSize: 12,
+            color: colorScheme.error.withValues(alpha: 0.8),
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        // Se sigue mostrando lo que eligió: sin esto, tocar una sugerencia
+        // fuera de cobertura borra la pantalla sin decir qué fue rechazado.
+        if (address != null && address!.isNotEmpty) ...[
+          const SizedBox(height: 4),
+          Text(
+            address!,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 11,
+              color: colorScheme.onSurface.withValues(alpha: 0.5),
+            ),
+          ),
+        ],
+      ],
     );
   }
 }
