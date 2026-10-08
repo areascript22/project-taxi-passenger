@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:flutter_svg/flutter_svg.dart'; // Make sure to import this
+import 'package:go_router/go_router.dart';
+import 'package:passenger_app/l10n/app_localizations.dart';
 
 class ScaffoldWithNavBar extends StatelessWidget {
   const ScaffoldWithNavBar({required this.navigationShell, Key? key})
@@ -10,6 +11,7 @@ class ScaffoldWithNavBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final colorScheme = Theme.of(context).colorScheme;
     final selectedColor = colorScheme.primary;
     final unselectedColor = colorScheme.onSurface.withValues(alpha: 0.35);
@@ -44,7 +46,7 @@ class ScaffoldWithNavBar extends StatelessWidget {
                 height: 24,
                 colorFilter: ColorFilter.mode(selectedColor, BlendMode.srcIn),
               ),
-              label: 'Pedir',
+              label: l10n.navRequest,
             ),
             BottomNavigationBarItem(
               icon: SvgPicture.asset(
@@ -59,7 +61,7 @@ class ScaffoldWithNavBar extends StatelessWidget {
                 height: 24,
                 colorFilter: ColorFilter.mode(selectedColor, BlendMode.srcIn),
               ),
-              label: 'Perfil',
+              label: l10n.navProfile,
             ),
           ],
           onTap: _onTap,

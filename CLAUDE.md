@@ -128,6 +128,43 @@ class ConfirmDialog extends StatelessWidget {
 
 Uso esperado: `await ConfirmDialog.show(context, message: '¿Seguro?');`
 
+### 2.1 Toasts (mensajes breves)
+
+Para avisos cortos al usuario (confirmaciones, errores, información) el
+proyecto **no usa `SnackBar`**: usa el componente `AppToast`
+(`shared/presentation/component/app_toast.dart`), que expone exactamente dos
+variantes.
+
+```dart
+AppToast.success(context, message: 'Perfil actualizado');
+AppToast.error(context, message: 'No se pudo guardar el perfil.');
+```
+
+- `success` → verde semántico (`context.appColors.success`). Se usa también
+  para mensajes meramente informativos, no solo para confirmaciones.
+- `error` → rojo del tema (`colorScheme.error`). Para cualquier resultado
+  negativo (fallos de red, validaciones, acciones que no se completaron).
+- Si hace falta un encabezado, ambas aceptan `title:` además de `message:`.
+
+Reglas:
+
+- **Nunca** llamar a `ScaffoldMessenger.of(context).showSnackBar(...)` ni al
+  paquete de toasts directamente desde una screen o un widget. Si falta una
+  variante o una opción, se agrega a `AppToast` — misma lógica que la regla de
+  los diálogos: la UI usa nuestro componente, no la API de la librería.
+- Los toasts se montan en el **overlay raíz**, no en el `Scaffold`. Eso tiene
+  dos consecuencias prácticas:
+  - Se ven por encima de todo, incluidos el bottom nav bar y los diálogos. Un
+    `SnackBar` vive en su `Scaffold`, así que el del `Scaffold` interno de un
+    branch queda tapado por la barra de navegación.
+  - Sobreviven a un `Navigator.pop()` y a un cambio de ruta. Por eso, cuando
+    hay que avisar algo **y** cerrar la pantalla o el diálogo, el orden
+    correcto es mostrar el toast **primero** y hacer el `pop()` después, con
+    el `context` todavía montado.
+- No se define `snackBarTheme` en el tema: un tema global de SnackBar pinta
+  igual los mensajes de éxito y los de error (es exactamente el bug que había
+  antes, con los "guardado correctamente" saliendo en rojo).
+
 ---
 
 ## 3. Manejo de errores con Dartz (Either)
@@ -141,6 +178,29 @@ donde `T` es el tipo de dato exitoso esperado.
 - Nunca se debe lanzar (`throw`) una excepción hacia arriba desde un
   repositorio o servicio; toda excepción se captura y se transforma en un
   `Failure`.
+- **`Failure` lleva un `FailureCode`, no un texto.** La capa de datos reporta
+  *qué* falló; *qué decirle al usuario* lo decide la UI, que es la única capa
+  con acceso a `AppLocalizations` (ver sección 10). Un repositorio no tiene
+  `BuildContext`, así que un mensaje armado ahí es intraducible por
+  definición.
+
+```dart
+// core/error/errors.dart
+enum FailureCode { noPermission, rideAcceptFailed, /* ... */ unexpected }
+
+class Failure extends ErrorBase {
+  Failure({required super.code, super.detail});
+}
+```
+
+- `detail` es opcional y **solo para logs** (la excepción, un código HTTP):
+  nunca se muestra al usuario.
+- Varios motivos distintos pueden compartir código cuando el usuario ve lo
+  mismo (ej. todos los "no tienes permisos"). El detalle técnico de cada caso
+  queda en el `debugPrint` del repositorio.
+- Los **estados de los Bloc/Cubit guardan el código**, no el texto
+  (`FailureCode? errorCode`), y la UI lo traduce con
+  `context.failureText(code)`.
 
 ```dart
 Future<Either<Failure, ProfileEntity>> fetchProfile({required String userId});
@@ -274,8 +334,9 @@ un bloque `try/catch`:
   - Repositorio de perfil → `"ProfileDebug | ..."`
   - Repositorio de autenticación → `"AuthDebug | ..."`
   - Repositorio de viajes → `"TripDebug | ..."`
-- En caso de error, el método debe devolver `Left(Failure(...))` con un
-  mensaje descriptivo; nunca debe dejar la excepción sin capturar.
+- En caso de error, el método debe devolver `Left(Failure(code: ...))` con el
+  `FailureCode` que corresponda; nunca debe dejar la excepción sin capturar.
+  El texto para el usuario **no** se decide acá (ver sección 3).
 
 Recuerda: como no usamos `datasource`, el repositorio/servicio llama
 directamente al cliente HTTP, SDK o storage, mapea el resultado (Model →
@@ -297,7 +358,7 @@ class ProfileRepositoryImpl implements ProfileRepository {
       return Right(model.toEntity());
     } catch (e) {
       debugPrint('ProfileDebug | Error en fetchProfile: $e');
-      return Left(Failure(message: 'No se pudo obtener el perfil'));
+      return Left(Failure(code: FailureCode.profileFetchFailed));
     }
   }
 }
@@ -317,6 +378,7 @@ del otro. Ejemplo de tabla para un proyecto:
 | Notifications           | `NotificationsDebug \|`|
 | Chat                     | `ChatDebug \|`         |
 | Connectivity             | `ConnectivityDebug \|` |
+| Sectors                  | `SectorDebug \|`       |
 
 Cuando se cree un feature nuevo sin prefijo definido en esta tabla, se debe
 crear uno consistente con el nombre del feature (ej. `Chat` → `ChatDebug |`)
@@ -336,7 +398,11 @@ Antes de dar por terminado un repositorio o servicio, verificar que:
 - [ ] No hay capa `datasource`: el repositorio/servicio llama directamente a la fuente.
 - [ ] La lógica está envuelta en `try/catch`.
 - [ ] El `catch` usa `debugPrint` con el prefijo de contexto correcto.
-- [ ] El `catch` retorna `Left(Failure(...))`, nunca relanza la excepción.
+- [ ] El `catch` retorna `Left(Failure(code: ...))`, nunca relanza la excepción.
+- [ ] El `FailureCode` existe en `core/error/errors.dart`, está mapeado en
+      `shared/presentation/failure_text.dart` y tiene su key en los `.arb`
+      (ver sección 10).
+- [ ] Ningún string visible para el usuario quedó hardcodeado (sección 10).
 - [ ] Si el repositorio/servicio es nuevo, está registrado en su `di/` correspondiente.
 - [ ] Tiene su test correspondiente (ver sección 9) — nuevo si no existía, actualizado si ya existía.
 
@@ -411,3 +477,105 @@ y confirmar que todo pasa en verde. Si al escribir el test se descubre un
 bug real en el código de producción, no lo corrijas por tu cuenta sin
 avisar: documentalo en el test o en tu respuesta y preguntá antes de
 tocar código de producción no relacionado con el cambio pedido.
+
+---
+
+## 10. Internacionalización (i18n)
+
+El proyecto está traducido a **español e inglés** con el generador oficial del
+SDK (`flutter gen-l10n`), sin paquetes de terceros. El español es el idioma
+fuente.
+
+```
+lib/l10n/
+ ├─ app_es.arb              # template: idioma fuente, con `description` por key
+ ├─ app_en.arb              # traducción
+ └─ app_localizations*.dart # generado por gen-l10n (versionado, no editar)
+```
+
+La configuración vive en `l10n.yaml` (raíz del proyecto) y el generador corre
+solo en cada build porque `flutter: generate: true` está activo en
+`pubspec.yaml`. Para forzarlo: `flutter gen-l10n`.
+
+**Reglas:**
+
+- **Ningún string visible para el usuario se escribe en el código.** Va al
+  `.arb` y se usa como `AppLocalizations.of(context).miKey`. Esto incluye los
+  textos hablados por TTS, que el usuario también "ve".
+- Si un `build` usa varias keys, se resuelve una vez:
+  `final l10n = AppLocalizations.of(context);`.
+- **Toda key nueva se agrega a los DOS `.arb`**, y en el template (`es`) con su
+  `description`: es el contexto que lee quien traduce. Hay un test que falla si
+  un idioma queda atrás (`test/l10n/arb_parity_test.dart`).
+- Convención de nombres: `lowerCamelCase` con prefijo por dominio
+  (`settingsTitle`, `rideCancel`, `adminFilterPending`), y `common*` para lo
+  compartido entre features.
+- Placeholders e ICU en el `.arb`, nunca interpolando en Dart:
+  `"onboardingStepOf": "Paso {step} de {totalSteps}"`.
+- **Lo que NO se traduce:** el nombre de la marca (`TaxiGo`), los valores de
+  dominio que vienen del backend (`'admin'`, `'pending'`, `'driverAssigned'`),
+  los mensajes de `debugPrint` (son para desarrollo), y las máscaras de formato
+  o nombres propios usados como ejemplo en los campos (`PBX-1234`, `Toyota`).
+- Los mensajes de error **no** se escriben en la UI: vienen de un
+  `FailureCode` y se traducen con `context.failureText(code)` (ver sección 3).
+
+**Dos lugares sin `BuildContext`** que hay que tener presentes:
+
+- El código que corre **fuera del árbol de widgets** no puede usar
+  `AppLocalizations.of(context)`: el isolate del foreground service (solo en
+  Driver App) y los servicios de TTS. Ahí se usa `loadIsolateLocalizations()`
+  (`shared/l10n/isolate_localizations.dart`), que resuelve el idioma con
+  `resolveAppLocale` —o sea, respeta el que el usuario eligió en Ajustes, no el
+  del sistema (ver 10.1)— y carga el delegate a mano.
+- El copy de las **push notifications lo arma el backend**, así que no pasa por
+  el `.arb` sino por el catálogo del server (`messages.properties` /
+  `messages_en.properties`, con el español como bundle por defecto). El server
+  sabe en qué idioma armarlo porque lo tiene guardado en el documento del
+  destinatario (ver 10.1).
+
+### 10.1 Selector de idioma (Sistema / Español / English)
+
+El idioma lo elige el usuario en Ajustes; "Sistema" es el default. El tipo y la
+resolución viven en `core/l10n/app_language.dart`:
+
+- `enum AppLanguage { system, spanish, english }`. `AppLanguage.locale` devuelve
+  `null` para `system`, que es justo lo que espera el `MaterialApp` para
+  delegar la resolución al dispositivo.
+- `resolveAppLocale({preference, deviceLocales})` es la **única fuente de
+  verdad** del locale efectivo: la preferencia si hay una; si no, el primer
+  idioma del dispositivo que esté soportado; y si ninguno lo está,
+  `fallbackLocale` (`es`). No se puede omitir: el fallback implícito de Flutter
+  es el PRIMER elemento de `supportedLocales` y gen-l10n los ordena
+  alfabéticamente (`[en, es]`), así que un teléfono en portugués abriría la app
+  en inglés. En el `MaterialApp` se pasa como `localeListResolutionCallback`,
+  que recibe la lista ordenada de idiomas del dispositivo, no uno solo.
+- La preferencia se persiste con `SettingsRepository.getLanguage()` /
+  `setLanguage()` (SharedPreferences, key `settings_language`). Ese storage es
+  compartido entre isolates: así lo leen el isolate del foreground service y el
+  TTS.
+- **Todo lo que le hable o le escriba al usuario tiene que salir de
+  `resolveAppLocale`, nunca de `Platform.localeName` a secas.** Si el usuario
+  puso la app en inglés, la voz del TTS también va en inglés
+  (`VoiceServiceImpl._resolveLanguageTag`): texto en inglés leído con voz
+  española es casi ininteligible.
+- El selector es la misma fila de pills que el de tema, pero sin iconos: una
+  bandera mapea un país, no un idioma.
+- **El backend también necesita el idioma**, porque el copy de los push lo arma
+  él. Se le manda guardándolo en el documento del usuario
+  (`drivers/{uid}.language` / `passengers/{uid}.language`), junto al `fcmToken`
+  y con el mismo ciclo de vida: al autenticarse y en `onTokenRefresh`
+  (`SessionBloc._registerPushToken`), y **además en el acto al tocar el
+  selector** (`SettingsBloc._syncPushLanguage`) — si solo se escribiera al
+  arrancar, quien acaba de elegir inglés seguiría recibiendo push en español
+  hasta el próximo arranque. Lo que se guarda es un código concreto
+  (`'es'`/`'en'`), nunca `'system'`: el server no conoce el idioma del
+  teléfono.
+- **El idioma NO viaja en un header del request.** El push casi siempre va
+  dirigido al *otro* participante (el conductor acepta → el push es para el
+  pasajero), así que el idioma de quien hace el request es el de la persona
+  equivocada. Por eso vive en el documento del destinatario, que es lo que el
+  server ya lee para sacar el `fcmToken`.
+
+**Al agregar un widget que muestre texto:** si el `Text` era `const` y ahora
+recibe una traducción, hay que quitarle el `const` (una traducción no es
+constante en tiempo de compilación).

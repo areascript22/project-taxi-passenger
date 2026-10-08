@@ -3,6 +3,7 @@ import 'package:bloc/bloc.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:meta/meta.dart';
+import 'package:passenger_app/core/error/errors.dart';
 import '../../../../shared/connectivity/domain/repository/connectivity_repository.dart';
 import '../../domain/entity/chat_message_entity.dart';
 import '../../domain/repository/chat_repository.dart';
@@ -113,13 +114,13 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
             .length;
 
     // Un stream que vuelve a emitir con datos es la señal de que ya está
-    // sano -- limpia cualquier errorMessage que hubiera quedado de un corte
+    // sano -- limpia cualquier errorCode que hubiera quedado de un corte
     // de conexión anterior (ver _onMessagesErrored/_onConnectivityRestored).
     emit(
       state.copyWith(
         messages: event.messages,
         unreadCount: unreadCount,
-        errorMessage: null,
+        errorCode: null,
       ),
     );
   }
@@ -156,13 +157,13 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
 
     emit(
       state.copyWith(
-        errorMessage: 'No se pudieron cargar los mensajes. Intenta de nuevo.',
+        errorCode: FailureCode.chatMessagesLoadFailed,
       ),
     );
   }
 
   Future<void> _onSendMessage(SendMessage event, Emitter<ChatState> emit) async {
-    emit(state.copyWith(isSending: true, errorMessage: null));
+    emit(state.copyWith(isSending: true, errorCode: null));
 
     final result = await repository.sendMessage(
       passengerId: event.passengerId,
@@ -171,7 +172,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
 
     result.fold(
       (failure) =>
-          emit(state.copyWith(isSending: false, errorMessage: failure.message)),
+          emit(state.copyWith(isSending: false, errorCode: failure.code)),
       // El stream de watchMessages ya va a traer el mensaje enviado.
       (_) => emit(state.copyWith(isSending: false)),
     );
@@ -226,18 +227,18 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     debugPrint(
       'ChatFlowDebug | ChatBloc._onConnectivityRestored -> rideId=$rideId '
       'subscriptionActiva=${_subscription != null} '
-      'errorPrevio=${state.errorMessage}',
+      'errorPrevio=${state.errorCode}',
     );
     if (rideId == null) return;
 
-    final needsReconnect = _subscription == null || state.errorMessage != null;
+    final needsReconnect = _subscription == null || state.errorCode != null;
     if (!needsReconnect) return;
 
     debugPrint(
       'ChatDebug | Conexión restaurada, reintentando watchMessages '
       '(rideId=$rideId)',
     );
-    emit(state.copyWith(errorMessage: null));
+    emit(state.copyWith(errorCode: null));
     _subscribeToMessages(rideId);
   }
 

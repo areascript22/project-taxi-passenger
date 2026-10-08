@@ -14,3 +14,9 @@ class ChangeThemeMode extends SettingsEvent {
 
   ChangeThemeMode(this.themeMode);
 }
+
+class ChangeLanguage extends SettingsEvent {
+  final AppLanguage language;
+
+  ChangeLanguage(this.language);
+}

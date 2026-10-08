@@ -2,10 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:passenger_app/shared/presentation/component/app_text_field.dart';
+import 'package:passenger_app/shared/presentation/component/app_toast.dart';
 import 'package:passenger_app/shared/presentation/component/custom_button.dart';
 import 'package:passenger_app/shared/presentation/component/image_source_sheet.dart';
 import 'package:passenger_app/shared/presentation/component/profile_avatar_picker.dart';
+import 'package:passenger_app/shared/presentation/failure_text.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../bloc/profile_bloc.dart';
 
 class EditProfileScreen extends StatefulWidget {
@@ -62,10 +65,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Editar perfil')),
+      appBar: AppBar(title: Text(l10n.profileEdit)),
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -76,15 +80,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         ),
         child: BlocConsumer<ProfileBloc, ProfileState>(
           listener: (context, state) {
-            if (state.errorMessage != null) {
-              ScaffoldMessenger.of(
-                context,
-              ).showSnackBar(SnackBar(content: Text(state.errorMessage!)));
+            if (state.errorCode != null) {
+              AppToast.error(context, message: context.failureText(state.errorCode!));
             }
             if (state.updateSuccess) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Perfil actualizado')),
-              );
+              // Toast antes del pop: al estar en el overlay raíz sigue visible
+              // después de volver a la pantalla anterior.
+              AppToast.success(context, message: l10n.profileUpdated);
               context.pop();
             }
           },
@@ -110,31 +112,31 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                             ),
                             const SizedBox(height: 32),
                             AppTextField(
-                              label: 'Nombres',
+                              label: l10n.fieldFirstName,
                               controller: _firstNameController,
                               textCapitalization: TextCapitalization.words,
                               validator: (value) {
                                 if (value == null || value.trim().isEmpty) {
-                                  return 'Ingresa tus nombres';
+                                  return l10n.validationFirstName;
                                 }
                                 return null;
                               },
                             ),
                             const SizedBox(height: 16),
                             AppTextField(
-                              label: 'Apellidos',
+                              label: l10n.fieldLastName,
                               controller: _lastNameController,
                               textCapitalization: TextCapitalization.words,
                               validator: (value) {
                                 if (value == null || value.trim().isEmpty) {
-                                  return 'Ingresa tus apellidos';
+                                  return l10n.validationLastName;
                                 }
                                 return null;
                               },
                             ),
                             const SizedBox(height: 16),
                             AppTextField(
-                              label: 'Correo electrónico',
+                              label: l10n.commonEmail,
                               controller: _emailController,
                               enabled: false,
                             ),
@@ -142,8 +144,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                             CustomButton(
                               textButton:
                                   state.isSubmitting
-                                      ? 'Guardando...'
-                                      : 'Guardar',
+                                      ? l10n.commonSaving
+                                      : l10n.commonSave,
                               backgroundColor: colorScheme.primary,
                               onTap: state.isSubmitting ? null : _save,
                             ),

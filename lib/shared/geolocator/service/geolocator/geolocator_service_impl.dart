@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:dartz/dartz.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
@@ -22,7 +21,7 @@ class GeolocatorServiceServiceImpl implements GeolocatorService {
       return Right(permission);
     } catch (e) {
       debugPrint("LocationDebug | Error requesting location permissions: $e");
-      return Left(Failure(message: e.toString()));
+      return Left(Failure(code: FailureCode.unexpected, detail: e.toString()));
     }
   }
 
@@ -32,7 +31,7 @@ class GeolocatorServiceServiceImpl implements GeolocatorService {
       final isServiceEnabled = await Geolocator.isLocationServiceEnabled();
       debugPrint("LocationDebug | isLocationServiceEnabled -> $isServiceEnabled");
       if (!isServiceEnabled) {
-        return Left(Failure(message: 'El servicio de GPS del dispositivo está desactivado.'));
+        return Left(Failure(code: FailureCode.gpsDisabled));
       }
 
       Position? position;
@@ -55,7 +54,7 @@ class GeolocatorServiceServiceImpl implements GeolocatorService {
 
       if (position == null) {
         return Left(
-          Failure(message: 'No se pudo obtener tu ubicación. Intenta de nuevo.'),
+          Failure(code: FailureCode.locationFetchFailed),
         );
       }
 
@@ -70,7 +69,7 @@ class GeolocatorServiceServiceImpl implements GeolocatorService {
       );
     } catch (e) {
       debugPrint("LocationDebug | Error en getCurrentPosition: $e");
-      return Left(Failure(message: e.toString()));
+      return Left(Failure(code: FailureCode.unexpected, detail: e.toString()));
     }
   }
 
@@ -81,7 +80,7 @@ class GeolocatorServiceServiceImpl implements GeolocatorService {
       return Right(response);
     } catch (e) {
       debugPrint("LocationDebug | Error opening app settings location: $e");
-      return Left(Failure(message: e.toString()));
+      return Left(Failure(code: FailureCode.unexpected, detail: e.toString()));
     }
   }
 }

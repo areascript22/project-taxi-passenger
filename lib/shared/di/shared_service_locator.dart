@@ -5,6 +5,7 @@ import 'package:passenger_app/shared/data/repository/session_repository_impl.dar
 import 'package:passenger_app/shared/domain/repository/session_repository.dart';
 import 'package:passenger_app/shared/notifications/service/push_notifications_service.dart';
 import 'package:passenger_app/shared/presentation/bloc/session/session_bloc.dart';
+import 'package:passenger_app/shared/settings/domain/repository/settings_repository.dart';
 
 void initSharedDI(GetIt sl) {
   sl.registerFactory<SessionRepository>(() => SessionRepositoryImpl());
@@ -18,6 +19,9 @@ void initSharedDI(GetIt sl) {
       rideTrackingRepository: sl<RideTrackingRepository>(),
       passengerProfileRepository: sl<PassengerProfileRepository>(),
       pushNotificationsService: sl<PushNotificationsService>(),
+      // Para registrar, junto al token, el idioma en el que el backend debe
+      // armarle los push a este pasajero.
+      settingsRepository: sl<SettingsRepository>(),
     ),
   );
 }

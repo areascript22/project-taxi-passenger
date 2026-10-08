@@ -4,7 +4,10 @@ import 'package:go_router/go_router.dart';
 import 'package:passenger_app/core/routing/app_routes.dart';
 import 'package:passenger_app/core/service_locator/main_service_locator.dart';
 import 'package:passenger_app/features/auth/presentation/bloc/auth_bloc.dart';
+import 'package:passenger_app/l10n/app_localizations.dart';
+import 'package:passenger_app/shared/presentation/component/app_toast.dart';
 import 'package:passenger_app/shared/presentation/component/app_version.dart';
+import 'package:passenger_app/shared/presentation/failure_text.dart';
 
 class SignInScreen extends StatelessWidget {
   const SignInScreen({super.key});
@@ -31,9 +34,7 @@ class SignInView extends StatelessWidget {
         child: BlocConsumer<AuthBloc, AuthState>(
           listener: (context, state) {
             if (state is AuthError) {
-              ScaffoldMessenger.of(
-                context,
-              ).showSnackBar(SnackBar(content: Text(state.message)));
+              AppToast.error(context, message: context.failureText(state.code));
             }
 
             if (state is AuthAuthenticated) {
@@ -52,7 +53,7 @@ class SignInView extends StatelessWidget {
                   Icon(Icons.local_taxi_rounded, size: 80, color: onSurface),
                   const SizedBox(height: 20),
                   Text(
-                    'Bienvenido Pasajero',
+                    AppLocalizations.of(context).signInWelcome,
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 28,
@@ -62,7 +63,7 @@ class SignInView extends StatelessWidget {
                   ),
                   const SizedBox(height: 10),
                   Text(
-                    'Viaja de forma segura y rápida con nosotros.',
+                    AppLocalizations.of(context).signInTagline,
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 16,
@@ -101,8 +102,8 @@ class SignInView extends StatelessWidget {
                               color: colorScheme.primary,
                             ),
                             const SizedBox(width: 8),
-                            const Text(
-                              'Continuar con Google',
+                            Text(
+                              AppLocalizations.of(context).signInGoogle,
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,

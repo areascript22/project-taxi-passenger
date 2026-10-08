@@ -45,21 +45,21 @@ class RideTrackingRepositoryImpl implements RideTrackingRepository {
       debugPrint('RideTrackingDebug | Error en cancelRide: $e');
       if (e.response?.statusCode == 403) {
         return Left(
-          Failure(message: 'No tienes permiso para cancelar este viaje.'),
+          Failure(code: FailureCode.rideCancelNotAllowed),
         );
       }
       if (e.response?.statusCode == 404 || e.response?.statusCode == 409) {
         return Left(
-          Failure(message: 'El viaje ya no está disponible para cancelar.'),
+          Failure(code: FailureCode.rideCancelUnavailable),
         );
       }
       return Left(
-        Failure(message: 'No se pudo cancelar el viaje. Intenta de nuevo.'),
+        Failure(code: FailureCode.rideCancelFailed),
       );
     } catch (e) {
       debugPrint('RideTrackingDebug | Error inesperado en cancelRide: $e');
       return Left(
-        Failure(message: 'No se pudo cancelar el viaje. Intenta de nuevo.'),
+        Failure(code: FailureCode.rideCancelFailed),
       );
     }
   }
@@ -76,7 +76,7 @@ class RideTrackingRepositoryImpl implements RideTrackingRepository {
       return const Right(unit);
     } catch (e) {
       return Left(
-        Failure(message: 'No se pudo confirmar. Intenta de nuevo.'),
+        Failure(code: FailureCode.confirmFailed),
       );
     }
   }
@@ -102,12 +102,12 @@ class RideTrackingRepositoryImpl implements RideTrackingRepository {
     } on DioException catch (e) {
       debugPrint('RideTrackingDebug | Error en getActiveRide: $e');
       return Left(
-        Failure(message: 'No se pudo verificar si tienes un viaje en curso.'),
+        Failure(code: FailureCode.activeTripCheckFailed),
       );
     } catch (e) {
       debugPrint('RideTrackingDebug | Error inesperado en getActiveRide: $e');
       return Left(
-        Failure(message: 'No se pudo verificar si tienes un viaje en curso.'),
+        Failure(code: FailureCode.activeTripCheckFailed),
       );
     }
   }
@@ -136,7 +136,7 @@ class RideTrackingRepositoryImpl implements RideTrackingRepository {
     } catch (e) {
       debugPrint('RideTrackingDebug | Error en recordInitialDriverDistance: $e');
       return Left(
-        Failure(message: 'No se pudo registrar la distancia inicial del conductor.'),
+        Failure(code: FailureCode.initialDistanceFailed),
       );
     }
   }

@@ -5,6 +5,7 @@ import 'package:passenger_app/core/theme/app_colors.dart';
 import 'package:passenger_app/features/booking/presentation/bloc/booking/booking_bloc.dart';
 import 'package:passenger_app/features/booking/presentation/component/waiting_for_driver_dialog.dart';
 import 'package:passenger_app/features/ride_tracking/presentation/bloc/ride_tracking_bloc.dart';
+import 'package:passenger_app/l10n/app_localizations.dart';
 import 'package:passenger_app/shared/presentation/bloc/session/session_bloc.dart';
 import 'package:passenger_app/shared/presentation/component/custom_loader.dart';
 
@@ -42,6 +43,7 @@ class TaxiConfirmationDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return BlocBuilder<BookingBloc, BookingState>(
       builder: (context, state) {
         final isRequesting = state.status == BookingStatus.requestingTaxi;
@@ -81,7 +83,7 @@ class TaxiConfirmationDialog extends StatelessWidget {
                   ),
                   const SizedBox(height: 20),
                   Text(
-                    "¿Confirmar viaje?",
+                    l10n.bookingConfirmTitle,
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
@@ -91,7 +93,7 @@ class TaxiConfirmationDialog extends StatelessWidget {
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    "Un conductor será enviado a la siguiente ubicación:",
+                    l10n.bookingConfirmBody,
                     style: TextStyle(
                       fontSize: 14,
                       color: onSurface.withValues(alpha: 0.6),
@@ -151,8 +153,8 @@ class TaxiConfirmationDialog extends StatelessWidget {
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
-                          child: const Text(
-                            "Cancelar",
+                          child: Text(
+                            l10n.commonCancel,
                             style: TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w600,
@@ -183,8 +185,8 @@ class TaxiConfirmationDialog extends StatelessWidget {
                           child:
                               isRequesting
                                   ? CustomLoader(width: 40, height: 40)
-                                  : const Text(
-                                    "Solicitar",
+                                  : Text(
+                                    l10n.bookingRequest,
                                     style: TextStyle(
                                       fontSize: 15,
                                       fontWeight: FontWeight.w600,

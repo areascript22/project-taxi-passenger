@@ -22,9 +22,9 @@ class SessionRepositoryImpl implements SessionRepository {
         );
       }
 
-      return Left(Failure(message: 'User is not signed in'));
+      return Left(Failure(code: FailureCode.notSignedIn));
     } catch (e) {
-      return left(Failure(message: "Error interno al verificar la sesión: $e"));
+      return left(Failure(code: FailureCode.sessionVerifyFailed));
     }
   }
 
@@ -35,7 +35,7 @@ class SessionRepositoryImpl implements SessionRepository {
       await auth.signOut();
       return const Right(unit);
     } catch (e) {
-      return left(Failure(message: "Error al cerrar sesión: $e"));
+      return left(Failure(code: FailureCode.signOutFailed));
     }
   }
 }

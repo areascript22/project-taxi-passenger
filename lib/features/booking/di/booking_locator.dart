@@ -6,10 +6,11 @@ import 'package:passenger_app/features/booking/domain/repository/location_search
 import 'package:passenger_app/features/booking/presentation/bloc/booking/booking_bloc.dart';
 import 'package:passenger_app/features/booking/presentation/bloc/location_search/location_search_bloc.dart';
 import 'package:passenger_app/shared/geocoding/domain/repository/geocoding_repository.dart';
+import 'package:passenger_app/shared/sectors/domain/service/sector_service.dart';
 
 void initBooking(GetIt sl) {
   sl.registerFactory<LocationSearchRepository>(
-    () => LocationSearchRepositoryImpl(),
+    () => LocationSearchRepositoryImpl(sectorService: sl<SectorService>()),
   );
   sl.registerFactory<BookingRepository>(
     () => BookingRepositoryImpl(),
@@ -24,6 +25,7 @@ void initBooking(GetIt sl) {
     () => BookingBloc(
       geocodingRepository: sl<GeocodingRepository>(),
       bookingRepository: sl<BookingRepository>(),
+      sectorService: sl<SectorService>(),
     ),
   );
 }

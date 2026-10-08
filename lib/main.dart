@@ -1,13 +1,14 @@
 import 'dart:async';
-
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
+import 'package:passenger_app/core/l10n/app_language.dart';
 import 'package:passenger_app/core/routing/app_routing.dart';
 import 'package:passenger_app/core/service_locator/main_service_locator.dart';
 import 'package:passenger_app/core/theme/app_theme.dart';
+import 'package:passenger_app/l10n/app_localizations.dart';
 import 'package:passenger_app/shared/connectivity/presentation/component/connectivity_banner.dart';
 import 'package:passenger_app/shared/connectivity/presentation/cubit/connectivity_cubit.dart';
 import 'package:passenger_app/shared/notifications/service/push_notifications_service.dart';
@@ -60,7 +61,24 @@ class MyApp extends StatelessWidget {
       child: BlocBuilder<SettingsBloc, SettingsState>(
         builder: (context, settingsState) {
           return MaterialApp.router(
-            title: 'Taxi project',
+            // onGenerateTitle en vez de `title`: se evalúa con un context que
+            // ya tiene las localizaciones, así el nombre que muestra el
+            // sistema operativo también sale del .arb.
+            onGenerateTitle: (context) => AppLocalizations.of(context).appTitle,
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            // null cuando el usuario eligio "Sistema": ahi resuelve
+            // localeListResolutionCallback con los idiomas del dispositivo.
+            locale: settingsState.language.locale,
+            // El fallback de Flutter cuando nada matchea es el PRIMER elemento
+            // de supportedLocales, que el generador ordena alfabeticamente
+            // ([en, es]). Sin esto, un telefono en portugues abriria la app en
+            // ingles en vez de espaniol -- ver resolveAppLocale.
+            localeListResolutionCallback:
+                (deviceLocales, _) => resolveAppLocale(
+                  preference: settingsState.language,
+                  deviceLocales: deviceLocales?.toList(),
+                ),
             debugShowCheckedModeBanner: false,
             theme: AppTheme.light,
             darkTheme: AppTheme.dark,

@@ -1,9 +1,10 @@
 import 'dart:io';
 import 'package:bloc/bloc.dart';
 import 'package:flutter/material.dart';
+import 'package:passenger_app/core/error/errors.dart';
+import '../../../../shared/image_picker/service/profile_image_picker_service.dart';
 import '../../../passenger_profile/domain/entity/passenger_entity.dart';
 import '../../../passenger_profile/domain/repository/passenger_profile_repository.dart';
-import '../../../../shared/image_picker/service/profile_image_picker_service.dart';
 
 part 'profile_event.dart';
 part 'profile_state.dart';
@@ -26,7 +27,7 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
     ProfileLoadRequested event,
     Emitter<ProfileState> emit,
   ) async {
-    emit(state.copyWith(isLoading: true, errorMessage: null));
+    emit(state.copyWith(isLoading: true, errorCode: null));
 
     final result = await passengerProfileRepository.getPassenger(
       passengerId: event.passengerId,
@@ -37,7 +38,7 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
       emit(
         state.copyWith(
           isLoading: false,
-          errorMessage: 'No se pudo cargar tu información',
+          errorCode: FailureCode.profileLoadFailed,
         ),
       );
       return;
@@ -47,20 +48,20 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
   }
 
   void _onEditStarted(ProfileEditStarted event, Emitter<ProfileState> emit) {
-    emit(state.copyWith(clearLocalImage: true, errorMessage: null));
+    emit(state.copyWith(clearLocalImage: true, errorCode: null));
   }
 
   Future<void> _onImagePicked(
     ProfileImagePicked event,
     Emitter<ProfileState> emit,
   ) async {
-    emit(state.copyWith(isPickingImage: true, errorMessage: null));
+    emit(state.copyWith(isPickingImage: true, errorCode: null));
 
     final result = await imagePickerService.pickImage(source: event.source);
 
     result.fold(
       (failure) => emit(
-        state.copyWith(isPickingImage: false, errorMessage: failure.message),
+        state.copyWith(isPickingImage: false, errorCode: failure.code),
       ),
       (file) {
         if (file == null) {
@@ -79,7 +80,7 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
     final current = state.passenger;
     if (current == null) return;
 
-    emit(state.copyWith(isSubmitting: true, errorMessage: null));
+    emit(state.copyWith(isSubmitting: true, errorCode: null));
 
     final updated = PassengerEntity(
       id: current.id,
@@ -100,7 +101,7 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
 
     result.fold(
       (failure) => emit(
-        state.copyWith(isSubmitting: false, errorMessage: failure.message),
+        state.copyWith(isSubmitting: false, errorCode: failure.code),
       ),
       (savedPassenger) => emit(
         state.copyWith(

@@ -13,7 +13,7 @@ class VibrationServiceImpl implements VibrationService {
       }
       return const Right(unit);
     } catch (e) {
-      return Left(Failure(message: e.toString()));
+      return Left(Failure(code: FailureCode.unexpected, detail: e.toString()));
     }
   }
 }

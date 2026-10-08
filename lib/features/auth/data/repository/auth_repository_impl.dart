@@ -34,13 +34,11 @@ class AuthRepositoryImpl implements AuthRepository {
         );
       } else {
         return left(
-          Failure(
-            message: "Error al obtener los datos del usuario de Firebase",
-          ),
+          Failure(code: FailureCode.signInFailed),
         );
       }
     } catch (e) {
-      return left(Failure(message: "Error interno en Google Sign-In: $e"));
+      return left(Failure(code: FailureCode.signInFailed));
     }
   }
 }

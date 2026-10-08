@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
@@ -7,8 +6,10 @@ import 'package:go_router/go_router.dart';
 import 'package:lottie/lottie.dart';
 import 'package:passenger_app/features/booking/presentation/bloc/booking/booking_bloc.dart';
 import 'package:passenger_app/features/ride_tracking/presentation/bloc/ride_tracking_bloc.dart';
+import 'package:passenger_app/l10n/app_localizations.dart';
 import 'package:passenger_app/shared/feedback/feedback_service.dart';
-
+import 'package:passenger_app/shared/presentation/component/app_toast.dart';
+import 'package:passenger_app/shared/presentation/failure_text.dart';
 import '../../../../core/routing/app_routes.dart';
 
 class WaitingForDriverDialog extends StatefulWidget {
@@ -228,7 +229,9 @@ class _WaitingForDriverDialogState extends State<WaitingForDriverDialog> {
           Icon(Icons.timer_outlined, size: 14, color: chipColor),
           const SizedBox(width: 6),
           Text(
-            'Cancelaremos en ${_formatCountdown(_displayRemaining)}',
+            AppLocalizations.of(
+              context,
+            ).bookingCancelCountdown(_formatCountdown(_displayRemaining)),
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w600,
@@ -285,7 +288,7 @@ class _WaitingForDriverDialogState extends State<WaitingForDriverDialog> {
               _buildCountdownRing(colorScheme),
               const SizedBox(height: 20),
               Text(
-                "Buscando conductor...",
+                AppLocalizations.of(context).waitingTitle,
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
@@ -295,7 +298,7 @@ class _WaitingForDriverDialogState extends State<WaitingForDriverDialog> {
               ),
               const SizedBox(height: 12),
               Text(
-                "Estamos buscando un taxi disponible para tu viaje. Por favor espera, un conductor aceptará tu solicitud en breve.",
+                AppLocalizations.of(context).waitingBody,
                 style: TextStyle(
                   fontSize: 14,
                   color: onSurface.withValues(alpha: 0.6),
@@ -314,7 +317,7 @@ class _WaitingForDriverDialogState extends State<WaitingForDriverDialog> {
                     if (state.status == RideTrackingStatus.driverAssigned) {
                       if (!context.mounted) return;
                       GetIt.instance<FeedbackService>().announce(
-                        'Carrera aceptada',
+                        AppLocalizations.of(context).waitingRideAccepted,
                         withVibration: true,
                       );
                       Navigator.pop(context);
@@ -330,15 +333,16 @@ class _WaitingForDriverDialogState extends State<WaitingForDriverDialog> {
                       // su propia lógica de mensaje.
                       if (_localCancelRequested) return;
                       if (!context.mounted) return;
-                      final messenger = ScaffoldMessenger.of(context);
-                      Navigator.of(context).pop();
-                      messenger.showSnackBar(
-                        const SnackBar(
-                          content: Text(
-                            'Ahora mismo no hay conductores disponibles. Intenta de nuevo en unos minutos.',
-                          ),
-                        ),
+                      // El toast se muestra ANTES del pop: vive en el overlay
+                      // raíz, así que sobrevive al cierre del diálogo y no
+                      // hace falta capturar nada por adelantado (con
+                      // ScaffoldMessenger sí: su context moría con el pop).
+                      AppToast.error(
+                        context,
+                        message:
+                            AppLocalizations.of(context).waitingNoDrivers,
                       );
+                      Navigator.of(context).pop();
                     }
                   },
                   child: SizedBox(),
@@ -353,17 +357,16 @@ class _WaitingForDriverDialogState extends State<WaitingForDriverDialog> {
                       // Éxito confirmado por el backend (Right en el
                       // repositorio): recién acá es seguro cerrar el popup.
                       final wasTimeout = _cancelledByTimeout;
-                      final messenger = ScaffoldMessenger.of(context);
-                      Navigator.of(context).pop();
+                      // Igual que arriba: el toast primero (context todavía
+                      // montado), el pop después.
                       if (wasTimeout) {
-                        messenger.showSnackBar(
-                          const SnackBar(
-                            content: Text(
-                              'Ahora mismo no hay conductores disponibles. Intenta de nuevo en unos minutos.',
-                            ),
-                          ),
+                        AppToast.error(
+                          context,
+                          message:
+                              AppLocalizations.of(context).waitingNoDrivers,
                         );
                       }
+                      Navigator.of(context).pop();
                     } else if (state.status == BookingStatus.error &&
                         _cancelledByTimeout) {
                       // El repositorio devolvió Failure: la carrera puede
@@ -377,26 +380,28 @@ class _WaitingForDriverDialogState extends State<WaitingForDriverDialog> {
                       // backend termina auto-cancelándola igual).
                       _cancelledByTimeout = false;
                       _localCancelRequested = false;
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            state.errorMessage ??
-                                'No se pudo cancelar automáticamente. Intenta cancelar de nuevo.',
-                          ),
-                        ),
+                      AppToast.error(
+                        context,
+                        message:
+                            state.errorCode != null
+                                ? context.failureText(state.errorCode!)
+                                : AppLocalizations.of(
+                                  context,
+                                ).waitingAutoCancelFailed,
                       );
                     } else if (state.status == BookingStatus.error) {
                       // Falla al cancelar manualmente con el botón: el
                       // diálogo se queda abierto (nunca cerramos en error),
                       // solo avisamos para que el usuario reintente.
                       _localCancelRequested = false;
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            state.errorMessage ??
-                                'No se pudo cancelar la solicitud. Intenta de nuevo.',
-                          ),
-                        ),
+                      AppToast.error(
+                        context,
+                        message:
+                            state.errorCode != null
+                                ? context.failureText(state.errorCode!)
+                                : AppLocalizations.of(
+                                  context,
+                                ).waitingCancelFailed,
                       );
                     }
                   },
@@ -440,8 +445,8 @@ class _WaitingForDriverDialogState extends State<WaitingForDriverDialog> {
                                   ),
                                 ),
                               )
-                              : const Text(
-                                "Cancelar solicitud",
+                              : Text(
+                                AppLocalizations.of(context).waitingCancelRequest,
                                 style: TextStyle(
                                   fontSize: 15,
                                   fontWeight: FontWeight.w600,

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:passenger_app/core/theme/app_colors.dart';
+import 'package:passenger_app/l10n/app_localizations.dart';
 
 class DriverDistanceIndicator extends StatelessWidget {
   const DriverDistanceIndicator({
@@ -36,7 +37,7 @@ class DriverDistanceIndicator extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            "El conductor está en camino",
+            AppLocalizations.of(context).distanceIndicatorTitle,
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
@@ -47,7 +48,7 @@ class DriverDistanceIndicator extends StatelessWidget {
           const SizedBox(height: 6),
 
           Text(
-            "Su conductor se dirige al lugar de recogida.",
+            AppLocalizations.of(context).distanceIndicatorSubtitle,
             style: TextStyle(color: onSurface.withValues(alpha: 0.6)),
           ),
 
@@ -113,7 +114,7 @@ class DriverDistanceIndicator extends StatelessWidget {
                       bottom: 0,
                       left: 0,
                       child: Text(
-                        "Tu ubicación",
+                        AppLocalizations.of(context).distanceYourLocation,
                         style: TextStyle(
                           fontSize: 12,
                           color: onSurface.withValues(alpha: 0.5),
@@ -125,7 +126,7 @@ class DriverDistanceIndicator extends StatelessWidget {
                       bottom: 0,
                       right: 0,
                       child: Text(
-                        "Conductor",
+                        AppLocalizations.of(context).distanceDriver,
                         style: TextStyle(
                           fontSize: 12,
                           color: onSurface.withValues(alpha: 0.5),
@@ -145,7 +146,7 @@ class DriverDistanceIndicator extends StatelessWidget {
               Expanded(
                 child: _InfoTile(
                   icon: Icons.route,
-                  title: "Distancia",
+                  title: AppLocalizations.of(context).distanceLabel,
                   value: distanceLabel,
                 ),
               ),
@@ -153,7 +154,7 @@ class DriverDistanceIndicator extends StatelessWidget {
               Expanded(
                 child: _InfoTile(
                   icon: Icons.access_time,
-                  title: "Tiempo estimado",
+                  title: AppLocalizations.of(context).distanceEta,
                   value: etaLabel,
                 ),
               ),

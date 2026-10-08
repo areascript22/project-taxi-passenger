@@ -14,27 +14,27 @@ enum LocationProcess {
 class LocationState {
   final LocationPermission? permissionStatus;
   final UserLocation? lastKnownLocation;
-  final String? errorMessage;
+  final FailureCode? errorCode;
   final LocationProcess locationProcess;
 
   const LocationState({
     this.permissionStatus,
     this.lastKnownLocation,
-    this.errorMessage,
+    this.errorCode,
     this.locationProcess = LocationProcess.initial,
   });
 
   LocationState copyWith({
     LocationPermission? permissionStatus,
     UserLocation? lastKnownLocation,
-    String? errorMessage,
+    FailureCode? errorCode,
     LocationProcess? locationProcess,
     bool clearError = false,
   }) {
     return LocationState(
       permissionStatus: permissionStatus ?? this.permissionStatus,
       lastKnownLocation: lastKnownLocation ?? this.lastKnownLocation,
-      errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
+      errorCode: clearError ? null : (errorCode ?? this.errorCode),
       locationProcess: locationProcess ?? this.locationProcess,
     );
   }

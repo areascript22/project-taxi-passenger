@@ -4,6 +4,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:get_it/get_it.dart';
 import 'package:go_router/go_router.dart';
 import 'package:passenger_app/core/routing/app_routes.dart';
+import 'package:passenger_app/core/theme/app_colors.dart';
 import 'package:passenger_app/features/booking/domain/entity/request_entity.dart';
 import 'package:passenger_app/features/booking/presentation/bloc/booking/booking_bloc.dart';
 import 'package:passenger_app/features/booking/presentation/component/booking_header.dart';
@@ -15,9 +16,10 @@ import 'package:passenger_app/features/ride_tracking/presentation/bloc/ride_trac
 import 'package:passenger_app/shared/domain/entity/place_entity.dart';
 import 'package:passenger_app/shared/geolocator/location/location_bloc.dart';
 import 'package:passenger_app/shared/presentation/bloc/session/session_bloc.dart';
-import 'package:passenger_app/core/theme/app_colors.dart';
 import 'package:passenger_app/shared/presentation/component/custom_button.dart';
 import 'package:passenger_app/shared/presentation/component/custom_loader.dart';
+import 'package:passenger_app/shared/presentation/failure_text.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../../../shared/feedback/feedback_service.dart';
 import '../bloc/location_search/location_search_bloc.dart';
 
@@ -78,7 +80,19 @@ class _BookingViewState extends State<BookingView> {
     // conductor" -- no tiene sentido saludar de bienvenida encima.
     if (widget.recoveredRide != null) return;
 
-    GetIt.instance<FeedbackService>().announce('Bienvenido a TaxiGo');
+    // El saludo se difiere al primer frame (igual que
+    // _maybeResumeWaitingDialog) porque AppLocalizations es un
+    // InheritedWidget: leerlo durante initState revienta con
+    // "dependOnInheritedWidgetOfExactType called before initState completed".
+    // Antes de la traducción esto era un string literal y no dependía del
+    // árbol, así que la llamada directa funcionaba.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+
+      GetIt.instance<FeedbackService>().announce(
+        AppLocalizations.of(context).bookingWelcomeAnnouncement,
+      );
+    });
   }
 
   // Resume el diálogo "Buscando conductor" si SessionScreen detectó que el
@@ -143,9 +157,12 @@ class _BookingViewState extends State<BookingView> {
                     BlocBuilder<BookingBloc, BookingState>(
                       builder: (context, state) {
                         return CustomButton(
-                          textButton: "Solicitar taxi",
+                          textButton: AppLocalizations.of(context).bookingRequestTaxi,
+                          // canRequestTaxi incluye estar DENTRO de la zona de
+                          // cobertura: fuera de los sectores de Riobamba el
+                          // botón queda deshabilitado.
                           onTap:
-                              state.pickupAddress != null
+                              state.canRequestTaxi
                                   ? () {
                                     _onRequestTaxi(state);
                                   }
@@ -170,11 +187,10 @@ class _BookingViewState extends State<BookingView> {
       context: context,
       address: state.pickupAddress!,
       onConfirm: () {
-        final isPickUpReady =
-            state.pickupLng != null ||
-            state.pickupLat != null ||
-            state.pickupAddress != null;
-        if (!isPickUpReady) {
+        // canRequestTaxi reemplaza al chequeo anterior, que usaba `||` donde
+        // correspondía `&&`: con solo una de las tres cosas presente seguía de
+        // largo y reventaba en los `!` de abajo.
+        if (!state.canRequestTaxi) {
           return;
         }
 
@@ -182,6 +198,7 @@ class _BookingViewState extends State<BookingView> {
           pickupLat: state.pickupLat!,
           pickupLng: state.pickupLng!,
           pickupAddress: state.pickupAddress!,
+          pickupSector: state.pickupSector,
         );
         context.read<BookingBloc>().add(RequestTaxi(request: request));
       },
@@ -221,17 +238,23 @@ class _BookingViewState extends State<BookingView> {
       },
       builder: (context, state) {
         if (state.locationProcess == LocationProcess.checkingPermissions) {
-          return const Center(
+          return Center(
             child: Column(
-              children: [CustomLoader(), Text('Comprobando permisos...')],
+              children: [
+                const CustomLoader(),
+                Text(AppLocalizations.of(context).bookingCheckingPermissions),
+              ],
             ),
           );
         }
 
         if (state.locationProcess == LocationProcess.gettingCurrentCords) {
-          return const Center(
+          return Center(
             child: Column(
-              children: [CustomLoader(), Text('Ubteniendo tu ubicacion...')],
+              children: [
+                const CustomLoader(),
+                Text(AppLocalizations.of(context).bookingGettingLocation),
+              ],
             ),
           );
         }
@@ -256,11 +279,11 @@ class _BookingViewState extends State<BookingView> {
         return BlocBuilder<BookingBloc, BookingState>(
           builder: (context, state) {
             if (state.status == BookingStatus.fetchingAddress) {
-              return const Center(
+              return Center(
                 child: Column(
                   children: [
-                    CustomLoader(),
-                    Text('Ubteniendo tu direccion...'),
+                    const CustomLoader(),
+                    Text(AppLocalizations.of(context).bookingGettingAddress),
                   ],
                 ),
               );
@@ -268,7 +291,7 @@ class _BookingViewState extends State<BookingView> {
 
             return Column(
               children: [
-                _buildLocationCard(context, address: state.pickupAddress),
+                _buildLocationCard(context, state: state),
 
                 const SizedBox(height: 24),
 
@@ -283,52 +306,59 @@ class _BookingViewState extends State<BookingView> {
     );
   }
 
-  Widget _buildLocationCard(BuildContext context, {String? address}) {
+  Widget _buildLocationCard(BuildContext context, {required BookingState state}) {
     final colorScheme = Theme.of(context).colorScheme;
     final onSurface = colorScheme.onSurface;
     final success = context.appColors.success;
+    final isOutOfCoverage = state.isOutOfCoverage;
+    // Fuera de cobertura la tarjeta se pinta con el rojo del tema: el pasajero
+    // tiene que ver que ese punto no sirve antes de buscar el botón.
+    final accent = isOutOfCoverage ? colorScheme.error : success;
 
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: onSurface.withValues(alpha: 0.08)),
+        border: Border.all(
+          color:
+              isOutOfCoverage
+                  ? colorScheme.error.withValues(alpha: 0.3)
+                  : onSurface.withValues(alpha: 0.08),
+        ),
       ),
       child: Row(
         children: [
 
           BlocBuilder<LocationSearchBloc, LocationSearchState>(
-            builder: (context, state) {
-              if(state is LocationSearchLoaded && state.searchLoadedProcess == SearchLoadedProcess.gettingCords){
+            builder: (context, searchState) {
+              if(searchState is LocationSearchLoaded && searchState.searchLoadedProcess == SearchLoadedProcess.gettingCords){
                 return CustomLoader();
               }
               return Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: success.withValues(alpha: 0.15),
+                  color: accent.withValues(alpha: 0.15),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(Icons.circle, color: success, size: 20),
+                child: Icon(
+                  isOutOfCoverage ? Icons.location_off_rounded : Icons.circle,
+                  color: accent,
+                  size: 20,
+                ),
               );
             },
           ),
 
           const SizedBox(width: 16),
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  address ?? '',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: onSurface.withValues(alpha: 0.6),
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
+            child:
+                isOutOfCoverage
+                    ? _OutOfCoverageText(address: state.pickupAddress)
+                    : _PickupText(
+                      sector: state.pickupSector,
+                      address: state.pickupAddress,
+                    ),
           ),
         ],
       ),
@@ -375,7 +405,7 @@ class _BookingViewState extends State<BookingView> {
                         );
                       },
                       decoration: InputDecoration(
-                        hintText: "Buscar dirección o lugar...",
+                        hintText: AppLocalizations.of(context).bookingSearchHint,
                         hintStyle: TextStyle(
                           color: onSurface.withValues(alpha: 0.4),
                           fontSize: 15,
@@ -479,7 +509,7 @@ class _BookingViewState extends State<BookingView> {
           return Padding(
             padding: const EdgeInsets.only(top: 16.0),
             child: Text(
-              state.message,
+              context.failureText(state.code),
               style: TextStyle(color: colorScheme.error, fontSize: 14),
             ),
           );
@@ -490,7 +520,7 @@ class _BookingViewState extends State<BookingView> {
             return Padding(
               padding: const EdgeInsets.only(top: 16.0),
               child: Text(
-                "No se encontraron resultados",
+                AppLocalizations.of(context).bookingNoResults,
                 style: TextStyle(color: onSurface.withValues(alpha: 0.5)),
               ),
             );
@@ -555,7 +585,7 @@ class _MapPickerButton extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Tooltip(
-      message: 'Elegir en el mapa',
+      message: AppLocalizations.of(context).bookingPickOnMap,
       child: Material(
         color: colorScheme.primary.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(16),
@@ -579,6 +609,94 @@ class _MapPickerButton extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+// El sector va arriba y en negrita porque es la referencia que el conductor va
+// a escuchar; la dirección exacta queda como detalle debajo.
+class _PickupText extends StatelessWidget {
+  final String? sector;
+  final String? address;
+
+  const _PickupText({required this.sector, required this.address});
+
+  @override
+  Widget build(BuildContext context) {
+    final onSurface = Theme.of(context).colorScheme.onSurface;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (sector != null && sector!.isNotEmpty) ...[
+          Text(
+            sector!,
+            style: TextStyle(
+              fontSize: 14,
+              color: onSurface,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 2),
+        ],
+        Text(
+          address ?? '',
+          style: TextStyle(
+            fontSize: 12,
+            color: onSurface.withValues(alpha: 0.6),
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _OutOfCoverageText extends StatelessWidget {
+  final String? address;
+
+  const _OutOfCoverageText({required this.address});
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final l10n = AppLocalizations.of(context);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          l10n.bookingOutOfCoverageTitle,
+          style: TextStyle(
+            fontSize: 14,
+            color: colorScheme.error,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          l10n.bookingOutOfCoverageMessage,
+          style: TextStyle(
+            fontSize: 12,
+            color: colorScheme.error.withValues(alpha: 0.8),
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        // Se sigue mostrando lo que eligió: sin esto, tocar una sugerencia
+        // fuera de cobertura borra la pantalla sin decir qué fue rechazado.
+        if (address != null && address!.isNotEmpty) ...[
+          const SizedBox(height: 4),
+          Text(
+            address!,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 11,
+              color: colorScheme.onSurface.withValues(alpha: 0.5),
+            ),
+          ),
+        ],
+      ],
     );
   }
 }

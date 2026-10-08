@@ -29,7 +29,7 @@ class ProfileImagePickerServiceImpl implements ProfileImagePickerService {
       return Right(File(picked.path));
     } catch (e) {
       debugPrint('ImagePickerDebug | Error en pickImage: $e');
-      return Left(Failure(message: 'No se pudo obtener la imagen seleccionada'));
+      return Left(Failure(code: FailureCode.imagePickFailed));
     }
   }
 }

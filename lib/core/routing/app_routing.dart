@@ -1,10 +1,11 @@
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:passenger_app/core/routing/app_routes.dart';
 import 'package:passenger_app/features/auth/presentation/screen/session_screen.dart';
 import 'package:passenger_app/features/auth/presentation/screen/sign_in_screen.dart';
 import 'package:passenger_app/features/booking/presentation/screen/booking_sccreen.dart';
-import 'package:passenger_app/features/chat/presentation/screen/chat_screen.dart';
 import 'package:passenger_app/features/booking/presentation/screen/booking_sccreen_2.dart';
+import 'package:passenger_app/features/chat/presentation/screen/chat_screen.dart';
 import 'package:passenger_app/features/map/presentation/screen/map_picker_screen.dart';
 import 'package:passenger_app/features/passenger_profile/presentation/screen/passenger_onboarding_screen.dart';
 import 'package:passenger_app/features/profile/presentation/bloc/profile_bloc.dart';
@@ -13,11 +14,10 @@ import 'package:passenger_app/features/profile/presentation/screen/profile_scree
 import 'package:passenger_app/features/profile/presentation/screen/profile_screen_2.dart';
 import 'package:passenger_app/features/ride_tracking/domain/entity/ride_entity.dart';
 import 'package:passenger_app/features/ride_tracking/presentation/screen/ride_tracking_screen.dart';
+import 'package:passenger_app/shared/domain/entity/place_entity.dart';
 import 'package:passenger_app/shared/domain/entity/user_entity.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:passenger_app/shared/presentation/component/scaffold_nav_bar.dart';
 import 'package:passenger_app/shared/settings/presentation/screen/settings_screen.dart';
-import 'package:passenger_app/shared/domain/entity/place_entity.dart';
 import '../../features/auth/presentation/screen/splash_screen.dart';
 
 class AppRouter {

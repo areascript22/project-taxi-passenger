@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
 import 'package:passenger_app/features/ride_tracking/presentation/bloc/ride_tracking_bloc.dart';
+import 'package:passenger_app/l10n/app_localizations.dart';
 import 'package:passenger_app/shared/presentation/component/custom_loader.dart';
+import 'package:passenger_app/shared/presentation/failure_text.dart';
 
 // Diálogo de confirmación para cancelar un viaje que ya tiene conductor
 // asignado. Arquitectura basada en TaxiConfirmationDialog (booking feature).
@@ -28,6 +30,7 @@ class ConfirmCancelRideDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return BlocConsumer<RideTrackingBloc, RideTrackingState>(
       // Dos señales pueden indicar "ya terminó, cierra el diálogo": que el
       // propio request de cancelación termine (isCancelling true->false) o
@@ -38,7 +41,7 @@ class ConfirmCancelRideDialog extends StatelessWidget {
           (previous, current) =>
               (previous.isCancelling &&
                   !current.isCancelling &&
-                  current.errorMessage == null) ||
+                  current.errorCode == null) ||
               (previous.status != RideTrackingStatus.cancelled &&
                   current.status == RideTrackingStatus.cancelled),
       listener: (context, state) {
@@ -86,7 +89,7 @@ class ConfirmCancelRideDialog extends StatelessWidget {
                   ),
                   const SizedBox(height: 20),
                   Text(
-                    "¿Cancelar viaje?",
+                    l10n.cancelRideDialogTitle,
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
@@ -96,7 +99,7 @@ class ConfirmCancelRideDialog extends StatelessWidget {
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    "Tu conductor ya está en camino. Si cancelas ahora, es posible que se te aplique un cargo por cancelación.",
+                    l10n.cancelRideDialogBody,
                     style: TextStyle(
                       fontSize: 14,
                       color: colorScheme.onSurface.withValues(alpha: 0.6),
@@ -104,10 +107,10 @@ class ConfirmCancelRideDialog extends StatelessWidget {
                     ),
                     textAlign: TextAlign.center,
                   ),
-                  if (state.errorMessage != null) ...[
+                  if (state.errorCode != null) ...[
                     const SizedBox(height: 12),
                     Text(
-                      state.errorMessage!,
+                      context.failureText(state.errorCode!),
                       style: TextStyle(fontSize: 13, color: colorScheme.error),
                       textAlign: TextAlign.center,
                     ),
@@ -130,8 +133,8 @@ class ConfirmCancelRideDialog extends StatelessWidget {
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
-                          child: const Text(
-                            "Continuar viaje",
+                          child: Text(
+                            l10n.cancelRideContinue,
                             style: TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w600,
@@ -166,8 +169,8 @@ class ConfirmCancelRideDialog extends StatelessWidget {
                           child:
                               isCancelling
                                   ? CustomLoader(width: 40, height: 40)
-                                  : const Text(
-                                    "Cancelar viaje",
+                                  : Text(
+                                    l10n.rideCancel,
                                     style: TextStyle(
                                       fontSize: 15,
                                       fontWeight: FontWeight.w600,

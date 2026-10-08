@@ -7,7 +7,7 @@ class ProfileState {
   final File? localImage;
   final bool isPickingImage;
   final bool isSubmitting;
-  final String? errorMessage;
+  final FailureCode? errorCode;
   // Flag de un solo uso: la UI lo consume para mostrar un snackbar de éxito
   // y luego queda en false en cualquier emisión posterior.
   final bool updateSuccess;
@@ -18,7 +18,7 @@ class ProfileState {
     this.localImage,
     this.isPickingImage = false,
     this.isSubmitting = false,
-    this.errorMessage,
+    this.errorCode,
     this.updateSuccess = false,
   });
 
@@ -29,7 +29,7 @@ class ProfileState {
     bool clearLocalImage = false,
     bool? isPickingImage,
     bool? isSubmitting,
-    String? errorMessage,
+    FailureCode? errorCode,
     bool? updateSuccess,
   }) {
     return ProfileState(
@@ -38,7 +38,7 @@ class ProfileState {
       localImage: clearLocalImage ? null : (localImage ?? this.localImage),
       isPickingImage: isPickingImage ?? this.isPickingImage,
       isSubmitting: isSubmitting ?? this.isSubmitting,
-      errorMessage: errorMessage,
+      errorCode: errorCode,
       updateSuccess: updateSuccess ?? false,
     );
   }

@@ -67,7 +67,7 @@ void main() {
     expect(bloc.state.messages, isEmpty);
     expect(bloc.state.unreadCount, 0);
     expect(bloc.state.isSending, isFalse);
-    expect(bloc.state.errorMessage, isNull);
+    expect(bloc.state.errorCode, isNull);
   });
 
   group('WatchMessages', () {
@@ -106,8 +106,7 @@ void main() {
         predicate<ChatState>(
           (s) =>
               s.messages.isEmpty &&
-              s.errorMessage ==
-                  'No se pudieron cargar los mensajes. Intenta de nuevo.',
+              s.errorCode != null,
         ),
       ],
     );
@@ -157,8 +156,8 @@ void main() {
       build: buildBloc,
       act: (bloc) => bloc.add(SendMessage(passengerId: 'p1', text: 'hola')),
       expect: () => [
-        predicate<ChatState>((s) => s.isSending && s.errorMessage == null),
-        predicate<ChatState>((s) => !s.isSending && s.errorMessage == null),
+        predicate<ChatState>((s) => s.isSending && s.errorCode == null),
+        predicate<ChatState>((s) => !s.isSending && s.errorCode == null),
       ],
     );
 
@@ -167,14 +166,14 @@ void main() {
       setUp: () {
         when(
           () => repository.sendMessage(passengerId: 'p1', text: 'hola'),
-        ).thenAnswer((_) async => Left(Failure(message: 'no se pudo enviar')));
+        ).thenAnswer((_) async => Left(Failure(code: FailureCode.unexpected)));
       },
       build: buildBloc,
       act: (bloc) => bloc.add(SendMessage(passengerId: 'p1', text: 'hola')),
       expect: () => [
         predicate<ChatState>((s) => s.isSending),
         predicate<ChatState>(
-          (s) => !s.isSending && s.errorMessage == 'no se pudo enviar',
+          (s) => !s.isSending && s.errorCode != null,
         ),
       ],
     );
@@ -229,12 +228,11 @@ void main() {
       expect: () => [
         predicate<ChatState>(
           (s) =>
-              s.errorMessage ==
-              'No se pudieron cargar los mensajes. Intenta de nuevo.',
+              s.errorCode != null,
         ),
-        predicate<ChatState>((s) => s.errorMessage == null), // reintento
+        predicate<ChatState>((s) => s.errorCode == null), // reintento
         predicate<ChatState>(
-          (s) => s.messages.length == 1 && s.errorMessage == null,
+          (s) => s.messages.length == 1 && s.errorCode == null,
         ),
       ],
       verify: (_) {
@@ -299,7 +297,7 @@ void main() {
 
           // Silencioso a propósito mientras reintenta -- no debe parpadear
           // un error que se va a resolver solo en un instante.
-          expect(bloc.state.errorMessage, isNull);
+          expect(bloc.state.errorCode, isNull);
 
           async.elapse(const Duration(milliseconds: 1200));
           messagesController.add([
@@ -312,7 +310,7 @@ void main() {
           async.elapse(Duration.zero);
 
           expect(bloc.state.messages.length, 1);
-          expect(bloc.state.errorMessage, isNull);
+          expect(bloc.state.errorCode, isNull);
           verify(() => repository.watchMessages(rideId: 'ride_1')).called(2);
 
           bloc.close();
@@ -355,8 +353,8 @@ void main() {
           async.elapse(Duration.zero);
 
           expect(
-            bloc.state.errorMessage,
-            'No se pudieron cargar los mensajes. Intenta de nuevo.',
+            bloc.state.errorCode,
+            FailureCode.chatMessagesLoadFailed,
           );
           verify(() => repository.watchMessages(rideId: 'ride_1')).called(5);
 
@@ -377,8 +375,8 @@ void main() {
           async.elapse(Duration.zero);
 
           expect(
-            bloc.state.errorMessage,
-            'No se pudieron cargar los mensajes. Intenta de nuevo.',
+            bloc.state.errorCode,
+            FailureCode.chatMessagesLoadFailed,
           );
           verify(() => repository.watchMessages(rideId: 'ride_1')).called(1);
 

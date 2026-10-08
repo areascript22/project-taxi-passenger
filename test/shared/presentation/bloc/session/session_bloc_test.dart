@@ -5,6 +5,7 @@ import 'package:dartz/dartz.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:passenger_app/core/error/errors.dart';
+import 'package:passenger_app/core/l10n/app_language.dart';
 import 'package:passenger_app/features/passenger_profile/domain/entity/passenger_entity.dart';
 import 'package:passenger_app/features/passenger_profile/domain/repository/passenger_profile_repository.dart';
 import 'package:passenger_app/features/ride_tracking/domain/entity/ride_entity.dart';
@@ -14,8 +15,11 @@ import 'package:passenger_app/shared/domain/entity/user_entity.dart';
 import 'package:passenger_app/shared/domain/repository/session_repository.dart';
 import 'package:passenger_app/shared/notifications/service/push_notifications_service.dart';
 import 'package:passenger_app/shared/presentation/bloc/session/session_bloc.dart';
+import 'package:passenger_app/shared/settings/domain/repository/settings_repository.dart';
 
 class _MockSessionRepository extends Mock implements SessionRepository {}
+
+class _MockSettingsRepository extends Mock implements SettingsRepository {}
 
 class _MockRideTrackingRepository extends Mock
     implements RideTrackingRepository {}
@@ -31,6 +35,7 @@ void main() {
   late _MockRideTrackingRepository rideTrackingRepository;
   late _MockPassengerProfileRepository passengerProfileRepository;
   late _MockPushNotificationsService pushNotificationsService;
+  late _MockSettingsRepository settingsRepository;
   final user = UserEntity(id: 'u1', email: 'a@a.com');
   final passenger = PassengerEntity(
     id: 'u1',
@@ -44,6 +49,7 @@ void main() {
     rideTrackingRepository = _MockRideTrackingRepository();
     passengerProfileRepository = _MockPassengerProfileRepository();
     pushNotificationsService = _MockPushNotificationsService();
+    settingsRepository = _MockSettingsRepository();
 
     // Comportamiento por defecto del registro de push token
     // (fire-and-forget en _onCheckRequested) para no romper tests que no
@@ -58,8 +64,15 @@ void main() {
       () => passengerProfileRepository.updateFcmToken(
         passengerId: any(named: 'passengerId'),
         token: any(named: 'token'),
+        language: any(named: 'language'),
       ),
     ).thenAnswer((_) async => const Right(unit));
+    // Preferencia explícita y no AppLanguage.system a propósito: 'system'
+    // resolvería contra el idioma de la máquina que corre el test, que no es
+    // determinístico.
+    when(
+      () => settingsRepository.getLanguage(),
+    ).thenAnswer((_) async => Right(AppLanguage.spanish));
   });
 
   SessionBloc buildBloc() => SessionBloc(
@@ -67,6 +80,7 @@ void main() {
     rideTrackingRepository: rideTrackingRepository,
     passengerProfileRepository: passengerProfileRepository,
     pushNotificationsService: pushNotificationsService,
+    settingsRepository: settingsRepository,
   );
 
   test('el estado inicial es SessionUnknown', () {
@@ -78,7 +92,7 @@ void main() {
       'emite SessionUnauthenticated si no hay usuario autenticado',
       build: () {
         when(() => sessionRepository.isUserAuthenticated()).thenAnswer(
-          (_) async => Left(Failure(message: 'no session')),
+          (_) async => Left(Failure(code: FailureCode.unexpected)),
         );
         return buildBloc();
       },
@@ -103,7 +117,7 @@ void main() {
           () => passengerProfileRepository.getPassenger(
             passengerId: any(named: 'passengerId'),
           ),
-        ).thenAnswer((_) async => Left(Failure(message: 'network')));
+        ).thenAnswer((_) async => Left(Failure(code: FailureCode.unexpected)));
         return buildBloc();
       },
       act: (bloc) => bloc.add(SessionCheckRequested()),
@@ -197,7 +211,7 @@ void main() {
           ),
         ).thenAnswer((_) async => Right(passenger));
         when(() => rideTrackingRepository.getActiveRide()).thenAnswer(
-          (_) async => Left(Failure(message: 'error')),
+          (_) async => Left(Failure(code: FailureCode.unexpected)),
         );
         return buildBloc();
       },
@@ -238,8 +252,94 @@ void main() {
           () => passengerProfileRepository.updateFcmToken(
             passengerId: user.id,
             token: 'token-123',
+            language: 'es',
           ),
         ).called(1);
+      },
+    );
+
+    // El backend arma el copy de los push, así que necesita el idioma del
+    // destinatario guardado junto al token: sin esto un pasajero con la app
+    // en inglés recibiría las notificaciones en español.
+    blocTest<SessionBloc, SessionState>(
+      'registra el idioma elegido en Ajustes junto al token',
+      build: () {
+        when(
+          () => sessionRepository.isUserAuthenticated(),
+        ).thenAnswer((_) async => Right(user));
+        when(
+          () => passengerProfileRepository.getPassenger(
+            passengerId: any(named: 'passengerId'),
+          ),
+        ).thenAnswer((_) async => Right(passenger));
+        when(
+          () => rideTrackingRepository.getActiveRide(),
+        ).thenAnswer((_) async => const Right(null));
+        when(
+          () => pushNotificationsService.getToken(),
+        ).thenAnswer((_) async => const Right('token-123'));
+        when(
+          () => settingsRepository.getLanguage(),
+        ).thenAnswer((_) async => Right(AppLanguage.english));
+        return buildBloc();
+      },
+      act: (bloc) => bloc.add(SessionCheckRequested()),
+      wait: const Duration(milliseconds: 10),
+      expect: () => [isA<SessionAuthenticated>()],
+      verify: (_) {
+        verify(
+          () => passengerProfileRepository.updateFcmToken(
+            passengerId: user.id,
+            token: 'token-123',
+            language: 'en',
+          ),
+        ).called(1);
+      },
+    );
+
+    // Si la lectura de la preferencia falla se asume el default, que es el
+    // mismo idioma al que cae el server cuando el campo no está.
+    blocTest<SessionBloc, SessionState>(
+      'guarda un idioma concreto si no se puede leer la preferencia',
+      build: () {
+        when(
+          () => sessionRepository.isUserAuthenticated(),
+        ).thenAnswer((_) async => Right(user));
+        when(
+          () => passengerProfileRepository.getPassenger(
+            passengerId: any(named: 'passengerId'),
+          ),
+        ).thenAnswer((_) async => Right(passenger));
+        when(
+          () => rideTrackingRepository.getActiveRide(),
+        ).thenAnswer((_) async => const Right(null));
+        when(
+          () => pushNotificationsService.getToken(),
+        ).thenAnswer((_) async => const Right('token-123'));
+        when(() => settingsRepository.getLanguage()).thenAnswer(
+          (_) async => Left(Failure(code: FailureCode.unexpected)),
+        );
+        return buildBloc();
+      },
+      act: (bloc) => bloc.add(SessionCheckRequested()),
+      wait: const Duration(milliseconds: 10),
+      expect: () => [isA<SessionAuthenticated>()],
+      verify: (_) {
+        // No se afirma 'es' a secas porque el default es "seguir al
+        // dispositivo" y eso depende de la máquina que corre el test. Lo que
+        // sí es invariante: nunca se guarda 'system', que el server no sabe
+        // resolver.
+        final language =
+            verify(
+                  () => passengerProfileRepository.updateFcmToken(
+                    passengerId: user.id,
+                    token: 'token-123',
+                    language: captureAny(named: 'language'),
+                  ),
+                ).captured.single
+                as String;
+
+        expect(language, isIn(const ['es', 'en']));
       },
     );
 
@@ -267,6 +367,7 @@ void main() {
           () => passengerProfileRepository.updateFcmToken(
             passengerId: any(named: 'passengerId'),
             token: any(named: 'token'),
+            language: any(named: 'language'),
           ),
         );
       },
@@ -305,6 +406,7 @@ void main() {
           () => passengerProfileRepository.updateFcmToken(
             passengerId: user.id,
             token: 'nuevo-token',
+            language: 'es',
           ),
         ).called(1);
       },
@@ -329,7 +431,7 @@ void main() {
       build: () {
         when(
           () => sessionRepository.signOut(),
-        ).thenAnswer((_) async => Left(Failure(message: 'error')));
+        ).thenAnswer((_) async => Left(Failure(code: FailureCode.unexpected)));
         return buildBloc();
       },
       seed: () => SessionAuthenticated(user: user),

@@ -54,21 +54,21 @@ class ChatRepositoryImpl implements ChatRepository {
       debugPrint('ChatDebug | Error en sendMessage: $e');
       if (e.response?.statusCode == 403) {
         return Left(
-          Failure(message: 'No tienes permiso para escribir en este viaje.'),
+          Failure(code: FailureCode.chatWriteNotAllowed),
         );
       }
       if (e.response?.statusCode == 409) {
         return Left(
-          Failure(message: 'El viaje ya finalizó, no se pueden enviar más mensajes.'),
+          Failure(code: FailureCode.chatRideFinished),
         );
       }
       return Left(
-        Failure(message: 'No se pudo enviar el mensaje. Intenta de nuevo.'),
+        Failure(code: FailureCode.chatSendFailed),
       );
     } catch (e) {
       debugPrint('ChatDebug | Error inesperado en sendMessage: $e');
       return Left(
-        Failure(message: 'No se pudo enviar el mensaje. Intenta de nuevo.'),
+        Failure(code: FailureCode.chatSendFailed),
       );
     }
   }
