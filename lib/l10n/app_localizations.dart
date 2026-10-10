@@ -952,6 +952,12 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'English'**
   String get settingsLanguageEnglish;
+
+  /// Version de la app mostrada al pie del login y del perfil. {version} ya viene sin sufijo ni build number (ej. 1.0.7)
+  ///
+  /// In es, this message translates to:
+  /// **'Versión: {version}'**
+  String appVersionLabel(String version);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

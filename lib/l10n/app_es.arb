@@ -598,5 +598,12 @@
   "settingsLanguageEnglish": "English",
   "@settingsLanguageEnglish": {
     "description": "Nombre del idioma ingles. NO se traduce, mismo criterio que settingsLanguageSpanish"
+  },
+  "appVersionLabel": "Versión: {version}",
+  "@appVersionLabel": {
+    "description": "Version de la app mostrada al pie del login y del perfil. {version} ya viene sin sufijo ni build number (ej. 1.0.7)",
+    "placeholders": {
+      "version": {"type": "String"}
+    }
   }
 }

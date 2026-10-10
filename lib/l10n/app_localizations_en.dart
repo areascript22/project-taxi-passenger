@@ -444,4 +444,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsLanguageEnglish => 'English';
+
+  @override
+  String appVersionLabel(String version) {
+    return 'Version: $version';
+  }
 }

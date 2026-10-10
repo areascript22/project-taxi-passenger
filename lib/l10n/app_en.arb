@@ -147,5 +147,6 @@
   "settingsSectionLanguage": "LANGUAGE",
   "settingsLanguageSystem": "System",
   "settingsLanguageSpanish": "Español",
-  "settingsLanguageEnglish": "English"
+  "settingsLanguageEnglish": "English",
+  "appVersionLabel": "Version: {version}"
 }

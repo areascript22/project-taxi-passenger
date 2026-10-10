@@ -1,19 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:passenger_app/l10n/app_localizations.dart';
+
+// Lo que se le muestra al usuario es solo la versión "de marketing" (1.0.7):
+// sin el sufijo de flavor/pre-release (-dev) ni el build number (+19). Es una
+// decisión de presentación, así que vive acá: el valor real sigue intacto en
+// pubspec/gradle y en lo que reporta el plugin.
+String displayAppVersion({required String rawVersion}) {
+  return rawVersion.split('+').first.split('-').first.trim();
+}
 
 class AppVersionWidget extends StatelessWidget {
   final TextStyle? style;
-  final String prefix;
-  final bool showBuildNumber;
   final Widget? loadingPlaceholder;
 
-  const AppVersionWidget({
-    super.key,
-    this.style,
-    this.prefix = 'v',
-    this.showBuildNumber = true,
-    this.loadingPlaceholder,
-  });
+  const AppVersionWidget({super.key, this.style, this.loadingPlaceholder});
 
   @override
   Widget build(BuildContext context) {
@@ -29,16 +30,10 @@ class AppVersionWidget extends StatelessWidget {
         }
 
         final packageInfo = snapshot.data!;
-        final version = packageInfo.version;
-        final buildNumber = packageInfo.buildNumber;
-
-        final displayText =
-            showBuildNumber
-                ? '$prefix$version ($buildNumber)'
-                : '$prefix$version';
+        final version = displayAppVersion(rawVersion: packageInfo.version);
 
         return Text(
-          displayText,
+          AppLocalizations.of(context).appVersionLabel(version),
           style:
               style ??
               TextStyle(
