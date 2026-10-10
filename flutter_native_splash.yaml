@@ -1,0 +1,27 @@
+# Splash nativo (lo que se ve mientras arranca el motor de Flutter, antes del
+# primer frame). Se regenera con:
+#   dart run flutter_native_splash:create
+#
+# Los colores son el scaffoldBackground de AppTheme (core/theme/app_theme.dart):
+# light = 0xFFF8F8FC, dark = 0xFF1A1A2E. El splash nativo corre antes de que
+# Flutter lea la preferencia de tema guardada en Ajustes, así que solo puede
+# seguir el modo oscuro del sistema operativo.
+#
+# Las imágenes viven en assets/splash/ (fuera de las carpetas declaradas en
+# pubspec.yaml): solo las lee el generador, no se empaquetan en la app.
+flutter_native_splash:
+  color: "#F8F8FC"
+  color_dark: "#1A1A2E"
+  image: assets/splash/splash_logo.png
+
+  # Android 12+ usa su propia API de splash: el icono se recorta en un círculo,
+  # por eso splash_logo_android12.png es el mismo logo con margen transparente.
+  android_12:
+    image: assets/splash/splash_logo_android12.png
+    color: "#F8F8FC"
+    color_dark: "#1A1A2E"
+
+  android: true
+  ios: true
+  web: false
+  fullscreen: false

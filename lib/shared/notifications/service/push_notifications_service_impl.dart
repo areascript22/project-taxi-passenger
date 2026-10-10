@@ -63,7 +63,7 @@ class PushNotificationsServiceImpl implements PushNotificationsService {
       // genéricas (app abierta tocando la notificación estando
       // completamente cerrada, "cold start"): en ese momento SessionBloc
       // todavía no corrió su chequeo de sesión (recién va a arrancar el
-      // flujo splash -> SessionScreen), así que empujar la ruta ahora monta
+      // flujo de arranque -> SessionScreen), así que empujar la ruta ahora monta
       // esa pantalla sin sesión resuelta -- RideTrackingScreen resuelve su
       // propio passengerId desde SessionBloc, así que sin sesión no dispara
       // el tracking y queda sin datos (y no se reintenta después, porque
