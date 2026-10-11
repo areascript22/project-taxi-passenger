@@ -923,6 +923,30 @@ abstract class AppLocalizations {
   /// **'No se pudo cargar tu información'**
   String get failureProfileLoadFailed;
 
+  /// Mensaje de error para FailureCode.storeOpenFailed: el sistema no pudo abrir la ficha de la app en la tienda. 'TaxiGo' es el nombre de la app y NO se traduce
+  ///
+  /// In es, this message translates to:
+  /// **'No se pudo abrir la tienda. Busca TaxiGo en Google Play.'**
+  String get failureStoreOpenFailed;
+
+  /// Título de la pantalla que bloquea la app cuando el servidor exige una versión más nueva
+  ///
+  /// In es, this message translates to:
+  /// **'Actualiza la aplicación'**
+  String get appUpdateTitle;
+
+  /// Explicación en la pantalla de actualización obligatoria. {minimumVersion} es la versión mínima que admite el servidor (ej. 1.0.4)
+  ///
+  /// In es, this message translates to:
+  /// **'Esta versión de la app ya no es compatible. Actualiza a la versión {minimumVersion} o superior para seguir usándola.'**
+  String appUpdateMessage(String minimumVersion);
+
+  /// Botón que abre la ficha de la app en la tienda, en la pantalla de actualización obligatoria
+  ///
+  /// In es, this message translates to:
+  /// **'Actualizar'**
+  String get appUpdateButton;
+
   /// Mensaje de error para FailureCode.locationPermissionDenied
   ///
   /// In es, this message translates to:

@@ -53,6 +53,8 @@ enum FailureCode {
   chatMessagesLoadFailed,
   profileLoadFailed,
   locationPermissionDenied,
+  appUpdateCheckFailed,
+  storeOpenFailed,
   unexpected,
 }
 

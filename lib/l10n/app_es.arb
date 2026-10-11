@@ -579,6 +579,25 @@
   "@failureProfileLoadFailed": {
     "description": "Mensaje de error para FailureCode.profileLoadFailed"
   },
+  "failureStoreOpenFailed": "No se pudo abrir la tienda. Busca TaxiGo en Google Play.",
+  "@failureStoreOpenFailed": {
+    "description": "Mensaje de error para FailureCode.storeOpenFailed: el sistema no pudo abrir la ficha de la app en la tienda. 'TaxiGo' es el nombre de la app y NO se traduce"
+  },
+  "appUpdateTitle": "Actualiza la aplicación",
+  "@appUpdateTitle": {
+    "description": "Título de la pantalla que bloquea la app cuando el servidor exige una versión más nueva"
+  },
+  "appUpdateMessage": "Esta versión de la app ya no es compatible. Actualiza a la versión {minimumVersion} o superior para seguir usándola.",
+  "@appUpdateMessage": {
+    "description": "Explicación en la pantalla de actualización obligatoria. {minimumVersion} es la versión mínima que admite el servidor (ej. 1.0.4)",
+    "placeholders": {
+      "minimumVersion": {"type": "String"}
+    }
+  },
+  "appUpdateButton": "Actualizar",
+  "@appUpdateButton": {
+    "description": "Botón que abre la ficha de la app en la tienda, en la pantalla de actualización obligatoria"
+  },
   "failureLocationPermissionDenied": "No tienes permisos de ubicación.",
   "@failureLocationPermissionDenied": {
     "description": "Mensaje de error para FailureCode.locationPermissionDenied"

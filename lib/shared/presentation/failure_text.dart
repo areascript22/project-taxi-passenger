@@ -71,6 +71,10 @@ extension FailureTextX on BuildContext {
       FailureCode.profileLoadFailed => l10n.failureProfileLoadFailed,
       FailureCode.locationPermissionDenied =>
         l10n.failureLocationPermissionDenied,
+      // solo para logs: la consulta de versión falla abierta y nunca se
+      // muestra; si llega a la UI, mensaje genérico
+      FailureCode.appUpdateCheckFailed => l10n.failureUnexpected,
+      FailureCode.storeOpenFailed => l10n.failureStoreOpenFailed,
       FailureCode.unexpected => l10n.failureUnexpected,
     };
   }
