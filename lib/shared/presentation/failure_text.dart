@@ -46,8 +46,6 @@ extension FailureTextX on BuildContext {
       FailureCode.rideCancelFailed => l10n.failureRideCancelFailed,
       FailureCode.activeTripCheckFailed => l10n.failureActiveTripCheckFailed,
       FailureCode.confirmFailed => l10n.failureConfirmFailed,
-      // solo para logs; si llega a la UI, mensaje genarico
-      FailureCode.initialDistanceFailed => l10n.failureUnexpected,
       FailureCode.chatWriteNotAllowed => l10n.failureChatWriteNotAllowed,
       FailureCode.chatRideFinished => l10n.failureChatRideFinished,
       FailureCode.chatSendFailed => l10n.failureChatSendFailed,

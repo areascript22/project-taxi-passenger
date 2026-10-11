@@ -14,10 +14,10 @@ part 'ride_tracking_state.dart';
 // progreso, aunque el status todavía no haya cambiado a driverArrived (el
 // conductor lo confirma manualmente con un botón en su app).
 const _kArrivalThresholdMeters = 50.0;
-// Referencia de progreso mientras driverInitialDistanceMeters todavía no se
-// terminó de escribir en Firebase (ventana de milisegundos entre el primer
-// RideUpdated y que se confirme la transacción) -- evita una barra en 0/1
-// incorrecta por un instante.
+// Referencia de progreso mientras la carrera no trae driverInitialDistanceMeters.
+// La distancia inicial la fija el SERVIDOR al asignar el conductor (junto con
+// su ubicación), así que esto solo cubre una carrera sin ese dato -- evita una
+// barra en 0/1 incorrecta.
 const _kFallbackInitialDistanceMeters = 5000.0;
 // Piso del denominador al calcular progreso, para no dividir por (casi) 0
 // en el caso borde de que el conductor ya estuviera pegado al punto de
@@ -26,13 +26,6 @@ const _kMinInitialDistanceMeters = 10.0;
 // Velocidad urbana asumida para estimar el tiempo de llegada a partir de la
 // distancia en línea recta (no hay ruteo real por calles/tráfico).
 const _kAverageSpeedKmh = 25.0;
-
-// Statuses en los que todavía tiene sentido capturar la distancia inicial
-// del conductor (antes de que llegue).
-const _capturableInitialDistanceStatuses = {
-  RideTrackingStatus.driverAssigned,
-  RideTrackingStatus.driverArriving,
-};
 
 // Statuses en los que, según el conductor, ya llegó -- fuerza progress a 0
 // sin importar ruido del GPS.
@@ -44,7 +37,6 @@ const _arrivedStatuses = {
 class RideTrackingBloc extends Bloc<RideTrackingEvent, RideTrackingState> {
   final RideTrackingRepository repository;
   StreamSubscription<RideEntity>? _subscription;
-  String? _passengerId;
 
   RideTrackingBloc({required this.repository})
     : super(const RideTrackingState()) {
@@ -65,7 +57,6 @@ class RideTrackingBloc extends Bloc<RideTrackingEvent, RideTrackingState> {
     emit(state.copyWith(status: RideTrackingStatus.connecting));
 
     await _subscription?.cancel();
-    _passengerId = event.passengerId;
 
     _subscription = repository
         .watchRideTrack(passengerId: event.passengerId)
@@ -74,10 +65,10 @@ class RideTrackingBloc extends Bloc<RideTrackingEvent, RideTrackingState> {
         });
   }
 
-  Future<void> _onRideUpdated(
+  void _onRideUpdated(
     RideUpdated event,
     Emitter<RideTrackingState> emit,
-  ) async {
+  ) {
     final ride = event.ride;
     debugPrint("Ride update event called ; ${ride}");
     debugPrint(
@@ -98,15 +89,12 @@ class RideTrackingBloc extends Bloc<RideTrackingEvent, RideTrackingState> {
         progress: progress,
       ),
     );
-
-    await _maybeRecordInitialDistance(ride: ride, distanceMeters: distanceMeters);
   }
 
   Future<void> _onStop(StopRideTracking event, Emitter<RideTrackingState> emit,
   ) async {
     await _subscription?.cancel();
     _subscription = null;
-    _passengerId = null;
     emit(const RideTrackingState());
   }
 
@@ -193,26 +181,5 @@ class RideTrackingBloc extends Bloc<RideTrackingEvent, RideTrackingState> {
     final distanceKm = distanceMeters / 1000;
     final etaMinutes = (distanceKm / _kAverageSpeedKmh * 60).ceil();
     return etaMinutes < 1 ? 1 : etaMinutes;
-  }
-
-  // Escribe driverInitialDistanceMeters en Firebase la primera vez que se
-  // detecta (solo si todavía no existe) -- referencia fija que sobrevive a
-  // que el pasajero cierre y reabra la app (ver RideTrackingRepository).
-  Future<void> _maybeRecordInitialDistance({
-    required RideEntity ride,
-    required double? distanceMeters,
-  }) async {
-    final passengerId = _passengerId;
-    if (passengerId == null || distanceMeters == null) return;
-    if (ride.driverInitialDistanceMeters != null) return;
-    if (!_capturableInitialDistanceStatuses.contains(ride.rideStatus)) return;
-
-    // No hace falta manejar el resultado acá: si falla, el próximo
-    // RideUpdated (5s después, con la siguiente ubicación del conductor) lo
-    // vuelve a intentar solo porque driverInitialDistanceMeters sigue null.
-    await repository.recordInitialDriverDistance(
-      passengerId: passengerId,
-      distanceMeters: distanceMeters,
-    );
   }
 }

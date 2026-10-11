@@ -1,16 +1,26 @@
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dartz/dartz.dart';
+import 'package:dio/dio.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import '../../../../core/error/errors.dart';
+import '../../../../core/network/dio_client.dart';
 import '../../domain/entity/passenger_entity.dart';
 import '../../domain/repository/passenger_profile_repository.dart';
 import '../model/passenger_model.dart';
 
 class PassengerProfileRepositoryImpl implements PassengerProfileRepository {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final FirebaseStorage _storage = FirebaseStorage.instance;
+  /// [dio] es inyectable para poder probar sin red; sin el se usa DioClient.instance.
+  PassengerProfileRepositoryImpl({Dio? dio}) : _injectedDio = dio;
+
+  final Dio? _injectedDio;
+
+  // Lazy a proposito: ninguno de los tres se materializa hasta que se usa, asi
+  // el repositorio se puede construir (y probar) sin Firebase inicializado.
+  late final Dio _dio = _injectedDio ?? DioClient.instance;
+  late final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  late final FirebaseStorage _storage = FirebaseStorage.instance;
 
   static const String _passengersCollection = 'passengers';
 
@@ -117,6 +127,11 @@ class PassengerProfileRepositoryImpl implements PassengerProfileRepository {
     }
   }
 
+  // El token de notificaciones y el idioma ya no se escriben directo en
+  // Firestore: van al servidor (PUT /api/me/device), que sabe de que persona
+  // y de que app son por el token de sesion. `passengerId` se conserva en la
+  // firma por compatibilidad con los llamadores, pero el servidor NO lo usa:
+  // la identidad sale siempre del token.
   @override
   Future<Either<Failure, Unit>> updateFcmToken({
     required String passengerId,
@@ -124,10 +139,10 @@ class PassengerProfileRepositoryImpl implements PassengerProfileRepository {
     required String language,
   }) async {
     try {
-      await _firestore.collection(_passengersCollection).doc(passengerId).update({
-        'fcmToken': token,
-        'language': language,
-      });
+      await _dio.put(
+        '/api/me/device',
+        data: {'app': 'passenger', 'fcmToken': token, 'language': language},
+      );
       return const Right(unit);
     } catch (e) {
       debugPrint('PassengerProfileDebug | Error en updateFcmToken: $e');
@@ -143,9 +158,10 @@ class PassengerProfileRepositoryImpl implements PassengerProfileRepository {
     required String language,
   }) async {
     try {
-      await _firestore.collection(_passengersCollection).doc(passengerId).update({
-        'language': language,
-      });
+      await _dio.put(
+        '/api/me/device',
+        data: {'app': 'passenger', 'language': language},
+      );
       return const Right(unit);
     } catch (e) {
       debugPrint('PassengerProfileDebug | Error en updateLanguage: $e');

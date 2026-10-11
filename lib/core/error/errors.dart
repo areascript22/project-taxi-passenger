@@ -35,7 +35,6 @@ enum FailureCode {
   rideCancelFailed,
   activeTripCheckFailed,
   confirmFailed,
-  initialDistanceFailed,
   chatWriteNotAllowed,
   chatRideFinished,
   chatSendFailed,
