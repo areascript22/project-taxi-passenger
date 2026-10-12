@@ -60,8 +60,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get deleteAccountSuccess => 'Account deleted successfully';
 
   @override
-  String bookingCancelCountdown(String time) {
-    return 'We\'ll cancel in $time';
+  String bookingSearchElapsed(String time) {
+    return 'Searching for $time';
   }
 
   @override
@@ -183,9 +183,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get waitingCancelRequest => 'Cancel request';
-
-  @override
-  String get waitingAutoCancelFailed => 'We could not cancel automatically. Try cancelling again.';
 
   @override
   String get waitingCancelFailed => 'The request could not be cancelled. Try again.';

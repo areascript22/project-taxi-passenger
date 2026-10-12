@@ -197,11 +197,11 @@ abstract class AppLocalizations {
   /// **'Cuenta eliminada correctamente'**
   String get deleteAccountSuccess;
 
-  /// Cuenta atrás en el popup de 'Buscando conductor': avisa cuánto falta para que la solicitud se cancele automáticamente
+  /// Contador hacia arriba en el popup de 'Buscando conductor': cuánto lleva buscándose. No es una cuenta atrás porque la duración de la búsqueda la decide el servidor
   ///
   /// In es, this message translates to:
-  /// **'Cancelaremos en {time}'**
-  String bookingCancelCountdown(String time);
+  /// **'Buscando hace {time}'**
+  String bookingSearchElapsed(String time);
 
   /// Boton para reintentar una operacion que fallo
   ///
@@ -431,7 +431,7 @@ abstract class AppLocalizations {
   /// **'Carrera aceptada'**
   String get waitingRideAccepted;
 
-  /// Toast cuando la solicitud se cancela por timeout o por el backend
+  /// Toast cuando el servidor cierra la solicitud porque se recorrieron todos los anillos de búsqueda y ningún conductor aceptó
   ///
   /// In es, this message translates to:
   /// **'Ahora mismo no hay conductores disponibles. Intenta de nuevo en unos minutos.'**
@@ -442,12 +442,6 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Cancelar solicitud'**
   String get waitingCancelRequest;
-
-  /// Toast cuando falla la cancelacion automatica por timeout
-  ///
-  /// In es, this message translates to:
-  /// **'No se pudo cancelar automáticamente. Intenta cancelar de nuevo.'**
-  String get waitingAutoCancelFailed;
 
   /// Toast cuando falla la cancelacion manual
   ///

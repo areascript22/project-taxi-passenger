@@ -73,13 +73,13 @@
     "description": "Toast de éxito tras eliminar la cuenta, justo antes del logout"
   },
 
-  "bookingCancelCountdown": "Cancelaremos en {time}",
-  "@bookingCancelCountdown": {
-    "description": "Cuenta atrás en el popup de 'Buscando conductor': avisa cuánto falta para que la solicitud se cancele automáticamente",
+  "bookingSearchElapsed": "Buscando hace {time}",
+  "@bookingSearchElapsed": {
+    "description": "Contador hacia arriba en el popup de 'Buscando conductor': cuánto lleva buscándose. No es una cuenta atrás porque la duración de la búsqueda la decide el servidor",
     "placeholders": {
       "time": {
         "type": "String",
-        "description": "Tiempo restante ya formateado como m:ss (ej. 0:27)",
+        "description": "Tiempo transcurrido ya formateado como m:ss (ej. 0:27)",
         "example": "0:27"
       }
     }
@@ -238,15 +238,11 @@
   },
   "waitingNoDrivers": "Ahora mismo no hay conductores disponibles. Intenta de nuevo en unos minutos.",
   "@waitingNoDrivers": {
-    "description": "Toast cuando la solicitud se cancela por timeout o por el backend"
+    "description": "Toast cuando el servidor cierra la solicitud porque se recorrieron todos los anillos de búsqueda y ningún conductor aceptó"
   },
   "waitingCancelRequest": "Cancelar solicitud",
   "@waitingCancelRequest": {
     "description": "Boton que cancela la solicitud mientras se busca conductor"
-  },
-  "waitingAutoCancelFailed": "No se pudo cancelar automáticamente. Intenta cancelar de nuevo.",
-  "@waitingAutoCancelFailed": {
-    "description": "Toast cuando falla la cancelacion automatica por timeout"
   },
   "waitingCancelFailed": "No se pudo cancelar la solicitud. Intenta de nuevo.",
   "@waitingCancelFailed": {
