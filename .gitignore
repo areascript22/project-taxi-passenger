@@ -55,3 +55,6 @@ android/app/src/*/google-services.json
 android/app/src/*/google-services*.txt
 assets/env/
 .env.dev.txt
+
+# Preferencias locales de Flutter DevTools
+devtools_options.yaml
