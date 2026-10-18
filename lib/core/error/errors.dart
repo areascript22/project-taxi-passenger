@@ -35,7 +35,6 @@ enum FailureCode {
   rideCancelFailed,
   activeTripCheckFailed,
   confirmFailed,
-  initialDistanceFailed,
   chatWriteNotAllowed,
   chatRideFinished,
   chatSendFailed,
@@ -53,6 +52,8 @@ enum FailureCode {
   chatMessagesLoadFailed,
   profileLoadFailed,
   locationPermissionDenied,
+  appUpdateCheckFailed,
+  storeOpenFailed,
   unexpected,
 }
 

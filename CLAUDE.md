@@ -561,8 +561,8 @@ resolución viven en `core/l10n/app_language.dart`:
 - El selector es la misma fila de pills que el de tema, pero sin iconos: una
   bandera mapea un país, no un idioma.
 - **El backend también necesita el idioma**, porque el copy de los push lo arma
-  él. Se le manda guardándolo en el documento del usuario
-  (`drivers/{uid}.language` / `passengers/{uid}.language`), junto al `fcmToken`
+  él. Se le manda guardándolo en el perfil del usuario, en el servidor
+  (`PUT /api/me/device`, que lo escribe en Postgres), junto al `fcmToken`
   y con el mismo ciclo de vida: al autenticarse y en `onTokenRefresh`
   (`SessionBloc._registerPushToken`), y **además en el acto al tocar el
   selector** (`SettingsBloc._syncPushLanguage`) — si solo se escribiera al

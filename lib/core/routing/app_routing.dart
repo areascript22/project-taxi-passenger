@@ -18,17 +18,11 @@ import 'package:passenger_app/shared/domain/entity/place_entity.dart';
 import 'package:passenger_app/shared/domain/entity/user_entity.dart';
 import 'package:passenger_app/shared/presentation/component/scaffold_nav_bar.dart';
 import 'package:passenger_app/shared/settings/presentation/screen/settings_screen.dart';
-import '../../features/auth/presentation/screen/splash_screen.dart';
 
 class AppRouter {
   static final GoRouter router = GoRouter(
-    initialLocation: splashRoute.route,
+    initialLocation: sessionRoute.route,
     routes: [
-      GoRoute(
-        path: splashRoute.route,
-        name: splashRoute.name,
-        builder: (context, state) => const SplashScreen(),
-      ),
       GoRoute(
         path: signInRoute.route,
         name: signInRoute.name,

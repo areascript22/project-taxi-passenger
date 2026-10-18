@@ -9,9 +9,12 @@ import '../../domain/repository/ride_tracking_repository.dart';
 
 class RideTrackingRepositoryImpl implements RideTrackingRepository {
   final FirebaseDatabase database;
-  final Dio _dio = DioClient.instance;
+  final Dio _dio;
 
-  RideTrackingRepositoryImpl({required this.database});
+  /// [dio] es inyectable para poder mockearlo en tests; sin él se usa
+  /// DioClient.instance.
+  RideTrackingRepositoryImpl({required this.database, Dio? dio})
+    : _dio = dio ?? DioClient.instance;
 
   @override
   Stream<RideEntity> watchRideTrack({required String passengerId}) {
@@ -64,17 +67,25 @@ class RideTrackingRepositoryImpl implements RideTrackingRepository {
     }
   }
 
+  // Ya no escribe directo a Realtime Database: pasa por el backend
+  // (POST /api/rides/{id}/start) para que verifique con el token que quien
+  // confirma es el pasajero dueño del viaje y que el conductor ya llegó. Es
+  // idempotente en el servidor, así que el reintento automático de DioClient
+  // ante un timeout es seguro.
   @override
   Future<Either<Failure, Unit>> confirmOnTheWay({
     required String passengerId,
   }) async {
     try {
-      await database.ref('taxi_requests/$passengerId').update({
-        'status': 'tripStarted',
-        'updatedAt': ServerValue.timestamp,
-      });
+      await _dio.post('/api/rides/$passengerId/start');
       return const Right(unit);
+    } on DioException catch (e) {
+      debugPrint('RideTrackingDebug | Error en confirmOnTheWay: $e');
+      return Left(
+        Failure(code: FailureCode.confirmFailed),
+      );
     } catch (e) {
+      debugPrint('RideTrackingDebug | Error inesperado en confirmOnTheWay: $e');
       return Left(
         Failure(code: FailureCode.confirmFailed),
       );
@@ -108,35 +119,6 @@ class RideTrackingRepositoryImpl implements RideTrackingRepository {
       debugPrint('RideTrackingDebug | Error inesperado en getActiveRide: $e');
       return Left(
         Failure(code: FailureCode.activeTripCheckFailed),
-      );
-    }
-  }
-
-  @override
-  Future<Either<Failure, Unit>> recordInitialDriverDistance({
-    required String passengerId,
-    required double distanceMeters,
-  }) async {
-    try {
-      final ref = database.ref('taxi_requests/$passengerId/driver');
-
-      await ref.runTransaction((mutableData) {
-        if (mutableData == null) return Transaction.abort();
-
-        final data = Map<dynamic, dynamic>.from(mutableData as Map);
-        // Ya se registró antes (ej. la app se reabrió a mitad del viaje) --
-        // no lo pisamos, es una referencia fija de todo el viaje.
-        if (data['initialDistance'] != null) return Transaction.abort();
-
-        data['initialDistance'] = distanceMeters;
-        return Transaction.success(data);
-      });
-
-      return const Right(unit);
-    } catch (e) {
-      debugPrint('RideTrackingDebug | Error en recordInitialDriverDistance: $e');
-      return Left(
-        Failure(code: FailureCode.initialDistanceFailed),
       );
     }
   }

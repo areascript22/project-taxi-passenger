@@ -197,11 +197,11 @@ abstract class AppLocalizations {
   /// **'Cuenta eliminada correctamente'**
   String get deleteAccountSuccess;
 
-  /// Cuenta atrás en el popup de 'Buscando conductor': avisa cuánto falta para que la solicitud se cancele automáticamente
+  /// Contador hacia arriba en el popup de 'Buscando conductor': cuánto lleva buscándose. No es una cuenta atrás porque la duración de la búsqueda la decide el servidor
   ///
   /// In es, this message translates to:
-  /// **'Cancelaremos en {time}'**
-  String bookingCancelCountdown(String time);
+  /// **'Buscando hace {time}'**
+  String bookingSearchElapsed(String time);
 
   /// Boton para reintentar una operacion que fallo
   ///
@@ -431,7 +431,7 @@ abstract class AppLocalizations {
   /// **'Carrera aceptada'**
   String get waitingRideAccepted;
 
-  /// Toast cuando la solicitud se cancela por timeout o por el backend
+  /// Toast cuando el servidor cierra la solicitud porque se recorrieron todos los anillos de búsqueda y ningún conductor aceptó
   ///
   /// In es, this message translates to:
   /// **'Ahora mismo no hay conductores disponibles. Intenta de nuevo en unos minutos.'**
@@ -442,12 +442,6 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Cancelar solicitud'**
   String get waitingCancelRequest;
-
-  /// Toast cuando falla la cancelacion automatica por timeout
-  ///
-  /// In es, this message translates to:
-  /// **'No se pudo cancelar automáticamente. Intenta cancelar de nuevo.'**
-  String get waitingAutoCancelFailed;
 
   /// Toast cuando falla la cancelacion manual
   ///
@@ -923,6 +917,30 @@ abstract class AppLocalizations {
   /// **'No se pudo cargar tu información'**
   String get failureProfileLoadFailed;
 
+  /// Mensaje de error para FailureCode.storeOpenFailed: el sistema no pudo abrir la ficha de la app en la tienda. 'TaxiGo' es el nombre de la app y NO se traduce
+  ///
+  /// In es, this message translates to:
+  /// **'No se pudo abrir la tienda. Busca TaxiGo en Google Play.'**
+  String get failureStoreOpenFailed;
+
+  /// Título de la pantalla que bloquea la app cuando el servidor exige una versión más nueva
+  ///
+  /// In es, this message translates to:
+  /// **'Actualiza la aplicación'**
+  String get appUpdateTitle;
+
+  /// Explicación en la pantalla de actualización obligatoria. {minimumVersion} es la versión mínima que admite el servidor (ej. 1.0.4)
+  ///
+  /// In es, this message translates to:
+  /// **'Esta versión de la app ya no es compatible. Actualiza a la versión {minimumVersion} o superior para seguir usándola.'**
+  String appUpdateMessage(String minimumVersion);
+
+  /// Botón que abre la ficha de la app en la tienda, en la pantalla de actualización obligatoria
+  ///
+  /// In es, this message translates to:
+  /// **'Actualizar'**
+  String get appUpdateButton;
+
   /// Mensaje de error para FailureCode.locationPermissionDenied
   ///
   /// In es, this message translates to:
@@ -952,6 +970,12 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'English'**
   String get settingsLanguageEnglish;
+
+  /// Version de la app mostrada al pie del login y del perfil. {version} ya viene sin sufijo ni build number (ej. 1.0.7)
+  ///
+  /// In es, this message translates to:
+  /// **'Versión: {version}'**
+  String appVersionLabel(String version);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

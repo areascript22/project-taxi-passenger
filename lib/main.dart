@@ -8,6 +8,8 @@ import 'package:passenger_app/core/l10n/app_language.dart';
 import 'package:passenger_app/core/routing/app_routing.dart';
 import 'package:passenger_app/core/service_locator/main_service_locator.dart';
 import 'package:passenger_app/core/theme/app_theme.dart';
+import 'package:passenger_app/features/app_update/presentation/component/force_update_gate.dart';
+import 'package:passenger_app/features/app_update/presentation/cubit/app_update_cubit.dart';
 import 'package:passenger_app/l10n/app_localizations.dart';
 import 'package:passenger_app/shared/connectivity/presentation/component/connectivity_banner.dart';
 import 'package:passenger_app/shared/connectivity/presentation/cubit/connectivity_cubit.dart';
@@ -57,6 +59,12 @@ class MyApp extends StatelessWidget {
         BlocProvider<ConnectivityCubit>(
           create: (context) => GetIt.instance<ConnectivityCubit>(),
         ),
+        // Consulta al arrancar si el servidor todavía admite esta versión.
+        // Falla abierto: sin red o con el servidor caído la app sigue normal
+        // (ver AppUpdateCubit.check).
+        BlocProvider<AppUpdateCubit>(
+          create: (context) => GetIt.instance<AppUpdateCubit>()..check(),
+        ),
       ],
       child: BlocBuilder<SettingsBloc, SettingsState>(
         builder: (context, settingsState) {
@@ -88,9 +96,15 @@ class MyApp extends StatelessWidget {
             // fuera del StatefulShellRoute) para que el banner de "sin
             // conexión" pueda mostrarse sin importar la pantalla -- ver
             // ConnectivityBannerOverlay.
+            //
+            // ForceUpdateGate va por fuera: si el servidor exige actualizar,
+            // reemplaza TODA la app (incluido el banner) por la pantalla de
+            // actualización.
             builder: (context, child) {
-              return ConnectivityBannerOverlay(
-                child: child ?? const SizedBox.shrink(),
+              return ForceUpdateGate(
+                child: ConnectivityBannerOverlay(
+                  child: child ?? const SizedBox.shrink(),
+                ),
               );
             },
           );

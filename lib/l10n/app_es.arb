@@ -73,13 +73,13 @@
     "description": "Toast de éxito tras eliminar la cuenta, justo antes del logout"
   },
 
-  "bookingCancelCountdown": "Cancelaremos en {time}",
-  "@bookingCancelCountdown": {
-    "description": "Cuenta atrás en el popup de 'Buscando conductor': avisa cuánto falta para que la solicitud se cancele automáticamente",
+  "bookingSearchElapsed": "Buscando hace {time}",
+  "@bookingSearchElapsed": {
+    "description": "Contador hacia arriba en el popup de 'Buscando conductor': cuánto lleva buscándose. No es una cuenta atrás porque la duración de la búsqueda la decide el servidor",
     "placeholders": {
       "time": {
         "type": "String",
-        "description": "Tiempo restante ya formateado como m:ss (ej. 0:27)",
+        "description": "Tiempo transcurrido ya formateado como m:ss (ej. 0:27)",
         "example": "0:27"
       }
     }
@@ -238,15 +238,11 @@
   },
   "waitingNoDrivers": "Ahora mismo no hay conductores disponibles. Intenta de nuevo en unos minutos.",
   "@waitingNoDrivers": {
-    "description": "Toast cuando la solicitud se cancela por timeout o por el backend"
+    "description": "Toast cuando el servidor cierra la solicitud porque se recorrieron todos los anillos de búsqueda y ningún conductor aceptó"
   },
   "waitingCancelRequest": "Cancelar solicitud",
   "@waitingCancelRequest": {
     "description": "Boton que cancela la solicitud mientras se busca conductor"
-  },
-  "waitingAutoCancelFailed": "No se pudo cancelar automáticamente. Intenta cancelar de nuevo.",
-  "@waitingAutoCancelFailed": {
-    "description": "Toast cuando falla la cancelacion automatica por timeout"
   },
   "waitingCancelFailed": "No se pudo cancelar la solicitud. Intenta de nuevo.",
   "@waitingCancelFailed": {
@@ -579,6 +575,25 @@
   "@failureProfileLoadFailed": {
     "description": "Mensaje de error para FailureCode.profileLoadFailed"
   },
+  "failureStoreOpenFailed": "No se pudo abrir la tienda. Busca TaxiGo en Google Play.",
+  "@failureStoreOpenFailed": {
+    "description": "Mensaje de error para FailureCode.storeOpenFailed: el sistema no pudo abrir la ficha de la app en la tienda. 'TaxiGo' es el nombre de la app y NO se traduce"
+  },
+  "appUpdateTitle": "Actualiza la aplicación",
+  "@appUpdateTitle": {
+    "description": "Título de la pantalla que bloquea la app cuando el servidor exige una versión más nueva"
+  },
+  "appUpdateMessage": "Esta versión de la app ya no es compatible. Actualiza a la versión {minimumVersion} o superior para seguir usándola.",
+  "@appUpdateMessage": {
+    "description": "Explicación en la pantalla de actualización obligatoria. {minimumVersion} es la versión mínima que admite el servidor (ej. 1.0.4)",
+    "placeholders": {
+      "minimumVersion": {"type": "String"}
+    }
+  },
+  "appUpdateButton": "Actualizar",
+  "@appUpdateButton": {
+    "description": "Botón que abre la ficha de la app en la tienda, en la pantalla de actualización obligatoria"
+  },
   "failureLocationPermissionDenied": "No tienes permisos de ubicación.",
   "@failureLocationPermissionDenied": {
     "description": "Mensaje de error para FailureCode.locationPermissionDenied"
@@ -598,5 +613,12 @@
   "settingsLanguageEnglish": "English",
   "@settingsLanguageEnglish": {
     "description": "Nombre del idioma ingles. NO se traduce, mismo criterio que settingsLanguageSpanish"
+  },
+  "appVersionLabel": "Versión: {version}",
+  "@appVersionLabel": {
+    "description": "Version de la app mostrada al pie del login y del perfil. {version} ya viene sin sufijo ni build number (ej. 1.0.7)",
+    "placeholders": {
+      "version": {"type": "String"}
+    }
   }
 }

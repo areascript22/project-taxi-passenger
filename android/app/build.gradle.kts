@@ -8,10 +8,18 @@ plugins {
     id("com.google.gms.google-services")
 }
 
+// dev firma con keystore.properties; prod con keystore-prod.properties (otro
+// .jks, guardado fuera del repo). Son llaves de subida distintas a propósito.
 val keystorePropertiesFile = rootProject.file("keystore.properties")
 val keystoreProperties = Properties()
 if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(FileInputStream(keystorePropertiesFile))
+}
+
+val keystoreProdPropertiesFile = rootProject.file("keystore-prod.properties")
+val keystoreProdProperties = Properties()
+if (keystoreProdPropertiesFile.exists()) {
+    keystoreProdProperties.load(FileInputStream(keystoreProdPropertiesFile))
 }
 
 fun loadEnvProperties(fileName: String): Properties {
@@ -79,28 +87,56 @@ android {
     }
 
     signingConfigs {
-        // Cambié el nombre de "prod" a "release" para que sea más semántico,
-        // ya que ahora firmará ambos flavors.
-        create("release") {
+        create("devRelease") {
             if (keystorePropertiesFile.exists()) {
                 keyAlias = keystoreProperties.getProperty("keyAlias")
                 keyPassword = keystoreProperties.getProperty("keyPassword")
-
-                // 🔥 Modificado: Usamos rootProject.file para que busque en "android/"
+                // rootProject.file resuelve relativo a "android/"
                 storeFile = rootProject.file(keystoreProperties.getProperty("storeFile"))
-
                 storePassword = keystoreProperties.getProperty("storePassword")
+            }
+        }
+        create("prodRelease") {
+            if (keystoreProdPropertiesFile.exists()) {
+                keyAlias = keystoreProdProperties.getProperty("keyAlias")
+                keyPassword = keystoreProdProperties.getProperty("keyPassword")
+                // Ruta absoluta: el .jks de prod vive fuera del repo.
+                storeFile = rootProject.file(keystoreProdProperties.getProperty("storeFile"))
+                storePassword = keystoreProdProperties.getProperty("storePassword")
             }
         }
     }
 
-    buildTypes {
-        release {
-            signingConfig = if (keystorePropertiesFile.exists()) {
-                signingConfigs.getByName("release")
-            } else {
-                signingConfigs.getByName("debug")
-            }
+    // La firma va por flavor: el buildType "release" no define signingConfig
+    // (si lo hiciera, ganaría sobre el del flavor). Los builds debug siguen
+    // usando la llave debug de Android.
+    productFlavors.getByName("dev").signingConfig = if (keystorePropertiesFile.exists()) {
+        signingConfigs.getByName("devRelease")
+    } else {
+        signingConfigs.getByName("debug")
+    }
+    productFlavors.getByName("prod").signingConfig = signingConfigs.getByName("prodRelease")
+}
+
+// Un release de prod NUNCA debe salir firmado con la llave debug ni con un
+// keystore a medio configurar: falla el build en vez de generar un APK que
+// Play Console rechazaría (o peor, que aceptaría con la llave equivocada).
+gradle.taskGraph.whenReady {
+    val buildsProdRelease = allTasks.any {
+        it.name.contains("ProdRelease") &&
+            (it.name.startsWith("assemble") || it.name.startsWith("bundle") || it.name.startsWith("package"))
+    }
+    if (buildsProdRelease) {
+        if (!keystoreProdPropertiesFile.exists()) {
+            throw GradleException("Falta android/keystore-prod.properties: no se puede firmar el release de prod.")
+        }
+        if (keystoreProdProperties.getProperty("storePassword") == "CHANGE_ME" ||
+            keystoreProdProperties.getProperty("keyPassword") == "CHANGE_ME") {
+            throw GradleException("android/keystore-prod.properties todavía tiene CHANGE_ME: pon las contraseñas reales.")
+        }
+        val prodStore = rootProject.file(keystoreProdProperties.getProperty("storeFile") ?: "")
+        if (!prodStore.isFile) {
+            throw GradleException("No existe el keystore de prod: $prodStore")
         }
     }
 }

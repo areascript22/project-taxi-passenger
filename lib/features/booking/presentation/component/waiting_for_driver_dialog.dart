@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lottie/lottie.dart';
+import 'package:passenger_app/features/booking/domain/search_elapsed.dart';
 import 'package:passenger_app/features/booking/presentation/bloc/booking/booking_bloc.dart';
 import 'package:passenger_app/features/ride_tracking/presentation/bloc/ride_tracking_bloc.dart';
 import 'package:passenger_app/l10n/app_localizations.dart';
@@ -12,12 +13,19 @@ import 'package:passenger_app/shared/presentation/component/app_toast.dart';
 import 'package:passenger_app/shared/presentation/failure_text.dart';
 import '../../../../core/routing/app_routes.dart';
 
+/// El popup "Buscando conductor".
+///
+/// La app NO decide cuando termina la busqueda: el servidor recorre los anillos
+/// de cercania y, si nadie acepta, cierra la solicitud (y este popup reacciona a
+/// ese cambio por el listener de [RideTrackingBloc]). Por eso el contador cuenta
+/// hacia arriba -- lleva esperando -- y no hacia abajo: la app no sabe cuanto va
+/// a durar la busqueda, la configura un administrador.
 class WaitingForDriverDialog extends StatefulWidget {
   final VoidCallback onCancel;
   // Epoch millis de RideEntity.createdAtMillis, solo cuando este diálogo se
   // muestra al reanudar una solicitud 'pending' que ya existía en Firebase
   // (app cerrada y reabierta). Null en el flujo normal (solicitud recién
-  // creada): en ese caso el countdown arranca completo desde _searchTimeout.
+  // creada): en ese caso el contador arranca en 0.
   final int? rideCreatedAtMillis;
 
   const WaitingForDriverDialog({
@@ -57,120 +65,50 @@ class WaitingForDriverDialog extends StatefulWidget {
 }
 
 class _WaitingForDriverDialogState extends State<WaitingForDriverDialog> {
-  // Tiempo máximo esperando a que un conductor acepte antes de cancelar la
-  // solicitud automáticamente. El cliente pidió "25 o 30 segundos".
-  static const _searchTimeout = Duration(seconds: 30);
+  late final DateTime _openedAt;
 
-  Timer? _timeoutTimer;
-
-  // Duración real que se le dio a _timeoutTimer al arrancar (30s en el flujo
-  // normal, o menos si el diálogo se resumió con parte del tiempo ya
-  // transcurrido -- ver _remainingSearchTime). Ancla del countdown visual:
-  // _displayRemaining se calcula a partir de esta y de cuándo se mostró el
-  // diálogo, nunca reaplicando _minResumeGrace en cada tick (ese piso solo
-  // aplica una vez, al decidir cuánto dura el timer real).
-  late final Duration _initialCountdown;
-  late final DateTime _countdownStartedAt;
-
-  // Valor mostrado en el anillo/chip de countdown, refrescado cada segundo
-  // por _displayTicker. Independiente de _timeoutTimer (que es el que de
-  // verdad dispara la cancelación) para no acoplar la UI a un Timer de
-  // disparo único.
-  Duration _displayRemaining = Duration.zero;
+  // Tiempo que lleva buscandose, refrescado cada segundo. Es solo para
+  // mostrar: no dispara ninguna accion.
+  Duration _elapsed = Duration.zero;
   Timer? _displayTicker;
 
-  // Marca que la próxima cancelación (éxito o falla) del BookingBloc fue
-  // disparada por el timeout automático, no por el botón. Así el listener de
-  // BookingBloc sabe qué mensaje mostrar sin necesitar un nuevo estado en el
-  // bloc.
-  bool _cancelledByTimeout = false;
-
   // true mientras haya un intento de cancelación disparado por ESTE cliente
-  // (botón o timeout) en curso o ya confirmado. El backend también puede
-  // cancelar la solicitud por su cuenta (auto-expiry si nadie la acepta a
-  // tiempo, ver PENDING_REQUEST_EXPIRY_SECONDS server-side) sin que este
-  // cliente llegue a llamar a /cancel -- el listener de RideTrackingBloc de
-  // más abajo usa este flag para no duplicar el cierre del popup cuando la
-  // cancelación sí la iniciamos nosotros (en ese caso ya la maneja el
-  // BlocConsumer<BookingBloc>), y para poder reaccionar cuando NO la
-  // iniciamos nosotros. Se resetea a false si un intento local falla, para
-  // que el diálogo vuelva a poder reaccionar a una cancelación externa.
+  // (el botón) en curso o ya confirmado. El servidor también cierra la
+  // solicitud por su cuenta (nadie aceptó tras el último anillo) sin que este
+  // cliente llame a /cancel -- el listener de RideTrackingBloc de más abajo usa
+  // este flag para no duplicar el cierre del popup cuando la cancelación sí la
+  // iniciamos nosotros (en ese caso ya la maneja el BlocConsumer<BookingBloc>),
+  // y para poder reaccionar cuando NO la iniciamos nosotros. Se resetea a
+  // false si un intento local falla, para que el diálogo vuelva a poder
+  // reaccionar a una cancelación del servidor.
   bool _localCancelRequested = false;
 
   @override
   void initState() {
     super.initState();
-    _initialCountdown = _remainingSearchTime();
-    _countdownStartedAt = DateTime.now();
-    _displayRemaining = _initialCountdown;
-    _timeoutTimer = Timer(_initialCountdown, _handleSearchTimeout);
+    _openedAt = DateTime.now();
+    _elapsed = _computeElapsed();
     _displayTicker = Timer.periodic(const Duration(seconds: 1), (_) {
       if (!mounted) return;
-      final elapsed = DateTime.now().difference(_countdownStartedAt);
-      final remaining = _initialCountdown - elapsed;
-      setState(() {
-        _displayRemaining = remaining.isNegative ? Duration.zero : remaining;
-      });
-      if (_displayRemaining == Duration.zero) {
-        _displayTicker?.cancel();
-      }
+      setState(() => _elapsed = _computeElapsed());
     });
   }
 
-  // Margen mínimo al resumir una solicitud cuyo timeout ya se cumplió con la
-  // app cerrada: le da tiempo al listener de Firebase (RideTrackingBloc) a
-  // reconectar y traer el status real antes de evaluar si corresponde
-  // auto-cancelar -- evita cancelar una carrera que en realidad ya fue
-  // aceptada segundos antes de reabrir la app.
-  static const _minResumeGrace = Duration(seconds: 3);
-
-  // Si rideCreatedAtMillis viene seteado (diálogo resumido tras reabrir la
-  // app con una solicitud 'pending' ya existente), el countdown se calcula
-  // contra ese momento real en vez de reiniciar los 30s completos --
-  // createdAt es un ServerValue.timestamp de Firebase, así que no depende
-  // del reloj local del dispositivo.
-  Duration _remainingSearchTime() {
-    final createdAtMillis = widget.rideCreatedAtMillis;
-    if (createdAtMillis == null) return _searchTimeout;
-
-    final createdAt = DateTime.fromMillisecondsSinceEpoch(createdAtMillis);
-    final elapsed = DateTime.now().difference(createdAt);
-    final remaining = _searchTimeout - elapsed;
-    return remaining < _minResumeGrace ? _minResumeGrace : remaining;
-  }
+  Duration _computeElapsed() => searchElapsed(
+    now: DateTime.now(),
+    openedAt: _openedAt,
+    rideCreatedAtMillis: widget.rideCreatedAtMillis,
+  );
 
   @override
   void dispose() {
-    _timeoutTimer?.cancel();
     _displayTicker?.cancel();
     super.dispose();
   }
 
-  // Bajo este umbral, el countdown (anillo + chip) cambia a un tono de
-  // alerta -- mismo criterio visual que el contador de driver_app
-  // (IncomingRequestTile) para el lado del conductor.
-  static const _urgentThreshold = Duration(seconds: 10);
-
-  String _formatCountdown(Duration duration) {
-    final totalSeconds = duration.inSeconds.clamp(0, 3599);
-    final minutes = totalSeconds ~/ 60;
-    final seconds = totalSeconds % 60;
-    return '$minutes:${seconds.toString().padLeft(2, '0')}';
-  }
-
-  // Anillo de progreso alrededor del ícono del taxi: se vacía a medida que
-  // pasa el tiempo, dando una señal ambiental de "se está agotando el
-  // tiempo" sin necesidad de leer un número.
-  Widget _buildCountdownRing(ColorScheme colorScheme) {
-    final progress =
-        _initialCountdown.inMilliseconds == 0
-            ? 0.0
-            : (_displayRemaining.inMilliseconds /
-                    _initialCountdown.inMilliseconds)
-                .clamp(0.0, 1.0);
-    final isUrgent = _displayRemaining <= _urgentThreshold;
-    final ringColor = isUrgent ? colorScheme.error : colorScheme.primary;
-
+  // Anillo indeterminado alrededor del taxi: "se esta buscando". No muestra
+  // progreso porque no hay un total conocido (ver la nota de la clase).
+  Widget _buildSearchRing(ColorScheme colorScheme) {
     return SizedBox(
       width: 158,
       height: 158,
@@ -181,10 +119,9 @@ class _WaitingForDriverDialogState extends State<WaitingForDriverDialog> {
             width: 158,
             height: 158,
             child: CircularProgressIndicator(
-              value: progress,
               strokeWidth: 5,
-              backgroundColor: ringColor.withValues(alpha: 0.15),
-              valueColor: AlwaysStoppedAnimation<Color>(ringColor),
+              backgroundColor: colorScheme.primary.withValues(alpha: 0.15),
+              valueColor: AlwaysStoppedAnimation<Color>(colorScheme.primary),
             ),
           ),
           Container(
@@ -210,12 +147,9 @@ class _WaitingForDriverDialogState extends State<WaitingForDriverDialog> {
     );
   }
 
-  // Chip con el número exacto de segundos restantes -- complementa el
-  // anillo (ambiental) con el dato concreto, para que quede claro por qué
-  // el popup se va a cerrar solo si nadie acepta a tiempo.
-  Widget _buildCountdownChip(ColorScheme colorScheme) {
-    final isUrgent = _displayRemaining <= _urgentThreshold;
-    final chipColor = isUrgent ? colorScheme.error : colorScheme.primary;
+  // Chip con el tiempo que lleva buscandose.
+  Widget _buildElapsedChip(ColorScheme colorScheme) {
+    final chipColor = colorScheme.primary;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -231,7 +165,7 @@ class _WaitingForDriverDialogState extends State<WaitingForDriverDialog> {
           Text(
             AppLocalizations.of(
               context,
-            ).bookingCancelCountdown(_formatCountdown(_displayRemaining)),
+            ).bookingSearchElapsed(formatSearchElapsed(_elapsed)),
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w600,
@@ -241,27 +175,6 @@ class _WaitingForDriverDialogState extends State<WaitingForDriverDialog> {
         ],
       ),
     );
-  }
-
-  void _handleSearchTimeout() {
-    if (!mounted) return;
-
-    // Guarda contra la carrera donde un conductor acepta justo en el
-    // instante en que expira el timer: si ya hay conductor asignado, dejamos
-    // que el otro listener (más abajo) cierre este diálogo y navegue --  no
-    // cancelamos una carrera que ya fue aceptada.
-    final rideStatus = context.read<RideTrackingBloc>().state.status;
-    if (rideStatus == RideTrackingStatus.driverAssigned) return;
-
-    // No cerramos el diálogo acá: el endpoint de cancelación puede fallar
-    // (conexión caída, la carrera ya fue aceptada en el instante exacto,
-    // etc.), y si cerráramos el popup igual perderíamos el BlocListener de
-    // RideTrackingBloc de más abajo -- el que nos avisa si un conductor
-    // terminó aceptando la carrera que creíamos cancelada. Solo cerramos
-    // cuando BookingBloc confirme éxito (ver el BlocConsumer más abajo).
-    _cancelledByTimeout = true;
-    _localCancelRequested = true;
-    context.read<BookingBloc>().add(CancelTaxiRequest());
   }
 
   @override
@@ -285,7 +198,7 @@ class _WaitingForDriverDialogState extends State<WaitingForDriverDialog> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              _buildCountdownRing(colorScheme),
+              _buildSearchRing(colorScheme),
               const SizedBox(height: 20),
               Text(
                 AppLocalizations.of(context).waitingTitle,
@@ -307,7 +220,7 @@ class _WaitingForDriverDialogState extends State<WaitingForDriverDialog> {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 16),
-              _buildCountdownChip(colorScheme),
+              _buildElapsedChip(colorScheme),
               const SizedBox(height: 24),
 
               BlocListener<RideTrackingBloc, RideTrackingState>(
@@ -323,20 +236,16 @@ class _WaitingForDriverDialogState extends State<WaitingForDriverDialog> {
                       Navigator.pop(context);
                       context.goNamed(rideTrackingRoute.name);
                     } else if (state.status == RideTrackingStatus.cancelled) {
-                      // El backend puede auto-cancelar la solicitud por su
-                      // cuenta (ver PENDING_REQUEST_EXPIRY_SECONDS) sin que
-                      // este cliente llegue a llamar a /cancel -- este
-                      // listener reacciona directo al cambio real en
-                      // Firebase. Si la cancelación la iniciamos nosotros
-                      // (botón o timeout local), no hacemos nada acá: ya la
-                      // maneja el BlocConsumer<BookingBloc> de más abajo, con
-                      // su propia lógica de mensaje.
+                      // El servidor cierra la solicitud por su cuenta cuando
+                      // se recorrieron todos los anillos y nadie aceptó (o
+                      // vence): este listener reacciona directo al cambio real
+                      // en Firebase. Si la cancelación la iniciamos nosotros
+                      // (botón), no hacemos nada acá: ya la maneja el
+                      // BlocConsumer<BookingBloc> de más abajo.
                       if (_localCancelRequested) return;
                       if (!context.mounted) return;
                       // El toast se muestra ANTES del pop: vive en el overlay
-                      // raíz, así que sobrevive al cierre del diálogo y no
-                      // hace falta capturar nada por adelantado (con
-                      // ScaffoldMessenger sí: su context moría con el pop).
+                      // raíz, así que sobrevive al cierre del diálogo.
                       AppToast.error(
                         context,
                         message:
@@ -356,42 +265,11 @@ class _WaitingForDriverDialogState extends State<WaitingForDriverDialog> {
                       if (!context.mounted) return;
                       // Éxito confirmado por el backend (Right en el
                       // repositorio): recién acá es seguro cerrar el popup.
-                      final wasTimeout = _cancelledByTimeout;
-                      // Igual que arriba: el toast primero (context todavía
-                      // montado), el pop después.
-                      if (wasTimeout) {
-                        AppToast.error(
-                          context,
-                          message:
-                              AppLocalizations.of(context).waitingNoDrivers,
-                        );
-                      }
                       Navigator.of(context).pop();
-                    } else if (state.status == BookingStatus.error &&
-                        _cancelledByTimeout) {
-                      // El repositorio devolvió Failure: la carrera puede
-                      // seguir viva en Firebase, así que el popup se queda
-                      // abierto (y con él, el listener de RideTrackingBloc
-                      // que reacciona si un conductor la acepta mientras
-                      // tanto). El botón "Cancelar solicitud" sigue
-                      // disponible para reintentar manualmente. Reseteamos
-                      // ambos flags para que el listener de RideTrackingBloc
-                      // vuelva a poder reaccionar por su cuenta (ej. si el
-                      // backend termina auto-cancelándola igual).
-                      _cancelledByTimeout = false;
-                      _localCancelRequested = false;
-                      AppToast.error(
-                        context,
-                        message:
-                            state.errorCode != null
-                                ? context.failureText(state.errorCode!)
-                                : AppLocalizations.of(
-                                  context,
-                                ).waitingAutoCancelFailed,
-                      );
                     } else if (state.status == BookingStatus.error) {
-                      // Falla al cancelar manualmente con el botón: el
-                      // diálogo se queda abierto (nunca cerramos en error),
+                      // Falla al cancelar con el botón: el diálogo se queda
+                      // abierto (nunca cerramos en error, para no perder el
+                      // listener que reacciona si un conductor acepta),
                       // solo avisamos para que el usuario reintente.
                       _localCancelRequested = false;
                       AppToast.error(

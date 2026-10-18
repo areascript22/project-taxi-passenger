@@ -60,8 +60,8 @@ class AppLocalizationsEs extends AppLocalizations {
   String get deleteAccountSuccess => 'Cuenta eliminada correctamente';
 
   @override
-  String bookingCancelCountdown(String time) {
-    return 'Cancelaremos en $time';
+  String bookingSearchElapsed(String time) {
+    return 'Buscando hace $time';
   }
 
   @override
@@ -183,9 +183,6 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get waitingCancelRequest => 'Cancelar solicitud';
-
-  @override
-  String get waitingAutoCancelFailed => 'No se pudo cancelar automáticamente. Intenta cancelar de nuevo.';
 
   @override
   String get waitingCancelFailed => 'No se pudo cancelar la solicitud. Intenta de nuevo.';
@@ -431,6 +428,20 @@ class AppLocalizationsEs extends AppLocalizations {
   String get failureProfileLoadFailed => 'No se pudo cargar tu información';
 
   @override
+  String get failureStoreOpenFailed => 'No se pudo abrir la tienda. Busca TaxiGo en Google Play.';
+
+  @override
+  String get appUpdateTitle => 'Actualiza la aplicación';
+
+  @override
+  String appUpdateMessage(String minimumVersion) {
+    return 'Esta versión de la app ya no es compatible. Actualiza a la versión $minimumVersion o superior para seguir usándola.';
+  }
+
+  @override
+  String get appUpdateButton => 'Actualizar';
+
+  @override
   String get failureLocationPermissionDenied => 'No tienes permisos de ubicación.';
 
   @override
@@ -444,4 +455,9 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get settingsLanguageEnglish => 'English';
+
+  @override
+  String appVersionLabel(String version) {
+    return 'Versión: $version';
+  }
 }

@@ -22,7 +22,7 @@
   "deleteAccountDialogBody": "This action is irreversible. Your profile, your photo and your chats will be deleted. You will not be able to recover this information.\n\nAre you sure you want to delete your account?",
   "deleteAccountSuccess": "Account deleted successfully",
 
-  "bookingCancelCountdown": "We'll cancel in {time}",
+  "bookingSearchElapsed": "Searching for {time}",
   "commonRetry": "Retry",
   "commonSignOut": "Sign out",
   "commonEmail": "Email",
@@ -63,7 +63,6 @@
   "waitingRideAccepted": "Ride accepted",
   "waitingNoDrivers": "There are no drivers available right now. Try again in a few minutes.",
   "waitingCancelRequest": "Cancel request",
-  "waitingAutoCancelFailed": "We could not cancel automatically. Try cancelling again.",
   "waitingCancelFailed": "The request could not be cancelled. Try again.",
   "onboardingTitle": "Complete your profile",
   "onboardingSubtitle": "Tell us who you are so we can identify you on your rides.",
@@ -143,9 +142,14 @@
   "failureUnexpected": "Something went wrong. Try again.",
   "failureChatMessagesLoadFailed": "The messages could not be loaded. Try again.",
   "failureProfileLoadFailed": "Your information could not be loaded",
+  "failureStoreOpenFailed": "The store could not be opened. Search for TaxiGo on Google Play.",
+  "appUpdateTitle": "Update the app",
+  "appUpdateMessage": "This version of the app is no longer supported. Update to version {minimumVersion} or later to keep using it.",
+  "appUpdateButton": "Update",
   "failureLocationPermissionDenied": "Location permission is not granted.",
   "settingsSectionLanguage": "LANGUAGE",
   "settingsLanguageSystem": "System",
   "settingsLanguageSpanish": "Español",
-  "settingsLanguageEnglish": "English"
+  "settingsLanguageEnglish": "English",
+  "appVersionLabel": "Version: {version}"
 }

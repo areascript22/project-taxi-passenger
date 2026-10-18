@@ -1,4 +1,4 @@
-name: Deploy TaxiGo Dev (Internal Test)
+name: Deploy TaxiGo QA (Internal Test)
 
 on:
   push:
@@ -8,6 +8,8 @@ on:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    # Los secrets se leen del environment "qa" (Settings > Environments).
+    environment: qa
 
     steps:
       # 1️⃣ Descarga el código del repositorio
@@ -21,30 +23,30 @@ jobs:
           flutter-version: '3.29.2'
           channel: 'stable'
 
-      # 3️⃣ 🔥 Decodifica .env_dev ANTES de flutter pub get
+      # 3️⃣ Decodifica el .env ANTES de flutter pub get
       - name: Decode .env_dev
         run: |
           mkdir -p assets/env
-          echo "${{ secrets.ENV_DEV_BASE64 }}" | base64 --decode > assets/env/.env_dev
+          echo "${{ secrets.ENV_FILE_BASE64 }}" | base64 --decode > assets/env/.env_dev
           echo "✅ .env_dev created:"
           ls -la assets/env/.env_dev
 
-      # 4️⃣ Decodifica google-services.json (dev)
+      # 4️⃣ Decodifica google-services.json (flavor dev)
       - name: Decode google-services.json (dev)
         run: |
           mkdir -p android/app/src/dev
-          echo "${{ secrets.GOOGLE_SERVICES_DEV_BASE64 }}" | base64 --decode > android/app/src/dev/google-services.json
+          echo "${{ secrets.GOOGLE_SERVICES_BASE64 }}" | base64 --decode > android/app/src/dev/google-services.json
 
-      # 5️⃣ Ahora sí, instala dependencias (con .env_dev ya presente)
+      # 5️⃣ Instala dependencias (con el .env ya presente)
       - name: Install dependencies
         run: flutter pub get
 
-      # 6️⃣ Decodifica Keystore (Actualizado a la ruta correcta en android/)
+      # 6️⃣ Decodifica Keystore
       - name: Decode Keystore
         run: |
           echo "${{ secrets.KEYSTORE_FILE_BASE64 }}" | base64 --decode > android/prod-keystore.jks
 
-      # 7️⃣ Crea keystore.properties (Actualizado al nombre que espera Gradle)
+      # 7️⃣ Crea keystore.properties (el que lee Gradle para el flavor dev)
       - name: Create keystore.properties
         run: |
           echo "storePassword=${{ secrets.KEYSTORE_PASSWORD }}" > android/keystore.properties

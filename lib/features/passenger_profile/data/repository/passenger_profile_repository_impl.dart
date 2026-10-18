@@ -1,39 +1,56 @@
 import 'dart:io';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dartz/dartz.dart';
+import 'package:dio/dio.dart';
+import 'package:dio_smart_retry/dio_smart_retry.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import '../../../../core/error/errors.dart';
+import '../../../../core/network/dio_client.dart';
 import '../../domain/entity/passenger_entity.dart';
 import '../../domain/repository/passenger_profile_repository.dart';
 import '../model/passenger_model.dart';
 
-class PassengerProfileRepositoryImpl implements PassengerProfileRepository {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final FirebaseStorage _storage = FirebaseStorage.instance;
+/// Sube [file] a [path] en Storage y devuelve su URL de descarga.
+typedef ProfilePhotoUploader = Future<String> Function({
+  required String path,
+  required File file,
+});
 
-  static const String _passengersCollection = 'passengers';
+// El perfil vive en Postgres y se lee/escribe por el servidor: GET /api/me lo
+// devuelve y PUT /api/me/passenger-profile lo crea o actualiza (idempotente).
+// Lo unico que la app sigue haciendo directo es subir la foto a Storage
+// (reglas por uid) y mandarle la URL al servidor.
+class PassengerProfileRepositoryImpl implements PassengerProfileRepository {
+  /// [dio] y [photoUploader] son inyectables para probar sin red ni Firebase;
+  /// sin ellos se usan DioClient.instance y Firebase Storage.
+  PassengerProfileRepositoryImpl({Dio? dio, ProfilePhotoUploader? photoUploader})
+    : _injectedDio = dio,
+      _photoUploader = photoUploader ?? _uploadToStorage;
+
+  final Dio? _injectedDio;
+  final ProfilePhotoUploader _photoUploader;
+
+  // Lazy a proposito: el repositorio se debe poder construir (y probar) sin
+  // inicializar dotenv ni Firebase.
+  late final Dio _dio = _injectedDio ?? DioClient.instance;
+
+  static Future<String> _uploadToStorage({
+    required String path,
+    required File file,
+  }) async {
+    final ref = FirebaseStorage.instance.ref(path);
+    await ref.putFile(file);
+    return ref.getDownloadURL();
+  }
 
   @override
   Future<Either<Failure, PassengerEntity?>> getPassenger({
     required String passengerId,
   }) async {
     try {
-      final snapshot =
-          await _firestore
-              .collection(_passengersCollection)
-              .doc(passengerId)
-              .get();
-
-      if (!snapshot.exists || snapshot.data() == null) {
-        return const Right(null);
-      }
-
-      final passenger = PassengerModel.fromJson(
-        snapshot.data()!,
-        id: snapshot.id,
-      );
-      return Right(passenger.toEntity());
+      final response = await _dio.get('/api/me');
+      final me = Map<String, dynamic>.from(response.data as Map);
+      return Right(PassengerModel.fromMe(me)?.toEntity());
     } catch (e) {
       debugPrint('PassengerProfileDebug | Error en getPassenger: $e');
       return Left(
@@ -48,28 +65,7 @@ class PassengerProfileRepositoryImpl implements PassengerProfileRepository {
     File? profileImage,
   }) async {
     try {
-      String? photoUrl = passenger.photoUrl;
-
-      if (profileImage != null) {
-        final storageRef = _storage.ref(
-          'passenger_profile_photos/${passenger.id}.jpg',
-        );
-        await storageRef.putFile(profileImage);
-        photoUrl = await storageRef.getDownloadURL();
-      }
-
-      final passengerToSave = passenger.copyWith(photoUrl: photoUrl);
-
-      final passengerRef = _firestore
-          .collection(_passengersCollection)
-          .doc(passenger.id);
-
-      await passengerRef.set({
-        ...PassengerModel.fromEntity(passengerToSave).toJson(),
-        'createdAt': FieldValue.serverTimestamp(),
-        'updatedAt': FieldValue.serverTimestamp(),
-      });
-
+      await _saveProfile(passenger: passenger, profileImage: profileImage);
       return const Right(unit);
     } catch (e) {
       debugPrint('PassengerProfileDebug | Error en registerPassenger: $e');
@@ -85,30 +81,11 @@ class PassengerProfileRepositoryImpl implements PassengerProfileRepository {
     File? profileImage,
   }) async {
     try {
-      String? photoUrl = passenger.photoUrl;
-
-      if (profileImage != null) {
-        final storageRef = _storage.ref(
-          'passenger_profile_photos/${passenger.id}.jpg',
-        );
-        await storageRef.putFile(profileImage);
-        photoUrl = await storageRef.getDownloadURL();
-      }
-
-      final passengerToSave = passenger.copyWith(photoUrl: photoUrl);
-
-      final passengerRef = _firestore
-          .collection(_passengersCollection)
-          .doc(passenger.id);
-
-      await passengerRef.update({
-        'firstName': passengerToSave.firstName,
-        'lastName': passengerToSave.lastName,
-        'photoUrl': passengerToSave.photoUrl,
-        'updatedAt': FieldValue.serverTimestamp(),
-      });
-
-      return Right(passengerToSave);
+      final photoUrl = await _saveProfile(
+        passenger: passenger,
+        profileImage: profileImage,
+      );
+      return Right(passenger.copyWith(photoUrl: photoUrl));
     } catch (e) {
       debugPrint('PassengerProfileDebug | Error en updatePassenger: $e');
       return Left(
@@ -117,6 +94,38 @@ class PassengerProfileRepositoryImpl implements PassengerProfileRepository {
     }
   }
 
+  // Alta y edicion usan el mismo endpoint. Devuelve la URL de la foto que
+  // quedo guardada (null si no hay).
+  Future<String?> _saveProfile({
+    required PassengerEntity passenger,
+    File? profileImage,
+  }) async {
+    String? photoUrl = passenger.photoUrl;
+
+    if (profileImage != null) {
+      photoUrl = await _photoUploader(
+        path: 'passenger_profile_photos/${passenger.id}.jpg',
+        file: profileImage,
+      );
+    }
+
+    await _dio.put(
+      '/api/me/passenger-profile',
+      data: {
+        'firstName': passenger.firstName,
+        'lastName': passenger.lastName,
+        if (photoUrl != null && photoUrl.isNotEmpty) 'photoUrl': photoUrl,
+      },
+      options: Options()..disableRetry = true,
+    );
+    return photoUrl;
+  }
+
+  // El token de notificaciones y el idioma ya no se escriben directo en
+  // Firestore: van al servidor (PUT /api/me/device), que sabe de que persona
+  // y de que app son por el token de sesion. `passengerId` se conserva en la
+  // firma por compatibilidad con los llamadores, pero el servidor NO lo usa:
+  // la identidad sale siempre del token.
   @override
   Future<Either<Failure, Unit>> updateFcmToken({
     required String passengerId,
@@ -124,10 +133,10 @@ class PassengerProfileRepositoryImpl implements PassengerProfileRepository {
     required String language,
   }) async {
     try {
-      await _firestore.collection(_passengersCollection).doc(passengerId).update({
-        'fcmToken': token,
-        'language': language,
-      });
+      await _dio.put(
+        '/api/me/device',
+        data: {'app': 'passenger', 'fcmToken': token, 'language': language},
+      );
       return const Right(unit);
     } catch (e) {
       debugPrint('PassengerProfileDebug | Error en updateFcmToken: $e');
@@ -143,9 +152,10 @@ class PassengerProfileRepositoryImpl implements PassengerProfileRepository {
     required String language,
   }) async {
     try {
-      await _firestore.collection(_passengersCollection).doc(passengerId).update({
-        'language': language,
-      });
+      await _dio.put(
+        '/api/me/device',
+        data: {'app': 'passenger', 'language': language},
+      );
       return const Right(unit);
     } catch (e) {
       debugPrint('PassengerProfileDebug | Error en updateLanguage: $e');

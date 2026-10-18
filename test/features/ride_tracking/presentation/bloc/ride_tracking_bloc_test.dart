@@ -121,15 +121,7 @@ void main() {
 
     blocTest<RideTrackingBloc, RideTrackingState>(
       'calcula distancia/progreso/ETA cuando ambas coordenadas están presentes',
-      build: () {
-        when(
-          () => repository.recordInitialDriverDistance(
-            passengerId: any(named: 'passengerId'),
-            distanceMeters: any(named: 'distanceMeters'),
-          ),
-        ).thenAnswer((_) async => const Right(unit));
-        return buildBloc();
-      },
+      build: buildBloc,
       act: (bloc) => bloc.add(
         RideUpdated(
           _ride(
@@ -212,115 +204,6 @@ void main() {
       expect: () => [
         isA<RideTrackingState>().having((s) => s.progress, 'progress', 1.0),
       ],
-    );
-
-    blocTest<RideTrackingBloc, RideTrackingState>(
-      'graba la distancia inicial solo la primera vez (driverInitialDistanceMeters null)',
-      build: () {
-        when(
-          () => repository.watchRideTrack(
-            passengerId: any(named: 'passengerId'),
-          ),
-        ).thenAnswer((_) => const Stream.empty());
-        when(
-          () => repository.recordInitialDriverDistance(
-            passengerId: any(named: 'passengerId'),
-            distanceMeters: any(named: 'distanceMeters'),
-          ),
-        ).thenAnswer((_) async => const Right(unit));
-        return buildBloc();
-      },
-      act: (bloc) async {
-        bloc.add(StartRideTracking(passengerId: 'p1'));
-        bloc.add(
-          RideUpdated(
-            _ride(
-              status: RideTrackingStatus.driverAssigned,
-              driverLat: 0,
-              driverLng: 0,
-              pickupLat: 0,
-              pickupLng: 1,
-            ),
-          ),
-        );
-      },
-      verify: (_) {
-        verify(
-          () => repository.recordInitialDriverDistance(
-            passengerId: 'p1',
-            distanceMeters: any(named: 'distanceMeters'),
-          ),
-        ).called(1);
-      },
-    );
-
-    blocTest<RideTrackingBloc, RideTrackingState>(
-      'no vuelve a grabar la distancia inicial si el ride ya trae una',
-      build: () {
-        when(
-          () => repository.watchRideTrack(
-            passengerId: any(named: 'passengerId'),
-          ),
-        ).thenAnswer((_) => const Stream.empty());
-        return buildBloc();
-      },
-      act: (bloc) async {
-        bloc.add(StartRideTracking(passengerId: 'p1'));
-        bloc.add(
-          RideUpdated(
-            _ride(
-              status: RideTrackingStatus.driverAssigned,
-              driverLat: 0,
-              driverLng: 0,
-              pickupLat: 0,
-              pickupLng: 1,
-              initialDistance: 5000,
-            ),
-          ),
-        );
-      },
-      verify: (_) {
-        verifyNever(
-          () => repository.recordInitialDriverDistance(
-            passengerId: any(named: 'passengerId'),
-            distanceMeters: any(named: 'distanceMeters'),
-          ),
-        );
-      },
-    );
-
-    blocTest<RideTrackingBloc, RideTrackingState>(
-      'no graba distancia inicial en estados no capturables (ej. tripStarted)',
-      build: () {
-        when(
-          () => repository.watchRideTrack(
-            passengerId: any(named: 'passengerId'),
-          ),
-        ).thenAnswer((_) => const Stream.empty());
-        return buildBloc();
-      },
-      act: (bloc) async {
-        bloc.add(StartRideTracking(passengerId: 'p1'));
-        bloc.add(
-          RideUpdated(
-            _ride(
-              status: RideTrackingStatus.tripStarted,
-              driverLat: 0,
-              driverLng: 0,
-              pickupLat: 0,
-              pickupLng: 1,
-            ),
-          ),
-        );
-      },
-      verify: (_) {
-        verifyNever(
-          () => repository.recordInitialDriverDistance(
-            passengerId: any(named: 'passengerId'),
-            distanceMeters: any(named: 'distanceMeters'),
-          ),
-        );
-      },
     );
   });
 
