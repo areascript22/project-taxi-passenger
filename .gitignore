@@ -46,3 +46,6 @@ app.*.map.json
 
 *.jks
 android/key.properties
+android/keystore.properties
+android/keystore-prod.properties
+keystore_base64.txt
