@@ -881,6 +881,12 @@ abstract class AppLocalizations {
   /// **'No se pudo verificar tu información de pasajero'**
   String get failurePassengerProfileCheckFailed;
 
+  /// Mensaje de error para FailureCode.profilePhotoRequired: en el registro la foto de perfil es obligatoria y no se toma de la cuenta de Google
+  ///
+  /// In es, this message translates to:
+  /// **'Elige una foto de perfil para continuar'**
+  String get failureProfilePhotoRequired;
+
   /// Mensaje de error para FailureCode.profileSaveFailed
   ///
   /// In es, this message translates to:

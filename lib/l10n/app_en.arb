@@ -136,6 +136,7 @@
   "failureAccountHasActiveRide": "You have an active ride. Finish or cancel it before deleting your account.",
   "failureAccountDeleteFailed": "Your account could not be deleted. Try again.",
   "failurePassengerProfileCheckFailed": "We could not verify your passenger information",
+  "failureProfilePhotoRequired": "Choose a profile photo to continue",
   "failureProfileSaveFailed": "Your information could not be saved. Try again.",
   "failureProfileUpdateFailed": "Your information could not be updated. Try again.",
   "failureImagePickFailed": "The selected image could not be loaded",

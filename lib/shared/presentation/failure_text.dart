@@ -53,6 +53,7 @@ extension FailureTextX on BuildContext {
       FailureCode.accountDeleteFailed => l10n.failureAccountDeleteFailed,
       FailureCode.passengerProfileCheckFailed => l10n.failurePassengerProfileCheckFailed,
       FailureCode.profileSaveFailed => l10n.failureProfileSaveFailed,
+      FailureCode.profilePhotoRequired => l10n.failureProfilePhotoRequired,
       FailureCode.profileUpdateFailed => l10n.failureProfileUpdateFailed,
       FailureCode.imagePickFailed => l10n.failureImagePickFailed,
       // solo para logs; si llega a la UI, mensaje genarico

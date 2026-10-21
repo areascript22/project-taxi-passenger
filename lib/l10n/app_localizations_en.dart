@@ -410,6 +410,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get failurePassengerProfileCheckFailed => 'We could not verify your passenger information';
 
   @override
+  String get failureProfilePhotoRequired => 'Choose a profile photo to continue';
+
+  @override
   String get failureProfileSaveFailed => 'Your information could not be saved. Try again.';
 
   @override
