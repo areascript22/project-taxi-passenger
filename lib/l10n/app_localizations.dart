@@ -311,17 +311,35 @@ abstract class AppLocalizations {
   /// **'No se pudo verificar tu sesión. Revisa tu conexión e intenta de nuevo.'**
   String get sessionCheckFailed;
 
-  /// Titulo de la pantalla de login
+  /// Titular grande de la pantalla de login
   ///
   /// In es, this message translates to:
-  /// **'Bienvenido Pasajero'**
-  String get signInWelcome;
+  /// **'Tu taxi, a un toque'**
+  String get signInHeadline;
 
-  /// Frase bajo el titulo en el login
+  /// Frase bajo el titular en el login
   ///
   /// In es, this message translates to:
-  /// **'Viaja de forma segura y rápida con nosotros.'**
+  /// **'Pide un taxi seguro en Riobamba, en segundos.'**
   String get signInTagline;
+
+  /// Ventaja 1 en el login: el equipo aprueba a los conductores antes de que operen
+  ///
+  /// In es, this message translates to:
+  /// **'Conductores verificados'**
+  String get signInFeatureVerified;
+
+  /// Ventaja 2 en el login: el pedido le llega a los conductores cercanos
+  ///
+  /// In es, this message translates to:
+  /// **'Respuesta rápida'**
+  String get signInFeatureFast;
+
+  /// Ventaja 3 en el login: ves al conductor en vivo y puedes escribirle
+  ///
+  /// In es, this message translates to:
+  /// **'Seguimiento y chat'**
+  String get signInFeatureTracking;
 
   /// Boton de login con Google
   ///

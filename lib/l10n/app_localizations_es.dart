@@ -119,10 +119,19 @@ class AppLocalizationsEs extends AppLocalizations {
   String get sessionCheckFailed => 'No se pudo verificar tu sesión. Revisa tu conexión e intenta de nuevo.';
 
   @override
-  String get signInWelcome => 'Bienvenido Pasajero';
+  String get signInHeadline => 'Tu taxi, a un toque';
 
   @override
-  String get signInTagline => 'Viaja de forma segura y rápida con nosotros.';
+  String get signInTagline => 'Pide un taxi seguro en Riobamba, en segundos.';
+
+  @override
+  String get signInFeatureVerified => 'Conductores verificados';
+
+  @override
+  String get signInFeatureFast => 'Respuesta rápida';
+
+  @override
+  String get signInFeatureTracking => 'Seguimiento y chat';
 
   @override
   String get signInGoogle => 'Continuar con Google';
