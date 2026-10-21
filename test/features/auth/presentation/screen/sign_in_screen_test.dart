@@ -71,28 +71,26 @@ void main() {
     await tester.pump(const Duration(seconds: 2));
   }
 
-  testWidgets('shows brand, headline, tagline, Google button and benefits',
+  testWidgets('shows the brand, role, tagline, app logo and Google button',
       (tester) async {
     await pumpScreen(tester);
 
     expect(find.text('TaxiGo'), findsOneWidget);
-    expect(find.text('Tu taxi, a un toque'), findsOneWidget);
+    expect(find.text('Pasajero'), findsOneWidget);
     expect(
-      find.text('Pide un taxi seguro en Riobamba, en segundos.'),
+      find.text('Viaja de forma segura y rápida con nosotros.'),
       findsOneWidget,
     );
     expect(find.text('Continuar con Google'), findsOneWidget);
-    expect(find.text('Conductores verificados'), findsOneWidget);
-    expect(find.text('Respuesta rápida'), findsOneWidget);
-    expect(find.text('Seguimiento y chat'), findsOneWidget);
-    // La pantalla ya no usa el saludo genérico.
-    expect(find.textContaining('Bienvenido'), findsNothing);
+    final logo = tester.widget<Image>(find.byType(Image));
+    expect((logo.image as AssetImage).assetName, 'assets/images/app_logo.png');
   });
 
   testWidgets('is translated to English', (tester) async {
     await pumpScreen(tester, locale: const Locale('en'));
 
-    expect(find.text('Your taxi, one tap away'), findsOneWidget);
+    expect(find.text('Passenger'), findsOneWidget);
+    expect(find.text('Travel safely and quickly with us.'), findsOneWidget);
     expect(find.text('Continue with Google'), findsOneWidget);
   });
 

@@ -156,25 +156,13 @@
   "@sessionCheckFailed": {
     "description": "Mensaje cuando falla el chequeo de sesion"
   },
-  "signInHeadline": "Tu taxi, a un toque",
-  "@signInHeadline": {
-    "description": "Titular grande de la pantalla de login"
+  "brandRoleLabel": "Pasajero",
+  "@brandRoleLabel": {
+    "description": "Subtítulo bajo el nombre de la marca en el login. 'TaxiGo' NO se traduce (es nombre propio), esto sí"
   },
-  "signInTagline": "Pide un taxi seguro en Riobamba, en segundos.",
+  "signInTagline": "Viaja de forma segura y rápida con nosotros.",
   "@signInTagline": {
-    "description": "Frase bajo el titular en el login"
-  },
-  "signInFeatureVerified": "Conductores verificados",
-  "@signInFeatureVerified": {
-    "description": "Ventaja 1 en el login: el equipo aprueba a los conductores antes de que operen"
-  },
-  "signInFeatureFast": "Respuesta rápida",
-  "@signInFeatureFast": {
-    "description": "Ventaja 2 en el login: el pedido le llega a los conductores cercanos"
-  },
-  "signInFeatureTracking": "Seguimiento y chat",
-  "@signInFeatureTracking": {
-    "description": "Ventaja 3 en el login: ves al conductor en vivo y puedes escribirle"
+    "description": "Frase bajo el nombre de la marca en el login"
   },
   "signInGoogle": "Continuar con Google",
   "@signInGoogle": {
