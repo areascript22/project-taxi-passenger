@@ -463,4 +463,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String appVersionLabel(String version) {
     return 'Versión: $version';
   }
+
+  @override
+  String get bookingOpenProfile => 'Abrir mi perfil';
 }

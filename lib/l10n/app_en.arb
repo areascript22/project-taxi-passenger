@@ -152,5 +152,6 @@
   "settingsLanguageSystem": "System",
   "settingsLanguageSpanish": "Español",
   "settingsLanguageEnglish": "English",
-  "appVersionLabel": "Version: {version}"
+  "appVersionLabel": "Version: {version}",
+  "bookingOpenProfile": "Open my profile"
 }

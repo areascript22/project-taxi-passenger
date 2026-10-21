@@ -56,8 +56,9 @@ class AppRouter {
                 path: bookingRoute.route,
                 name: bookingRoute.name,
                 builder:
-                    (context, state) =>
-                        BookingScreen(recoveredRide: state.extra as RideEntity?),
+                    (context, state) => BookingScreen(
+                      recoveredRide: state.extra as RideEntity?,
+                    ),
               ),
               GoRoute(
                 path: '/booking2',
@@ -100,8 +101,8 @@ class AppRouter {
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: '/profile',
-                name: 'profile',
+                path: profileRoute.route,
+                name: profileRoute.name,
                 builder: (context, state) => const ProfileScreen(),
                 routes: [
                   // CHILD ROUTE: Notice there is no leading '/'

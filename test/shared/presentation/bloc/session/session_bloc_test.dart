@@ -165,6 +165,7 @@ void main() {
       expect: () => [
         isA<SessionAuthenticated>()
             .having((s) => s.user, 'user', user)
+            .having((s) => s.passenger, 'passenger', passenger)
             .having((s) => s.activeRide, 'activeRide', isNull),
       ],
     );

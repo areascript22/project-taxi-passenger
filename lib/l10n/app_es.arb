@@ -624,5 +624,9 @@
     "placeholders": {
       "version": {"type": "String"}
     }
+  },
+  "bookingOpenProfile": "Abrir mi perfil",
+  "@bookingOpenProfile": {
+    "description": "Etiqueta de accesibilidad (tooltip) del avatar con la foto del pasajero, arriba a la derecha en la pantalla de pedir taxi: al tocarlo se abre su perfil"
   }
 }

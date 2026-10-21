@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:passenger_app/shared/presentation/component/app_text_field.dart';
 import 'package:passenger_app/shared/presentation/component/app_toast.dart';
+import 'package:passenger_app/shared/profile_photo/presentation/cubit/profile_photo_cubit.dart';
 import 'package:passenger_app/shared/presentation/component/custom_button.dart';
 import 'package:passenger_app/shared/presentation/component/image_source_sheet.dart';
 import 'package:passenger_app/shared/presentation/component/profile_avatar_picker.dart';
@@ -81,9 +82,17 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         child: BlocConsumer<ProfileBloc, ProfileState>(
           listener: (context, state) {
             if (state.errorCode != null) {
-              AppToast.error(context, message: context.failureText(state.errorCode!));
+              AppToast.error(
+                context,
+                message: context.failureText(state.errorCode!),
+              );
             }
             if (state.updateSuccess) {
+              // El avatar de la pantalla de pedir taxi muestra la misma foto: se
+              // refresca aquí, sin volver a emitir la sesión.
+              context.read<ProfilePhotoCubit>().set(
+                photoUrl: state.passenger?.photoUrl,
+              );
               // Toast antes del pop: al estar en el overlay raíz sigue visible
               // después de volver a la pantalla anterior.
               AppToast.success(context, message: l10n.profileUpdated);

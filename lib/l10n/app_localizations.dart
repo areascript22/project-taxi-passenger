@@ -982,6 +982,12 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Versión: {version}'**
   String appVersionLabel(String version);
+
+  /// Etiqueta de accesibilidad (tooltip) del avatar con la foto del pasajero, arriba a la derecha en la pantalla de pedir taxi: al tocarlo se abre su perfil
+  ///
+  /// In es, this message translates to:
+  /// **'Abrir mi perfil'**
+  String get bookingOpenProfile;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
