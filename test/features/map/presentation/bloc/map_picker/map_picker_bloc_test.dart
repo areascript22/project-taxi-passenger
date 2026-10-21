@@ -4,13 +4,20 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:passenger_app/core/error/errors.dart';
 import 'package:passenger_app/features/map/presentation/bloc/map_picker/map_picker_bloc.dart';
+import 'package:passenger_app/shared/domain/entity/user_location.dart';
 import 'package:passenger_app/shared/geocoding/domain/repository/geocoding_repository.dart';
+import 'package:passenger_app/shared/geolocator/service/geolocator/geolocator_service.dart';
+import 'package:passenger_app/shared/geolocator/service/last_location/last_location_service.dart';
 import 'package:passenger_app/shared/sectors/domain/entity/sector_entity.dart';
 import 'package:passenger_app/shared/sectors/domain/service/sector_service.dart';
 
 class _MockGeocodingRepository extends Mock implements GeocodingRepository {}
 
 class _MockSectorService extends Mock implements SectorService {}
+
+class _MockGeolocatorService extends Mock implements GeolocatorService {}
+
+class _MockLastLocationService extends Mock implements LastLocationService {}
 
 const _bounds = SectorBounds(
   minLatitude: -1.70,
@@ -35,10 +42,18 @@ SectorEntity _sector(String name) {
 void main() {
   late _MockGeocodingRepository geocodingRepository;
   late _MockSectorService sectorService;
+  late _MockGeolocatorService geolocatorService;
+  late _MockLastLocationService lastLocationService;
+
+  setUpAll(() {
+    registerFallbackValue(UserLocation(latitude: 0, longitude: 0));
+  });
 
   setUp(() {
     geocodingRepository = _MockGeocodingRepository();
     sectorService = _MockSectorService();
+    geolocatorService = _MockGeolocatorService();
+    lastLocationService = _MockLastLocationService();
 
     when(
       () => sectorService.loadSectors(),
@@ -66,6 +81,8 @@ void main() {
   MapPickerBloc buildBloc() => MapPickerBloc(
     geocodingRepository: geocodingRepository,
     sectorService: sectorService,
+    geolocatorService: geolocatorService,
+    lastLocationService: lastLocationService,
   );
 
   test('el estado inicial es MapPickerState() con status initial', () {
@@ -74,6 +91,170 @@ void main() {
     expect(state.latitude, 0);
     expect(state.longitude, 0);
     expect(state.sectors, isEmpty);
+  });
+
+  group('MapPickerStarted (dónde centrar el mapa)', () {
+    final cached = UserLocation(latitude: -1.65, longitude: -78.66);
+    final gps = UserLocation(latitude: -1.68, longitude: -78.64);
+
+    setUp(() {
+      when(
+        () => geocodingRepository.getAddressFromCoordinates(
+          lat: any(named: 'lat'),
+          lng: any(named: 'lng'),
+        ),
+      ).thenAnswer((_) async => const Right('Mi dirección'));
+    });
+
+    Matcher centeredAt(double lat, double lng) => isA<MapPickerState>()
+        .having((s) => s.status, 'status', MapPickerStatus.loadingAddress)
+        .having((s) => s.latitude, 'latitude', lat)
+        .having((s) => s.longitude, 'longitude', lng);
+
+    blocTest<MapPickerBloc, MapPickerState>(
+      'con un punto conocido lo usa sin tocar caché ni GPS',
+      build: buildBloc,
+      act: (bloc) => bloc.add(MapPickerStarted(latitude: 1, longitude: 2)),
+      expect: () => [
+        isA<MapPickerState>().having(
+          (s) => s.status,
+          'status',
+          MapPickerStatus.resolvingCenter,
+        ),
+        centeredAt(1, 2),
+        isA<MapPickerState>().having(
+          (s) => s.status,
+          'status',
+          MapPickerStatus.addressReady,
+        ),
+      ],
+      verify: (_) {
+        verifyNever(() => lastLocationService.getLastLocation());
+        verifyNever(() => geolocatorService.getCurrentPosition());
+      },
+    );
+
+    blocTest<MapPickerBloc, MapPickerState>(
+      'sin punto conocido usa la última ubicación guardada y no pide GPS',
+      setUp: () {
+        when(
+          () => lastLocationService.getLastLocation(),
+        ).thenAnswer((_) async => Right(cached));
+      },
+      build: buildBloc,
+      act: (bloc) => bloc.add(MapPickerStarted()),
+      skip: 1,
+      expect: () => [
+        centeredAt(-1.65, -78.66),
+        isA<MapPickerState>().having(
+          (s) => s.status,
+          'status',
+          MapPickerStatus.addressReady,
+        ),
+      ],
+      verify: (_) {
+        verifyNever(() => geolocatorService.getCurrentPosition());
+      },
+    );
+
+    blocTest<MapPickerBloc, MapPickerState>(
+      'sin caché usa el GPS y lo guarda para la próxima vez',
+      setUp: () {
+        when(
+          () => lastLocationService.saveLastLocation(
+            location: any(named: 'location'),
+          ),
+        ).thenAnswer((_) async => const Right(unit));
+        when(
+          () => lastLocationService.getLastLocation(),
+        ).thenAnswer((_) async => const Right(null));
+        when(
+          () => geolocatorService.getCurrentPosition(),
+        ).thenAnswer((_) async => Right(gps));
+      },
+      build: buildBloc,
+      act: (bloc) => bloc.add(MapPickerStarted()),
+      skip: 1,
+      expect: () => [
+        centeredAt(-1.68, -78.64),
+        isA<MapPickerState>().having(
+          (s) => s.status,
+          'status',
+          MapPickerStatus.addressReady,
+        ),
+      ],
+      verify: (_) {
+        final saved =
+            verify(
+              () => lastLocationService.saveLastLocation(
+                location: captureAny(named: 'location'),
+              ),
+            ).captured.single as UserLocation;
+        expect(saved.latitude, -1.68);
+        expect(saved.longitude, -78.64);
+      },
+    );
+
+    blocTest<MapPickerBloc, MapPickerState>(
+      'sin caché ni GPS centra en Riobamba y no guarda nada',
+      setUp: () {
+        when(
+          () => lastLocationService.getLastLocation(),
+        ).thenAnswer((_) async => const Right(null));
+        when(() => geolocatorService.getCurrentPosition()).thenAnswer(
+          (_) async => Left(Failure(code: FailureCode.gpsDisabled)),
+        );
+      },
+      build: buildBloc,
+      act: (bloc) => bloc.add(MapPickerStarted()),
+      skip: 1,
+      expect: () => [
+        centeredAt(
+          MapPickerBloc.riobambaLatitude,
+          MapPickerBloc.riobambaLongitude,
+        ),
+        isA<MapPickerState>().having(
+          (s) => s.status,
+          'status',
+          MapPickerStatus.addressReady,
+        ),
+      ],
+      verify: (_) {
+        verifyNever(
+          () => lastLocationService.saveLastLocation(
+            location: any(named: 'location'),
+          ),
+        );
+      },
+    );
+
+    blocTest<MapPickerBloc, MapPickerState>(
+      'si falla leer la caché, cae al GPS',
+      setUp: () {
+        when(() => lastLocationService.getLastLocation()).thenAnswer(
+          (_) async => Left(Failure(code: FailureCode.unexpected)),
+        );
+        when(
+          () => geolocatorService.getCurrentPosition(),
+        ).thenAnswer((_) async => Right(gps));
+        when(
+          () => lastLocationService.saveLastLocation(
+            location: any(named: 'location'),
+          ),
+        ).thenAnswer((_) async => const Right(unit));
+      },
+      build: buildBloc,
+      act: (bloc) => bloc.add(MapPickerStarted()),
+      skip: 1,
+      expect: () => [
+        centeredAt(-1.68, -78.64),
+        isA<MapPickerState>().having(
+          (s) => s.status,
+          'status',
+          MapPickerStatus.addressReady,
+        ),
+      ],
+    );
   });
 
   group('MapCenterInitialized (no debounced)', () {

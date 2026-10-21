@@ -1,7 +1,10 @@
 import 'package:bloc/bloc.dart';
 import 'package:meta/meta.dart';
 import 'package:passenger_app/core/error/errors.dart';
+import 'package:passenger_app/shared/domain/entity/user_location.dart';
 import 'package:passenger_app/shared/geocoding/domain/repository/geocoding_repository.dart';
+import 'package:passenger_app/shared/geolocator/service/geolocator/geolocator_service.dart';
+import 'package:passenger_app/shared/geolocator/service/last_location/last_location_service.dart';
 import 'package:passenger_app/shared/sectors/domain/entity/sector_entity.dart';
 import 'package:passenger_app/shared/sectors/domain/service/sector_service.dart';
 import 'package:passenger_app/shared/utils/debouncer.dart';
@@ -13,15 +16,65 @@ part 'map_picker_state.dart';
 class MapPickerBloc extends Bloc<MapPickerEvent, MapPickerState> {
   final GeocodingRepository geocodingRepository;
   final SectorService sectorService;
+  final GeolocatorService geolocatorService;
+  final LastLocationService lastLocationService;
+
+  // Centro de Riobamba: donde se abre el mapa si no hay ubicacion del usuario.
+  static const double riobambaLatitude = -1.6702;
+  static const double riobambaLongitude = -78.6631;
 
   MapPickerBloc({
     required this.geocodingRepository,
     required this.sectorService,
+    required this.geolocatorService,
+    required this.lastLocationService,
   }) : super(const MapPickerState()) {
+    on<MapPickerStarted>(_onStarted);
     on<MapCenterInitialized>(_onMapCenterInitialized);
     on<MapCameraIdle>(
       _onMapCameraIdle,
       transformer: debounce(const Duration(milliseconds: 500)),
+    );
+  }
+
+  // Donde abrir el mapa, por orden: el punto ya conocido, la ultima ubicacion
+  // guardada (instantanea), el GPS (y se guarda para la proxima) y, si nada de
+  // eso hay, el centro de Riobamba. Solo se resuelve una vez al abrir: despues
+  // el mapa no se vuelve a mover solo.
+  Future<void> _onStarted(
+    MapPickerStarted event,
+    Emitter<MapPickerState> emit,
+  ) async {
+    emit(state.copyWith(status: MapPickerStatus.resolvingCenter));
+
+    var latitude = event.latitude;
+    var longitude = event.longitude;
+
+    if (latitude == null || longitude == null) {
+      final cached = await lastLocationService.getLastLocation();
+      final cachedLocation = cached.fold<UserLocation?>((_) => null, (l) => l);
+
+      if (cachedLocation != null) {
+        latitude = cachedLocation.latitude;
+        longitude = cachedLocation.longitude;
+      } else {
+        final current = await geolocatorService.getCurrentPosition();
+        final currentLocation = current.fold<UserLocation?>((_) => null, (l) => l);
+
+        if (currentLocation != null) {
+          latitude = currentLocation.latitude;
+          longitude = currentLocation.longitude;
+          await lastLocationService.saveLastLocation(location: currentLocation);
+        } else {
+          latitude = riobambaLatitude;
+          longitude = riobambaLongitude;
+        }
+      }
+    }
+
+    await _onMapCenterInitialized(
+      MapCenterInitialized(latitude: latitude, longitude: longitude),
+      emit,
     );
   }
 
