@@ -119,7 +119,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get sessionCheckFailed => 'No se pudo verificar tu sesión. Revisa tu conexión e intenta de nuevo.';
 
   @override
-  String get signInWelcome => 'Bienvenido Pasajero';
+  String get brandRoleLabel => 'Pasajero';
 
   @override
   String get signInTagline => 'Viaja de forma segura y rápida con nosotros.';
@@ -410,6 +410,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get failurePassengerProfileCheckFailed => 'No se pudo verificar tu información de pasajero';
 
   @override
+  String get failureProfilePhotoRequired => 'Elige una foto de perfil para continuar';
+
+  @override
   String get failureProfileSaveFailed => 'No se pudo guardar tu información. Intenta nuevamente.';
 
   @override
@@ -460,4 +463,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String appVersionLabel(String version) {
     return 'Versión: $version';
   }
+
+  @override
+  String get bookingOpenProfile => 'Abrir mi perfil';
 }

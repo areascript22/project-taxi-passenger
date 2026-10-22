@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:dio_smart_retry/dio_smart_retry.dart'; // Import the package
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'auth_token_interceptor.dart';
 
 class DioClient {
   DioClient._();
@@ -27,14 +28,8 @@ class DioClient {
     );
 
     dio.interceptors.addAll([
-      InterceptorsWrapper(
-        onRequest: (options, handler) async {
-          final idToken = await FirebaseAuth.instance.currentUser?.getIdToken();
-          if (idToken != null) {
-            options.headers['Authorization'] = 'Bearer $idToken';
-          }
-          handler.next(options);
-        },
+      AuthTokenInterceptor(
+        tokenProvider: () async => FirebaseAuth.instance.currentUser?.getIdToken(),
       ),
       LogInterceptor(requestBody: true, responseBody: true),
       RetryInterceptor(

@@ -62,6 +62,12 @@ class PassengerOnboardingBloc
       return;
     }
 
+    // La foto no se toma de la cuenta de Google: el pasajero debe elegir una.
+    if (state.profileImage == null) {
+      emit(state.copyWith(errorCode: FailureCode.profilePhotoRequired));
+      return;
+    }
+
     emit(state.copyWith(isSubmitting: true, errorCode: null));
 
     final passenger = PassengerEntity(
@@ -69,7 +75,6 @@ class PassengerOnboardingBloc
       firstName: event.firstName,
       lastName: event.lastName,
       email: user.email ?? '',
-      photoUrl: user.photoUrl,
     );
 
     final result = await passengerProfileRepository.registerPassenger(

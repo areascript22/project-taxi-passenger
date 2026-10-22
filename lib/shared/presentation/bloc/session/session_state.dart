@@ -14,7 +14,12 @@ final class SessionAuthenticated extends SessionState {
   // conductor", cualquier otro status activo -> RideTrackingScreen directo.
   final RideEntity? activeRide;
 
-  SessionAuthenticated({required this.user, this.activeRide});
+  // Los datos del pasajero que se descargaron para decidir si debía registrarse.
+  // Se conservan para no pedirlos otra vez (hoy: la foto del avatar, ver
+  // ProfilePhotoSessionListener).
+  final PassengerEntity? passenger;
+
+  SessionAuthenticated({required this.user, this.activeRide, this.passenger});
 }
 
 final class SessionUnauthenticated extends SessionState {}

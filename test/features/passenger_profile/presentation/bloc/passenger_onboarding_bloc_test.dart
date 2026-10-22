@@ -150,6 +150,29 @@ void main() {
     );
 
     blocTest<PassengerOnboardingBloc, PassengerOnboardingState>(
+      'exige una foto de perfil y no registra sin ella',
+      build: buildBloc,
+      seed: () => PassengerOnboardingState(user: user),
+      act: (bloc) => bloc.add(
+        PassengerOnboardingSubmitted(firstName: 'Ana', lastName: 'Gómez'),
+      ),
+      expect: () => [
+        predicate<PassengerOnboardingState>(
+          (s) =>
+              s.errorCode == FailureCode.profilePhotoRequired && !s.isSubmitting,
+        ),
+      ],
+      verify: (_) {
+        verifyNever(
+          () => passengerProfileRepository.registerPassenger(
+            passenger: any(named: 'passenger'),
+            profileImage: any(named: 'profileImage'),
+          ),
+        );
+      },
+    );
+
+    blocTest<PassengerOnboardingBloc, PassengerOnboardingState>(
       'registra al pasajero y marca registrationSuccess',
       build: () {
         when(
@@ -160,7 +183,7 @@ void main() {
         ).thenAnswer((_) async => const Right(unit));
         return buildBloc();
       },
-      seed: () => PassengerOnboardingState(user: user),
+      seed: () => PassengerOnboardingState(user: user, profileImage: File('photo.jpg')),
       act: (bloc) => bloc.add(
         PassengerOnboardingSubmitted(firstName: 'Ana', lastName: 'Gómez'),
       ),
@@ -205,7 +228,7 @@ void main() {
         );
         return buildBloc();
       },
-      seed: () => PassengerOnboardingState(user: user),
+      seed: () => PassengerOnboardingState(user: user, profileImage: File('photo.jpg')),
       act: (bloc) => bloc.add(
         PassengerOnboardingSubmitted(firstName: 'Ana', lastName: 'Gómez'),
       ),

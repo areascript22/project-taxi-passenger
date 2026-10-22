@@ -15,6 +15,8 @@ import 'package:passenger_app/shared/connectivity/presentation/component/connect
 import 'package:passenger_app/shared/connectivity/presentation/cubit/connectivity_cubit.dart';
 import 'package:passenger_app/shared/notifications/service/push_notifications_service.dart';
 import 'package:passenger_app/shared/presentation/bloc/session/session_bloc.dart';
+import 'package:passenger_app/shared/profile_photo/presentation/component/profile_photo_session_listener.dart';
+import 'package:passenger_app/shared/profile_photo/presentation/cubit/profile_photo_cubit.dart';
 import 'package:passenger_app/shared/services/services_initializer.dart';
 import 'package:passenger_app/shared/settings/presentation/bloc/settings_bloc.dart';
 
@@ -65,50 +67,59 @@ class MyApp extends StatelessWidget {
         BlocProvider<AppUpdateCubit>(
           create: (context) => GetIt.instance<AppUpdateCubit>()..check(),
         ),
+        // La foto de perfil que se ve fuera de la pantalla de perfil (avatar de
+        // pedir taxi). Singleton: sobrevive a las pantallas que la muestran.
+        BlocProvider<ProfilePhotoCubit>(
+          create: (context) => GetIt.instance<ProfilePhotoCubit>(),
+        ),
       ],
-      child: BlocBuilder<SettingsBloc, SettingsState>(
-        builder: (context, settingsState) {
-          return MaterialApp.router(
-            // onGenerateTitle en vez de `title`: se evalúa con un context que
-            // ya tiene las localizaciones, así el nombre que muestra el
-            // sistema operativo también sale del .arb.
-            onGenerateTitle: (context) => AppLocalizations.of(context).appTitle,
-            localizationsDelegates: AppLocalizations.localizationsDelegates,
-            supportedLocales: AppLocalizations.supportedLocales,
-            // null cuando el usuario eligio "Sistema": ahi resuelve
-            // localeListResolutionCallback con los idiomas del dispositivo.
-            locale: settingsState.language.locale,
-            // El fallback de Flutter cuando nada matchea es el PRIMER elemento
-            // de supportedLocales, que el generador ordena alfabeticamente
-            // ([en, es]). Sin esto, un telefono en portugues abriria la app en
-            // ingles en vez de espaniol -- ver resolveAppLocale.
-            localeListResolutionCallback:
-                (deviceLocales, _) => resolveAppLocale(
-                  preference: settingsState.language,
-                  deviceLocales: deviceLocales?.toList(),
-                ),
-            debugShowCheckedModeBanner: false,
-            theme: AppTheme.light,
-            darkTheme: AppTheme.dark,
-            themeMode: settingsState.themeMode,
-            routerConfig: AppRouter.router,
-            // Envuelve TODO lo que arma go_router (incluidas splash/login,
-            // fuera del StatefulShellRoute) para que el banner de "sin
-            // conexión" pueda mostrarse sin importar la pantalla -- ver
-            // ConnectivityBannerOverlay.
-            //
-            // ForceUpdateGate va por fuera: si el servidor exige actualizar,
-            // reemplaza TODA la app (incluido el banner) por la pantalla de
-            // actualización.
-            builder: (context, child) {
-              return ForceUpdateGate(
-                child: ConnectivityBannerOverlay(
-                  child: child ?? const SizedBox.shrink(),
-                ),
-              );
-            },
-          );
-        },
+      // Siembra la foto cuando la sesión se resuelve y la borra al cerrar sesión.
+      child: ProfilePhotoSessionListener(
+        child: BlocBuilder<SettingsBloc, SettingsState>(
+          builder: (context, settingsState) {
+            return MaterialApp.router(
+              // onGenerateTitle en vez de `title`: se evalúa con un context que
+              // ya tiene las localizaciones, así el nombre que muestra el
+              // sistema operativo también sale del .arb.
+              onGenerateTitle:
+                  (context) => AppLocalizations.of(context).appTitle,
+              localizationsDelegates: AppLocalizations.localizationsDelegates,
+              supportedLocales: AppLocalizations.supportedLocales,
+              // null cuando el usuario eligio "Sistema": ahi resuelve
+              // localeListResolutionCallback con los idiomas del dispositivo.
+              locale: settingsState.language.locale,
+              // El fallback de Flutter cuando nada matchea es el PRIMER elemento
+              // de supportedLocales, que el generador ordena alfabeticamente
+              // ([en, es]). Sin esto, un telefono en portugues abriria la app en
+              // ingles en vez de espaniol -- ver resolveAppLocale.
+              localeListResolutionCallback:
+                  (deviceLocales, _) => resolveAppLocale(
+                    preference: settingsState.language,
+                    deviceLocales: deviceLocales?.toList(),
+                  ),
+              debugShowCheckedModeBanner: false,
+              theme: AppTheme.light,
+              darkTheme: AppTheme.dark,
+              themeMode: settingsState.themeMode,
+              routerConfig: AppRouter.router,
+              // Envuelve TODO lo que arma go_router (incluidas splash/login,
+              // fuera del StatefulShellRoute) para que el banner de "sin
+              // conexión" pueda mostrarse sin importar la pantalla -- ver
+              // ConnectivityBannerOverlay.
+              //
+              // ForceUpdateGate va por fuera: si el servidor exige actualizar,
+              // reemplaza TODA la app (incluido el banner) por la pantalla de
+              // actualización.
+              builder: (context, child) {
+                return ForceUpdateGate(
+                  child: ConnectivityBannerOverlay(
+                    child: child ?? const SizedBox.shrink(),
+                  ),
+                );
+              },
+            );
+          },
+        ),
       ),
     );
   }

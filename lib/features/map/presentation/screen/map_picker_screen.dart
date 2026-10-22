@@ -9,11 +9,6 @@ import 'package:passenger_app/shared/presentation/failure_text.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../bloc/map_picker/map_picker_bloc.dart';
 
-// Fallback center used when no prior pickup location is known yet,
-// matching the autocomplete search bias in location_search_repository_impl.dart.
-const double _fallbackLatitude = -1.6702;
-const double _fallbackLongitude = -78.6631;
-
 class MapPickerScreen extends StatelessWidget {
   final PlaceEntity? initialPlace;
 
@@ -21,34 +16,21 @@ class MapPickerScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final initialLatitude = initialPlace?.latitude ?? _fallbackLatitude;
-    final initialLongitude = initialPlace?.longitude ?? _fallbackLongitude;
-
     return BlocProvider(
       create: (_) => GetIt.instance<MapPickerBloc>()
         ..add(
-          MapCenterInitialized(
-            latitude: initialLatitude,
-            longitude: initialLongitude,
+          MapPickerStarted(
+            latitude: initialPlace?.latitude,
+            longitude: initialPlace?.longitude,
           ),
         ),
-      child: MapPickerView(
-        initialLatitude: initialLatitude,
-        initialLongitude: initialLongitude,
-      ),
+      child: const MapPickerView(),
     );
   }
 }
 
 class MapPickerView extends StatefulWidget {
-  final double initialLatitude;
-  final double initialLongitude;
-
-  const MapPickerView({
-    super.key,
-    required this.initialLatitude,
-    required this.initialLongitude,
-  });
+  const MapPickerView({super.key});
 
   @override
   State<MapPickerView> createState() => _MapPickerViewState();
@@ -56,15 +38,8 @@ class MapPickerView extends StatefulWidget {
 
 class _MapPickerViewState extends State<MapPickerView> {
   GoogleMapController? _mapController;
-  late double _pendingLatitude;
-  late double _pendingLongitude;
-
-  @override
-  void initState() {
-    super.initState();
-    _pendingLatitude = widget.initialLatitude;
-    _pendingLongitude = widget.initialLongitude;
-  }
+  double? _pendingLatitude;
+  double? _pendingLongitude;
 
   @override
   void dispose() {
@@ -73,8 +48,14 @@ class _MapPickerViewState extends State<MapPickerView> {
   }
 
   void _onCameraIdle() {
+    // Sin arrastre todavia (primer idle al crear el mapa) el centro es el que
+    // resolvio el bloc.
+    final current = context.read<MapPickerBloc>().state;
     context.read<MapPickerBloc>().add(
-      MapCameraIdle(latitude: _pendingLatitude, longitude: _pendingLongitude),
+      MapCameraIdle(
+        latitude: _pendingLatitude ?? current.latitude,
+        longitude: _pendingLongitude ?? current.longitude,
+      ),
     );
   }
 
@@ -127,6 +108,10 @@ class _MapPickerViewState extends State<MapPickerView> {
     }).toSet();
   }
 
+  static bool _isResolving(MapPickerState state) =>
+      state.status == MapPickerStatus.initial ||
+      state.status == MapPickerStatus.resolvingCenter;
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -148,14 +133,21 @@ class _MapPickerViewState extends State<MapPickerView> {
             buildWhen:
                 (previous, current) =>
                     previous.sectors != current.sectors ||
-                    previous.coverageBounds != current.coverageBounds,
+                    previous.coverageBounds != current.coverageBounds ||
+                    _isResolving(previous) != _isResolving(current),
             builder: (context, state) {
+              // El centro (punto conocido, ultima ubicacion, GPS o Riobamba) se
+              // resuelve antes de dibujar: asi el mapa abre ya en su sitio y no
+              // salta desde otro lugar.
+              if (_isResolving(state)) {
+                return Center(
+                  child: CircularProgressIndicator(color: colorScheme.primary),
+                );
+              }
+
               return GoogleMap(
                 initialCameraPosition: CameraPosition(
-                  target: LatLng(
-                    widget.initialLatitude,
-                    widget.initialLongitude,
-                  ),
+                  target: LatLng(state.latitude, state.longitude),
                   zoom: 16,
                 ),
                 onMapCreated: (controller) => _mapController = controller,

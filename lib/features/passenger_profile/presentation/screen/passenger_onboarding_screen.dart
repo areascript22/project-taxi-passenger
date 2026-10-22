@@ -45,6 +45,9 @@ class PassengerOnboardingView extends StatefulWidget {
 class _PassengerOnboardingViewState extends State<PassengerOnboardingView> {
   final _formKey = GlobalKey<FormState>();
 
+  // Se activa al intentar continuar sin foto; se apaga solo al elegir una.
+  bool _photoMissingAttempted = false;
+
   late final TextEditingController _firstNameController;
   late final TextEditingController _lastNameController;
   late final TextEditingController _emailController;
@@ -79,7 +82,17 @@ class _PassengerOnboardingViewState extends State<PassengerOnboardingView> {
   }
 
   void _submit() {
-    if (_formKey.currentState?.validate() != true) return;
+    final hasPhoto =
+        context.read<PassengerOnboardingBloc>().state.profileImage != null;
+    final formValid = _formKey.currentState?.validate() == true;
+    if (!hasPhoto) {
+      setState(() => _photoMissingAttempted = true);
+      AppToast.error(
+        context,
+        message: AppLocalizations.of(context).failureProfilePhotoRequired,
+      );
+    }
+    if (!formValid || !hasPhoto) return;
 
     context.read<PassengerOnboardingBloc>().add(
       PassengerOnboardingSubmitted(
@@ -147,11 +160,26 @@ class _PassengerOnboardingViewState extends State<PassengerOnboardingView> {
                               Center(
                                 child: ProfileAvatarPicker(
                                   localImage: state.profileImage,
-                                  networkImageUrl: widget.user.photoUrl,
+                                  networkImageUrl: null,
                                   isLoading: state.isPickingImage,
                                   onTap: _pickImage,
                                 ),
                               ),
+                              if (_photoMissingAttempted &&
+                                  state.profileImage == null)
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 12),
+                                  child: Center(
+                                    child: Text(
+                                      AppLocalizations.of(context)
+                                          .failureProfilePhotoRequired,
+                                      style: TextStyle(
+                                        color: colorScheme.error,
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                                  ),
+                                ),
                               const SizedBox(height: 32),
                               AppTextField(
                                 label: AppLocalizations.of(context).fieldFirstName,

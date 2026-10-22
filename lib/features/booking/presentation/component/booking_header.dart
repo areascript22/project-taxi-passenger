@@ -1,4 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
+import 'package:passenger_app/core/routing/app_routes.dart';
+import 'package:passenger_app/shared/presentation/component/network_avatar.dart';
+import 'package:passenger_app/shared/profile_photo/presentation/cubit/profile_photo_cubit.dart';
 import 'package:passenger_app/l10n/app_localizations.dart';
 
 class BookingHeader extends StatelessWidget {
@@ -42,16 +47,20 @@ class BookingHeader extends StatelessWidget {
               ),
             ],
           ),
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: colorScheme.primary.withValues(alpha: 0.12),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              Icons.person_outline,
-              color: colorScheme.primary,
-              size: 28,
+          Tooltip(
+            message: l10n.bookingOpenProfile,
+            child: Semantics(
+              button: true,
+              label: l10n.bookingOpenProfile,
+              child: GestureDetector(
+                onTap: () => context.go(profileRoute.route),
+                child: NetworkAvatar(
+                  photoUrl: context.select<ProfilePhotoCubit, String?>(
+                    (cubit) => cubit.state,
+                  ),
+                  size: 48,
+                ),
+              ),
             ),
           ),
         ],

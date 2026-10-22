@@ -156,13 +156,13 @@
   "@sessionCheckFailed": {
     "description": "Mensaje cuando falla el chequeo de sesion"
   },
-  "signInWelcome": "Bienvenido Pasajero",
-  "@signInWelcome": {
-    "description": "Titulo de la pantalla de login"
+  "brandRoleLabel": "Pasajero",
+  "@brandRoleLabel": {
+    "description": "Subtítulo bajo el nombre de la marca en el login. 'TaxiGo' NO se traduce (es nombre propio), esto sí"
   },
   "signInTagline": "Viaja de forma segura y rápida con nosotros.",
   "@signInTagline": {
-    "description": "Frase bajo el titulo en el login"
+    "description": "Frase bajo el nombre de la marca en el login"
   },
   "signInGoogle": "Continuar con Google",
   "@signInGoogle": {
@@ -551,6 +551,10 @@
   "@failurePassengerProfileCheckFailed": {
     "description": "Mensaje de error para FailureCode.passengerProfileCheckFailed"
   },
+  "failureProfilePhotoRequired": "Elige una foto de perfil para continuar",
+  "@failureProfilePhotoRequired": {
+    "description": "Mensaje de error para FailureCode.profilePhotoRequired: en el registro la foto de perfil es obligatoria y no se toma de la cuenta de Google"
+  },
   "failureProfileSaveFailed": "No se pudo guardar tu información. Intenta nuevamente.",
   "@failureProfileSaveFailed": {
     "description": "Mensaje de error para FailureCode.profileSaveFailed"
@@ -620,5 +624,9 @@
     "placeholders": {
       "version": {"type": "String"}
     }
+  },
+  "bookingOpenProfile": "Abrir mi perfil",
+  "@bookingOpenProfile": {
+    "description": "Etiqueta de accesibilidad (tooltip) del avatar con la foto del pasajero, arriba a la derecha en la pantalla de pedir taxi: al tocarlo se abre su perfil"
   }
 }

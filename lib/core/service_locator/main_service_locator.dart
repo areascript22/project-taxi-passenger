@@ -21,6 +21,7 @@ import '../../features/booking/di/booking_locator.dart';
 import '../../features/map/di/map_locator.dart';
 import '../../features/ride_tracking/di/ride_tracking_service_locator.dart';
 import '../../shared/di/shared_service_locator.dart';
+import '../../shared/profile_photo/di/profile_photo_service_locator.dart';
 
 final GetIt mainServiceLocator = GetIt.instance;
 
@@ -28,6 +29,7 @@ Future<void> initMainServiceLocator() async {
   // Antes que initChatDI: ChatBloc depende de ConnectivityRepository para
   // reintentar watchMessages en cuanto vuelve la conexión.
   initConnectivityDI(mainServiceLocator);
+  initProfilePhotoDI(mainServiceLocator);
   initChatPresenceDI(mainServiceLocator);
   initPushNotificationsDI(mainServiceLocator);
   initImagePickerDI(mainServiceLocator);

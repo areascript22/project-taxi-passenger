@@ -1,6 +1,8 @@
 import 'package:get_it/get_it.dart';
 import 'package:passenger_app/features/map/presentation/bloc/map_picker/map_picker_bloc.dart';
 import 'package:passenger_app/shared/geocoding/domain/repository/geocoding_repository.dart';
+import 'package:passenger_app/shared/geolocator/service/geolocator/geolocator_service.dart';
+import 'package:passenger_app/shared/geolocator/service/last_location/last_location_service.dart';
 import 'package:passenger_app/shared/sectors/domain/service/sector_service.dart';
 
 void initMap(GetIt sl) {
@@ -8,6 +10,8 @@ void initMap(GetIt sl) {
     () => MapPickerBloc(
       geocodingRepository: sl<GeocodingRepository>(),
       sectorService: sl<SectorService>(),
+      geolocatorService: sl<GeolocatorService>(),
+      lastLocationService: sl<LastLocationService>(),
     ),
   );
 }

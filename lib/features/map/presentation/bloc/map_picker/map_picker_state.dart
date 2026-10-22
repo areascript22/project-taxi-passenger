@@ -2,6 +2,9 @@ part of 'map_picker_bloc.dart';
 
 enum MapPickerStatus {
   initial,
+  // Todavia no se sabe donde centrar el mapa (se mira la ultima ubicacion o el
+  // GPS); la vista espera para no dibujarlo en un sitio y saltar despues.
+  resolvingCenter,
   loadingAddress,
   addressReady,
   // El pin quedó fuera de los sectores de Riobamba: no se puede confirmar esa

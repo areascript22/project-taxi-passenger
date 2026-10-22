@@ -311,13 +311,13 @@ abstract class AppLocalizations {
   /// **'No se pudo verificar tu sesión. Revisa tu conexión e intenta de nuevo.'**
   String get sessionCheckFailed;
 
-  /// Titulo de la pantalla de login
+  /// Subtítulo bajo el nombre de la marca en el login. 'TaxiGo' NO se traduce (es nombre propio), esto sí
   ///
   /// In es, this message translates to:
-  /// **'Bienvenido Pasajero'**
-  String get signInWelcome;
+  /// **'Pasajero'**
+  String get brandRoleLabel;
 
-  /// Frase bajo el titulo en el login
+  /// Frase bajo el nombre de la marca en el login
   ///
   /// In es, this message translates to:
   /// **'Viaja de forma segura y rápida con nosotros.'**
@@ -881,6 +881,12 @@ abstract class AppLocalizations {
   /// **'No se pudo verificar tu información de pasajero'**
   String get failurePassengerProfileCheckFailed;
 
+  /// Mensaje de error para FailureCode.profilePhotoRequired: en el registro la foto de perfil es obligatoria y no se toma de la cuenta de Google
+  ///
+  /// In es, this message translates to:
+  /// **'Elige una foto de perfil para continuar'**
+  String get failureProfilePhotoRequired;
+
   /// Mensaje de error para FailureCode.profileSaveFailed
   ///
   /// In es, this message translates to:
@@ -976,6 +982,12 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Versión: {version}'**
   String appVersionLabel(String version);
+
+  /// Etiqueta de accesibilidad (tooltip) del avatar con la foto del pasajero, arriba a la derecha en la pantalla de pedir taxi: al tocarlo se abre su perfil
+  ///
+  /// In es, this message translates to:
+  /// **'Abrir mi perfil'**
+  String get bookingOpenProfile;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

@@ -66,7 +66,13 @@ class SessionBloc extends Bloc<SessionEvent, SessionState> {
     final activeRideResult = await rideTrackingRepository.getActiveRide();
     final activeRide = activeRideResult.fold((_) => null, (ride) => ride);
 
-    emit(SessionAuthenticated(user: user, activeRide: activeRide));
+    emit(
+      SessionAuthenticated(
+        user: user,
+        activeRide: activeRide,
+        passenger: passenger,
+      ),
+    );
 
     unawaited(_registerPushToken(passengerId: user.id));
   }
@@ -122,7 +128,8 @@ class SessionBloc extends Bloc<SessionEvent, SessionState> {
   ) async {
     final response = await sessionRepository.signOut();
     response.fold(
-      (failure) => debugPrint('SessionDebug | Error en logout: ${failure.code}'),
+      (failure) =>
+          debugPrint('SessionDebug | Error en logout: ${failure.code}'),
       (unit) => emit(SessionUnauthenticated()),
     );
   }

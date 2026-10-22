@@ -1,13 +1,14 @@
+import 'package:passenger_app/l10n/app_localizations.dart';
+import 'package:passenger_app/shared/presentation/component/app_toast.dart';
+import 'package:passenger_app/shared/presentation/component/app_version.dart';
+import 'package:passenger_app/shared/presentation/failure_text.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:passenger_app/core/routing/app_routes.dart';
 import 'package:passenger_app/core/service_locator/main_service_locator.dart';
+import 'package:passenger_app/core/theme/app_colors.dart';
 import 'package:passenger_app/features/auth/presentation/bloc/auth_bloc.dart';
-import 'package:passenger_app/l10n/app_localizations.dart';
-import 'package:passenger_app/shared/presentation/component/app_toast.dart';
-import 'package:passenger_app/shared/presentation/component/app_version.dart';
-import 'package:passenger_app/shared/presentation/failure_text.dart';
 
 class SignInScreen extends StatelessWidget {
   const SignInScreen({super.key});
@@ -30,95 +31,139 @@ class SignInView extends StatelessWidget {
     final onSurface = colorScheme.onSurface;
 
     return Scaffold(
-      body: SafeArea(
-        child: BlocConsumer<AuthBloc, AuthState>(
-          listener: (context, state) {
-            if (state is AuthError) {
-              AppToast.error(context, message: context.failureText(state.code));
-            }
+      body: Stack(
+        children: [
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: context.appColors.backgroundGradient,
+              ),
+            ),
+          ),
+          SafeArea(
+            child: BlocConsumer<AuthBloc, AuthState>(
+              listener: (context, state) {
+                if (state is AuthError) {
+                  AppToast.error(context, message: context.failureText(state.code));
+                }
 
-            if (state is AuthAuthenticated) {
-              context.goNamed(sessionRoute.name);
-            }
-          },
-          builder: (context, state) {
-            final isLoading = state is AuthLoading;
+                if (state is AuthAuthenticated) {
+                  context.goNamed(sessionRoute.name);
+                }
+              },
+              builder: (context, state) {
+                final isLoading = state is AuthLoading;
 
-            return Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 30.0),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Icon(Icons.local_taxi_rounded, size: 80, color: onSurface),
-                  const SizedBox(height: 20),
-                  Text(
-                    AppLocalizations.of(context).signInWelcome,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                      color: onSurface,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    AppLocalizations.of(context).signInTagline,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: onSurface.withValues(alpha: 0.6),
-                    ),
-                  ),
-                  const SizedBox(height: 60),
-
-                  isLoading
-                      ? Center(
-                        child: CircularProgressIndicator(
-                          color: colorScheme.primary,
-                        ),
-                      )
-                      : OutlinedButton(
-                        onPressed: () {
-                          context.read<AuthBloc>().add(AuthSignInWithGoogle());
-                        },
-                        style: OutlinedButton.styleFrom(
-                          backgroundColor: colorScheme.surface,
-                          foregroundColor: onSurface,
-                          side: BorderSide(
-                            color: onSurface.withValues(alpha: 0.2),
-                          ),
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.g_mobiledata_rounded,
-                              size: 32,
-                              color: colorScheme.primary,
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              AppLocalizations.of(context).signInGoogle,
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                              ),
+                return Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 32.0),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: onSurface.withValues(alpha: 0.1),
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: colorScheme.primary.withValues(alpha: 0.3),
+                              blurRadius: 60,
+                              spreadRadius: 10,
                             ),
                           ],
                         ),
+                        child: Image.asset(
+                          'assets/images/app_logo.png',
+                          width: 96,
+                          height: 96,
+                        ),
                       ),
-                  const SizedBox(height: 100),
-                  Center(child: AppVersionWidget()),
-                ],
-              ),
-            );
-          },
-        ),
+                      const SizedBox(height: 40),
+                      Text(
+                        'TaxiGo',
+                        style: TextStyle(
+                          fontSize: 36,
+                          fontWeight: FontWeight.bold,
+                          color: onSurface,
+                          letterSpacing: 2,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        AppLocalizations.of(context).brandRoleLabel,
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w300,
+                          color: onSurface.withValues(alpha: 0.6),
+                          letterSpacing: 4,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        AppLocalizations.of(context).signInTagline,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: onSurface.withValues(alpha: 0.5),
+                        ),
+                      ),
+                      const SizedBox(height: 60),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed:
+                              isLoading
+                                  ? null
+                                  : () {
+                                    context.read<AuthBloc>().add(
+                                      AuthSignInWithGoogle(),
+                                    );
+                                  },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            foregroundColor: Colors.black87,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child:
+                              isLoading
+                                  ? Center(
+                                    child: CircularProgressIndicator(
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                        colorScheme.primary,
+                                      ),
+                                    ),
+                                  )
+                                  : Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      const SizedBox(width: 12),
+                                      Text(
+                                        AppLocalizations.of(context).signInGoogle,
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.black87,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                        ),
+                      ),
+                      const SizedBox(height: 40),
+                      AppVersionWidget(),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }

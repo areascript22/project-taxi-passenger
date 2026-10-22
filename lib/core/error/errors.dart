@@ -42,6 +42,7 @@ enum FailureCode {
   accountDeleteFailed,
   passengerProfileCheckFailed,
   profileSaveFailed,
+  profilePhotoRequired,
   profileUpdateFailed,
   imagePickFailed,
   pushInitFailed,
