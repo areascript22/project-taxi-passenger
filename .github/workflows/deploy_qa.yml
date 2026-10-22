@@ -1,4 +1,4 @@
-name: Deploy TaxiGo QA (Internal Test)
+name: Deploy TaxiGo to QA (Play Internal)
 
 on:
   push:
