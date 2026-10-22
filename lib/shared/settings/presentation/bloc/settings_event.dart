@@ -1,0 +1,22 @@
+part of 'settings_bloc.dart';
+
+@immutable
+sealed class SettingsEvent {}
+
+class LoadSettings extends SettingsEvent {}
+
+class ToggleVoice extends SettingsEvent {}
+
+class ToggleVibration extends SettingsEvent {}
+
+class ChangeThemeMode extends SettingsEvent {
+  final ThemeMode themeMode;
+
+  ChangeThemeMode(this.themeMode);
+}
+
+class ChangeLanguage extends SettingsEvent {
+  final AppLanguage language;
+
+  ChangeLanguage(this.language);
+}

@@ -1,0 +1,78 @@
+name: Deploy TaxiGo to QA (Play Internal)
+
+on:
+  push:
+    branches:
+      - qa
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    # Los secrets se leen del environment "qa" (Settings > Environments).
+    environment: qa
+
+    steps:
+      # 1️⃣ Descarga el código del repositorio
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2️⃣ Configura Flutter
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.29.2'
+          channel: 'stable'
+
+      # 3️⃣ Decodifica el .env ANTES de flutter pub get
+      - name: Decode .env_dev
+        run: |
+          mkdir -p assets/env
+          echo "${{ secrets.ENV_FILE_BASE64 }}" | base64 --decode > assets/env/.env_dev
+          echo "✅ .env_dev created:"
+          ls -la assets/env/.env_dev
+
+      # 4️⃣ Decodifica google-services.json (flavor dev)
+      - name: Decode google-services.json (dev)
+        run: |
+          mkdir -p android/app/src/dev
+          echo "${{ secrets.GOOGLE_SERVICES_BASE64 }}" | base64 --decode > android/app/src/dev/google-services.json
+
+      # 5️⃣ Instala dependencias (con el .env ya presente)
+      - name: Install dependencies
+        run: flutter pub get
+
+      # 6️⃣ Decodifica Keystore
+      - name: Decode Keystore
+        run: |
+          echo "${{ secrets.KEYSTORE_FILE_BASE64 }}" | base64 --decode > android/prod-keystore.jks
+
+      # 7️⃣ Crea keystore.properties (el que lee Gradle para el flavor dev)
+      - name: Create keystore.properties
+        run: |
+          echo "storePassword=${{ secrets.KEYSTORE_PASSWORD }}" > android/keystore.properties
+          echo "keyPassword=${{ secrets.KEY_PASSWORD }}" >> android/keystore.properties
+          echo "keyAlias=${{ secrets.KEY_ALIAS }}" >> android/keystore.properties
+          echo "storeFile=prod-keystore.jks" >> android/keystore.properties
+
+      # 8️⃣ Compila el .aab del flavor dev
+      - name: Build appbundle (dev)
+        run: flutter build appbundle --flavor dev --dart-define=ENV_FILE=assets/env/.env_dev --release --dart-define=FLAVOR=dev
+
+      # 9️⃣ Lista archivos generados
+      - name: List built files
+        run: ls -l build/app/outputs/bundle/devRelease/
+
+      # 🔟 Decodifica JSON de Play Store
+      - name: Decode Play Store JSON key
+        run: echo "${{ secrets.PLAY_STORE_SERVICE_ACCOUNT_JSON }}" | base64 --decode > /tmp/playstore_key.json
+
+      # 1️⃣1️⃣ Sube a Google Play (Internal track)
+      - name: Upload to Google Play (Internal)
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJson: /tmp/playstore_key.json
+          packageName: com.areascript.passenger_app.dev
+          releaseFiles: build/app/outputs/bundle/devRelease/app-dev-release.aab
+          tracks: internal
+          status: draft
+          inAppUpdatePriority: 0

@@ -1,0 +1,250 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
+import 'package:passenger_app/shared/presentation/failure_text.dart';
+import '../../../../core/routing/app_routes.dart';
+import '../../../../core/service_locator/main_service_locator.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../../l10n/app_localizations.dart';
+import '../../../../shared/domain/entity/user_entity.dart';
+import '../../../../shared/presentation/bloc/session/session_bloc.dart';
+import '../../../../shared/presentation/component/app_text_field.dart';
+import '../../../../shared/presentation/component/app_toast.dart';
+import '../../../../shared/presentation/component/custom_button.dart';
+import '../../../../shared/presentation/component/image_source_sheet.dart';
+import '../../../../shared/presentation/component/profile_avatar_picker.dart';
+import '../bloc/passenger_onboarding_bloc.dart';
+
+class PassengerOnboardingScreen extends StatelessWidget {
+  final UserEntity user;
+
+  const PassengerOnboardingScreen({super.key, required this.user});
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocProvider(
+      create:
+          (_) =>
+              mainServiceLocator<PassengerOnboardingBloc>()
+                ..add(PassengerOnboardingStarted(user)),
+      child: PassengerOnboardingView(user: user),
+    );
+  }
+}
+
+class PassengerOnboardingView extends StatefulWidget {
+  final UserEntity user;
+
+  const PassengerOnboardingView({super.key, required this.user});
+
+  @override
+  State<PassengerOnboardingView> createState() =>
+      _PassengerOnboardingViewState();
+}
+
+class _PassengerOnboardingViewState extends State<PassengerOnboardingView> {
+  final _formKey = GlobalKey<FormState>();
+
+  // Se activa al intentar continuar sin foto; se apaga solo al elegir una.
+  bool _photoMissingAttempted = false;
+
+  late final TextEditingController _firstNameController;
+  late final TextEditingController _lastNameController;
+  late final TextEditingController _emailController;
+
+  @override
+  void initState() {
+    super.initState();
+    final nameParts = (widget.user.displayName ?? '').trim().split(' ');
+    _firstNameController = TextEditingController(
+      text: nameParts.isNotEmpty ? nameParts.first : '',
+    );
+    _lastNameController = TextEditingController(
+      text: nameParts.length > 1 ? nameParts.sublist(1).join(' ') : '',
+    );
+    _emailController = TextEditingController(text: widget.user.email ?? '');
+  }
+
+  @override
+  void dispose() {
+    _firstNameController.dispose();
+    _lastNameController.dispose();
+    _emailController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _pickImage() async {
+    final source = await ImageSourceSheet.show(context);
+    if (source == null || !mounted) return;
+    context.read<PassengerOnboardingBloc>().add(
+      PassengerOnboardingImagePicked(source),
+    );
+  }
+
+  void _submit() {
+    final hasPhoto =
+        context.read<PassengerOnboardingBloc>().state.profileImage != null;
+    final formValid = _formKey.currentState?.validate() == true;
+    if (!hasPhoto) {
+      setState(() => _photoMissingAttempted = true);
+      AppToast.error(
+        context,
+        message: AppLocalizations.of(context).failureProfilePhotoRequired,
+      );
+    }
+    if (!formValid || !hasPhoto) return;
+
+    context.read<PassengerOnboardingBloc>().add(
+      PassengerOnboardingSubmitted(
+        firstName: _firstNameController.text.trim(),
+        lastName: _lastNameController.text.trim(),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return PopScope(
+      canPop: false,
+      child: Scaffold(
+        body: BlocConsumer<PassengerOnboardingBloc, PassengerOnboardingState>(
+          listener: (context, state) {
+            if (state.errorCode != null) {
+              AppToast.error(context, message: context.failureText(state.errorCode!));
+            }
+            if (state.registrationSuccess) {
+              context.goNamed(sessionRoute.name);
+            }
+          },
+          builder: (context, state) {
+            return Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: context.appColors.backgroundGradient,
+                ),
+              ),
+              child: SafeArea(
+                child: Column(
+                  children: [
+                    Expanded(
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.fromLTRB(24, 24, 24, 32),
+                        child: Form(
+                          key: _formKey,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                AppLocalizations.of(context).onboardingTitle,
+                                style: TextStyle(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.bold,
+                                  color: colorScheme.onSurface,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                AppLocalizations.of(context).onboardingSubtitle,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: colorScheme.onSurface.withValues(
+                                    alpha: 0.5,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 28),
+                              Center(
+                                child: ProfileAvatarPicker(
+                                  localImage: state.profileImage,
+                                  networkImageUrl: null,
+                                  isLoading: state.isPickingImage,
+                                  onTap: _pickImage,
+                                ),
+                              ),
+                              if (_photoMissingAttempted &&
+                                  state.profileImage == null)
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 12),
+                                  child: Center(
+                                    child: Text(
+                                      AppLocalizations.of(context)
+                                          .failureProfilePhotoRequired,
+                                      style: TextStyle(
+                                        color: colorScheme.error,
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              const SizedBox(height: 32),
+                              AppTextField(
+                                label: AppLocalizations.of(context).fieldFirstName,
+                                controller: _firstNameController,
+                                textCapitalization: TextCapitalization.words,
+                                validator: (value) {
+                                  if (value == null || value.trim().isEmpty) {
+                                    return AppLocalizations.of(context).validationFirstName;
+                                  }
+                                  return null;
+                                },
+                              ),
+                              const SizedBox(height: 16),
+                              AppTextField(
+                                label: AppLocalizations.of(context).fieldLastName,
+                                controller: _lastNameController,
+                                textCapitalization: TextCapitalization.words,
+                                validator: (value) {
+                                  if (value == null || value.trim().isEmpty) {
+                                    return AppLocalizations.of(context).validationLastName;
+                                  }
+                                  return null;
+                                },
+                              ),
+                              const SizedBox(height: 16),
+                              AppTextField(
+                                label: AppLocalizations.of(context).commonEmail,
+                                controller: _emailController,
+                                enabled: false,
+                              ),
+                              const SizedBox(height: 32),
+                              CustomButton(
+                                textButton:
+                                    state.isSubmitting
+                                        ? AppLocalizations.of(context).commonSaving
+                                        : AppLocalizations.of(context).commonContinue,
+                                backgroundColor: colorScheme.primary,
+                                onTap: state.isSubmitting ? null : _submit,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        context.read<SessionBloc>().add(
+                          SessionLogoutRequested(),
+                        );
+                        context.goNamed(signInRoute.name);
+                      },
+                      child: Text(
+                        AppLocalizations.of(context).onboardingSignOutPrompt,
+                        style: TextStyle(
+                          color: colorScheme.onSurface.withValues(alpha: 0.4),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+}

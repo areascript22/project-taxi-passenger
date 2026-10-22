@@ -1,122 +1,126 @@
+import 'dart:async';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:get_it/get_it.dart';
+import 'package:passenger_app/core/l10n/app_language.dart';
+import 'package:passenger_app/core/routing/app_routing.dart';
+import 'package:passenger_app/core/service_locator/main_service_locator.dart';
+import 'package:passenger_app/core/theme/app_theme.dart';
+import 'package:passenger_app/features/app_update/presentation/component/force_update_gate.dart';
+import 'package:passenger_app/features/app_update/presentation/cubit/app_update_cubit.dart';
+import 'package:passenger_app/l10n/app_localizations.dart';
+import 'package:passenger_app/shared/connectivity/presentation/component/connectivity_banner.dart';
+import 'package:passenger_app/shared/connectivity/presentation/cubit/connectivity_cubit.dart';
+import 'package:passenger_app/shared/notifications/service/push_notifications_service.dart';
+import 'package:passenger_app/shared/presentation/bloc/session/session_bloc.dart';
+import 'package:passenger_app/shared/profile_photo/presentation/component/profile_photo_session_listener.dart';
+import 'package:passenger_app/shared/profile_photo/presentation/cubit/profile_photo_cubit.dart';
+import 'package:passenger_app/shared/services/services_initializer.dart';
+import 'package:passenger_app/shared/settings/presentation/bloc/settings_bloc.dart';
 
-void main() {
+// Debe ser una función top-level (o estática): FCM la ejecuta en un isolate
+// separado cuando llega un mensaje con la app en background, así que no
+// tiene acceso al estado ya inicializado en main().
+@pragma('vm:entry-point')
+Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  await Firebase.initializeApp();
+}
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
+  FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+  initMainServiceLocator();
+  await ServicesInitializer.initializeServices();
+  // No se espera (fire-and-forget): no debe bloquear el arranque de la app.
+  unawaited(GetIt.instance<PushNotificationsService>().initialize());
+
   runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Taxi project',
-      theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-      ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
-    );
-  }
-}
-
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
-
-  @override
-  State<MyHomePage> createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
-    return Scaffold(
-      appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
-      ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text('You have pushed the button this many times:'),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-          ],
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider<SessionBloc>(
+          create: (context) => GetIt.instance<SessionBloc>(),
+        ),
+        BlocProvider<SettingsBloc>(
+          create:
+              (context) => GetIt.instance<SettingsBloc>()..add(LoadSettings()),
+        ),
+        // Singleton de GetIt: vive durante toda la sesión, no solo mientras
+        // este widget está montado (igual que SessionBloc/SettingsBloc de
+        // arriba) -- así el banner de conectividad puede mostrarse desde el
+        // primer frame (splash) hasta el último.
+        BlocProvider<ConnectivityCubit>(
+          create: (context) => GetIt.instance<ConnectivityCubit>(),
+        ),
+        // Consulta al arrancar si el servidor todavía admite esta versión.
+        // Falla abierto: sin red o con el servidor caído la app sigue normal
+        // (ver AppUpdateCubit.check).
+        BlocProvider<AppUpdateCubit>(
+          create: (context) => GetIt.instance<AppUpdateCubit>()..check(),
+        ),
+        // La foto de perfil que se ve fuera de la pantalla de perfil (avatar de
+        // pedir taxi). Singleton: sobrevive a las pantallas que la muestran.
+        BlocProvider<ProfilePhotoCubit>(
+          create: (context) => GetIt.instance<ProfilePhotoCubit>(),
+        ),
+      ],
+      // Siembra la foto cuando la sesión se resuelve y la borra al cerrar sesión.
+      child: ProfilePhotoSessionListener(
+        child: BlocBuilder<SettingsBloc, SettingsState>(
+          builder: (context, settingsState) {
+            return MaterialApp.router(
+              // onGenerateTitle en vez de `title`: se evalúa con un context que
+              // ya tiene las localizaciones, así el nombre que muestra el
+              // sistema operativo también sale del .arb.
+              onGenerateTitle:
+                  (context) => AppLocalizations.of(context).appTitle,
+              localizationsDelegates: AppLocalizations.localizationsDelegates,
+              supportedLocales: AppLocalizations.supportedLocales,
+              // null cuando el usuario eligio "Sistema": ahi resuelve
+              // localeListResolutionCallback con los idiomas del dispositivo.
+              locale: settingsState.language.locale,
+              // El fallback de Flutter cuando nada matchea es el PRIMER elemento
+              // de supportedLocales, que el generador ordena alfabeticamente
+              // ([en, es]). Sin esto, un telefono en portugues abriria la app en
+              // ingles en vez de espaniol -- ver resolveAppLocale.
+              localeListResolutionCallback:
+                  (deviceLocales, _) => resolveAppLocale(
+                    preference: settingsState.language,
+                    deviceLocales: deviceLocales?.toList(),
+                  ),
+              debugShowCheckedModeBanner: false,
+              theme: AppTheme.light,
+              darkTheme: AppTheme.dark,
+              themeMode: settingsState.themeMode,
+              routerConfig: AppRouter.router,
+              // Envuelve TODO lo que arma go_router (incluidas splash/login,
+              // fuera del StatefulShellRoute) para que el banner de "sin
+              // conexión" pueda mostrarse sin importar la pantalla -- ver
+              // ConnectivityBannerOverlay.
+              //
+              // ForceUpdateGate va por fuera: si el servidor exige actualizar,
+              // reemplaza TODA la app (incluido el banner) por la pantalla de
+              // actualización.
+              builder: (context, child) {
+                return ForceUpdateGate(
+                  child: ConnectivityBannerOverlay(
+                    child: child ?? const SizedBox.shrink(),
+                  ),
+                );
+              },
+            );
+          },
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
     );
   }
 }

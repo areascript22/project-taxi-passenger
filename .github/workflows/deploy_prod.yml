@@ -1,0 +1,79 @@
+name: Deploy TaxiGo to Production (Play Internal)
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    # Los secrets se leen del environment "production" (Settings > Environments).
+    environment: production
+
+    steps:
+      # 1️⃣ Descarga el código del repositorio
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2️⃣ Configura Flutter
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.29.2'
+          channel: 'stable'
+
+      # 3️⃣ Decodifica el .env ANTES de flutter pub get
+      #    (Gradle también lo lee de aquí para MAPS_API_KEY del manifest)
+      - name: Decode .env_prod
+        run: |
+          mkdir -p assets/env
+          echo "${{ secrets.ENV_FILE_BASE64 }}" | base64 --decode > assets/env/.env_prod
+          echo "✅ .env_prod created:"
+          ls -la assets/env/.env_prod
+
+      # 4️⃣ Decodifica google-services.json (flavor prod)
+      - name: Decode google-services.json (prod)
+        run: |
+          mkdir -p android/app/src/prod
+          echo "${{ secrets.GOOGLE_SERVICES_BASE64 }}" | base64 --decode > android/app/src/prod/google-services.json
+
+      # 5️⃣ Instala dependencias (con el .env ya presente)
+      - name: Install dependencies
+        run: flutter pub get
+
+      # 6️⃣ Decodifica el keystore de PRODUCCIÓN (distinto al de dev/qa)
+      - name: Decode Keystore (prod)
+        run: |
+          echo "${{ secrets.KEYSTORE_FILE_BASE64 }}" | base64 --decode > android/prod-keystore.jks
+
+      # 7️⃣ Crea keystore-prod.properties (el que lee Gradle para el flavor prod)
+      - name: Create keystore-prod.properties
+        run: |
+          echo "storePassword=${{ secrets.KEYSTORE_PASSWORD }}" > android/keystore-prod.properties
+          echo "keyPassword=${{ secrets.KEY_PASSWORD }}" >> android/keystore-prod.properties
+          echo "keyAlias=${{ secrets.KEY_ALIAS }}" >> android/keystore-prod.properties
+          echo "storeFile=prod-keystore.jks" >> android/keystore-prod.properties
+
+      # 8️⃣ Compila el .aab del flavor prod
+      - name: Build appbundle (prod)
+        run: flutter build appbundle --flavor prod --dart-define=ENV_FILE=assets/env/.env_prod --release --dart-define=FLAVOR=prod
+
+      # 9️⃣ Lista archivos generados
+      - name: List built files
+        run: ls -l build/app/outputs/bundle/prodRelease/
+
+      # 🔟 Decodifica JSON de Play Store
+      - name: Decode Play Store JSON key
+        run: echo "${{ secrets.PLAY_STORE_SERVICE_ACCOUNT_JSON }}" | base64 --decode > /tmp/playstore_key.json
+
+      # 1️⃣1️⃣ Sube a Google Play (Internal track, como borrador: se promueve a mano)
+      - name: Upload to Google Play (Internal)
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJson: /tmp/playstore_key.json
+          packageName: com.areascript.passenger_app
+          releaseFiles: build/app/outputs/bundle/prodRelease/app-prod-release.aab
+          tracks: internal
+          status: draft
+          inAppUpdatePriority: 0
