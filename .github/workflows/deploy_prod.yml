@@ -1,4 +1,4 @@
-name: Deploy TaxiGo Production (Internal Test)
+name: Deploy TaxiGo to Production (Play Internal)
 
 on:
   push:
