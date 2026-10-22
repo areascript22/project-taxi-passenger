@@ -179,9 +179,9 @@ flutter test
 | Branch | Workflow | Result |
 |---|---|---|
 | `qa` | [`deploy_qa.yml`](.github/workflows/deploy_qa.yml) | Builds the signed **dev-flavor** App Bundle (`com.areascript.passenger_app.dev`) and uploads it to the Play **internal** track as a draft |
-| `main` | [`deploy_prod.yml`](.github/workflows/deploy_prod.yml) | Builds the signed **prod-flavor** App Bundle (`com.areascript.passenger_app`) with the production keystore and uploads it to the Play **internal** track as a draft, to be promoted by hand |
+| `main` | [`deploy_prod.yml`](.github/workflows/deploy_prod.yml) | Builds the signed **prod-flavor** App Bundle (`com.areascript.passenger_app`) with the production keystore and **publishes it to the Google Play production track** |
 
-Each workflow reads its secrets from a GitHub **Environment** (`qa` / `production`): the `.env` file, `google-services.json`, the signing keystore and the Play service-account key. Release flow: `dev` → PR → `qa` (internal test build) → PR → `main` (production build).
+Each workflow reads its secrets from a GitHub **Environment** (`qa` / `production`): the `.env` file, `google-services.json`, the signing keystore and the Play service-account key. Release flow: `dev` → PR → `qa` (the dev flavor reaches testers on the internal track, which is where a change is verified) → PR → `main` (the prod flavor is published to production). Merging into `main` is the release decision.
 
 ## 🏁 Getting Started
 
