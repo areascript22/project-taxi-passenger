@@ -1,4 +1,4 @@
-name: Deploy TaxiGo to Production (Play Internal)
+name: Deploy TaxiGo to Production (Play Store)
 
 on:
   push:
@@ -67,13 +67,13 @@ jobs:
       - name: Decode Play Store JSON key
         run: echo "${{ secrets.PLAY_STORE_SERVICE_ACCOUNT_JSON }}" | base64 --decode > /tmp/playstore_key.json
 
-      # 1️⃣1️⃣ Sube a Google Play (Internal track, como borrador: se promueve a mano)
-      - name: Upload to Google Play (Internal)
+      # 1️⃣1️⃣ Sube a Google Play y lo publica en PRODUCCION (la version se probo antes en el flavor dev / internal testing)
+      - name: Upload to Google Play (Production)
         uses: r0adkll/upload-google-play@v1
         with:
           serviceAccountJson: /tmp/playstore_key.json
           packageName: com.areascript.passenger_app
           releaseFiles: build/app/outputs/bundle/prodRelease/app-prod-release.aab
-          tracks: internal
-          status: draft
+          tracks: production
+          status: completed
           inAppUpdatePriority: 0
